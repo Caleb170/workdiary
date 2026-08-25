@@ -18,6 +18,15 @@
   --accent:#7C9CFF;
   --radius:16px; --radius-sm:10px;
 }
+[data-theme="light"]{
+  --bg:#F6F5F1; --bg-2:#FFFFFF; --card:#FFFFFF; --card-2:#EFEDE6;
+  --line:#E3E0D6; --line-soft:#ECE9DF;
+  --text:#1B1D22; --text-dim:#6B7180; --text-faint:#9CA1AD;
+  --green:#1D9A6C; --green-dim:#E3F5EC;
+  --amber:#B8792A; --amber-dim:#FBF0DE;
+  --rust:#C24A3E; --rust-dim:#FBEAE7;
+  --accent:#5B6FE0;
+}
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{
@@ -25,7 +34,10 @@ body{
   font-family:'Inter',system-ui,sans-serif;
   -webkit-font-smoothing:antialiased;
   min-height:100vh; padding-bottom:env(safe-area-inset-bottom);
+  transition:background 0.25s ease, color 0.25s ease;
 }
+:root{ --on-accent:#0B0D12; }
+[data-theme="light"]{ --on-accent:#FFFFFF; }
 .num,.money{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;}
 h1,h2,h3,.display{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:-0.01em;color:var(--text);margin:0;}
 button{font-family:inherit;cursor:pointer;}
@@ -53,7 +65,7 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
 }
 .login-btn{
   width:100%;max-width:280px;padding:14px;border-radius:12px;border:none;
-  background:var(--accent);color:#0B0D12;font-weight:700;font-size:15px;
+  background:var(--accent);color:var(--on-accent);font-weight:700;font-size:15px;
 }
 .login-btn:disabled{opacity:0.4;}
 .login-error{color:var(--rust);font-size:13px;margin-top:14px;min-height:18px;}
@@ -98,16 +110,75 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
 
 .btn{border-radius:10px;border:1px solid var(--line);background:var(--card-2);color:var(--text);padding:10px 16px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:6px;}
 .btn:active{transform:scale(0.98);}
-.btn-primary{background:var(--accent);color:#0B0D12;border-color:var(--accent);}
+.btn-primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent);}
 .btn-danger{color:var(--rust);border-color:var(--rust-dim);}
 .btn-sm{padding:7px 12px;font-size:12.5px;}
 .btn-block{width:100%;justify-content:center;}
 .fab{
   position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
-  background:var(--accent);color:#0B0D12;border:none;border-radius:999px;
+  background:var(--accent);color:var(--on-accent);border:none;border-radius:999px;
   padding:15px 26px;font-weight:700;font-size:15px;box-shadow:0 8px 24px rgba(124,156,255,0.35);
   z-index:50;display:flex;align-items:center;gap:8px;
 }
+/* ---- Theme toggle ---- */
+.theme-toggle{
+  width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--card-2);
+  display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text);
+  position:relative;overflow:hidden;
+}
+.theme-toggle:active{transform:scale(0.94);}
+
+/* ---- FY selector ---- */
+.fy-pill{position:relative;}
+.fy-pill-btn{
+  background:var(--card-2);border:1px solid var(--line);color:var(--text);
+  border-radius:999px;padding:7px 12px;font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:4px;
+}
+.fy-menu{
+  position:absolute;top:calc(100% + 6px);left:0;background:var(--bg-2);border:1px solid var(--line);
+  border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.3);min-width:120px;overflow:hidden;z-index:60;
+}
+.fy-menu button{display:block;width:100%;text-align:left;padding:9px 14px;background:none;border:none;font-size:13.5px;color:var(--text);}
+.fy-menu button:hover{background:var(--card-2);}
+.fy-menu button.cur{color:var(--accent);font-weight:700;}
+
+/* ---- Calendar ---- */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+.cal-dow{text-align:center;font-size:10.5px;font-weight:700;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.05em;padding-bottom:6px;}
+.cal-cell{min-height:58px;border-radius:10px;padding:6px 5px;font-size:11.5px;background:var(--card);border:1px solid var(--line-soft);position:relative;}
+.cal-cell.blank{background:transparent;border:none;}
+.cal-cell.today{border-color:var(--accent);border-width:1.5px;}
+.cal-cell.worked{background:var(--green-dim);}
+.cal-cell.planned{background:var(--amber-dim);}
+.cal-cell button{all:unset;display:block;width:100%;height:100%;cursor:pointer;}
+.cal-cell .d{font-weight:700;font-size:12px;color:var(--text);}
+.cal-cell .amt{color:var(--green);font-weight:700;font-size:10.5px;margin-top:4px;display:block;}
+.cal-cell .dot{width:5px;height:5px;border-radius:50%;background:var(--green);margin-top:5px;}
+.cal-legend{display:flex;gap:14px;margin-top:14px;flex-wrap:wrap;font-size:11.5px;color:var(--text-dim);}
+.cal-legend .sw{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:middle;}
+
+/* ---- Timeline ---- */
+.tl-month h3{font-size:15px;margin:18px 0 8px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;font-family:'Inter';font-weight:700;}
+.tl-week{display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--line-soft);font-size:13.5px;}
+.tl-week .rng{flex:1;color:var(--text-dim);}
+.tl-week .hrs{color:var(--text-faint);width:64px;text-align:right;font-size:12px;}
+.tl-week .amt{font-weight:700;color:var(--green);width:80px;text-align:right;}
+
+/* ---- Search ---- */
+.search-box{display:flex;align-items:center;gap:8px;background:var(--bg-2);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:14px;}
+.search-box input{border:none;background:none;padding:0;font-size:15px;}
+.search-box input:focus{outline:none;}
+.search-result{padding:11px 4px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;gap:10px;font-size:13.5px;align-items:center;}
+.search-result:active{opacity:0.7;}
+
+/* ---- Tax ---- */
+.tax-hero{background:linear-gradient(160deg,var(--card),var(--card-2));border:1px solid var(--line-soft);border-radius:18px;padding:22px;text-align:center;margin-bottom:16px;}
+.tax-hero .big-num{font-family:'Fraunces',serif;font-weight:700;font-size:36px;margin:6px 0;}
+.tax-row{display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line-soft);font-size:13.5px;}
+.tax-row:first-child{border-top:none;}
+.tax-estimate-badge{display:inline-block;background:var(--amber-dim);color:var(--amber);font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;}
+.bracket-bar{display:flex;height:8px;border-radius:999px;overflow:hidden;margin:12px 0 6px;background:var(--line-soft);}
+.bracket-bar .seg{height:100%;}
 
 .week-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .week-nav-btn{background:var(--card-2);border:1px solid var(--line);color:var(--text);border-radius:8px;width:34px;height:34px;font-size:15px;}
@@ -179,11 +250,19 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
       <div class="brand">WorkQuest <span class="role-badge" id="roleBadge"></span></div>
       <div class="row">
         <div class="sync-pill"><span class="sync-dot" id="syncDot"></span><span id="syncText">—</span></div>
+        <button class="icon-btn" onclick="openSearchModal()" title="Search">⌕</button>
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme">☀️</button>
         <button class="icon-btn" onclick="logout()" title="Log out">⎋</button>
       </div>
     </div>
+    <div class="row" style="margin-top:12px;">
+      <div class="fy-pill" id="fyPillWrap"></div>
+    </div>
     <div class="tabs" id="tabs">
       <button class="tab active" data-tab="diary" onclick="switchTab('diary')">Diary</button>
+      <button class="tab" data-tab="calendar" onclick="switchTab('calendar')">Calendar</button>
+      <button class="tab" data-tab="timeline" onclick="switchTab('timeline')">Timeline</button>
+      <button class="tab" data-tab="tax" onclick="switchTab('tax')">Tax</button>
       <button class="tab" data-tab="settings" onclick="switchTab('settings')">Pay Rates</button>
     </div>
   </div>
@@ -458,8 +537,10 @@ async function afterLogin(){
   document.getElementById('app-screen').classList.remove('hidden');
   document.getElementById('roleBadge').textContent = STATE.role==='admin' ? 'Admin' : 'Viewer';
   if(STATE.role==='viewer'){
-    document.querySelector('[data-tab="settings"]').classList.add('hidden');
+    ['settings','timeline','tax'].forEach(t=>document.querySelector(`[data-tab="${t}"]`).classList.add('hidden'));
   }
+  initTheme();
+  renderFyPill();
   setSync('saving','Loading…');
   if(STATE.role==='admin'){
     STATE.ownerId = STATE.uid;
@@ -610,12 +691,244 @@ function switchTab(tab){
 function render(){
   const el = document.getElementById('content');
   if(STATE.activeTab==='diary') el.innerHTML = STATE.role==='admin' ? renderAdminDiary() : renderViewerDiary();
+  else if(STATE.activeTab==='calendar') el.innerHTML = renderCalendar();
+  else if(STATE.activeTab==='timeline') el.innerHTML = renderTimeline();
+  else if(STATE.activeTab==='tax') el.innerHTML = renderTax();
   else if(STATE.activeTab==='settings') el.innerHTML = renderSettings();
+  const fab = document.getElementById('fabAdd');
+  if(fab) fab.classList.toggle('hidden', !(STATE.role==='admin' && STATE.activeTab==='diary'));
   if(STATE.role==='admin'){
-    const fab = document.getElementById('fabAdd') || document.createElement('button');
-    fab.id='fabAdd'; fab.className='fab'; fab.innerHTML='+ Add shift'; fab.onclick=openAddShiftModal;
-    if(!document.getElementById('fabAdd')) document.body.appendChild(fab);
+    let fab2 = document.getElementById('fabAdd');
+    if(!fab2){
+      fab2 = document.createElement('button');
+      fab2.id='fabAdd'; fab2.className='fab'; fab2.innerHTML='+ Add shift'; fab2.onclick=openAddShiftModal;
+      document.body.appendChild(fab2);
+    }
+    fab2.classList.toggle('hidden', STATE.activeTab!=='diary');
   }
+}
+
+/* =========================================================================
+   THEME
+   ========================================================================= */
+function initTheme(){
+  const saved = localStorage.getItem('wq_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('themeToggle').textContent = saved==='dark' ? '☀️' : '🌙';
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur==='light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('wq_theme', next);
+  document.getElementById('themeToggle').textContent = next==='dark' ? '☀️' : '🌙';
+}
+
+/* =========================================================================
+   FINANCIAL YEAR SELECTOR
+   ========================================================================= */
+function renderFyPill(){
+  const wrap = document.getElementById('fyPillWrap');
+  const fy = fyForDate(STATE.weekStart);
+  wrap.innerHTML = `
+    <button class="fy-pill-btn" onclick="toggleFyMenu()">${fy.key} ▾</button>
+    <div class="fy-menu hidden" id="fyMenu">
+      ${['FY26','FY27','FY28','FY29','FY30'].map(k=>`<button class="${k===fy.key?'cur':''}" onclick="selectFY('${k}')">${k}</button>`).join('')}
+    </div>`;
+}
+function toggleFyMenu(){ document.getElementById('fyMenu').classList.toggle('hidden'); }
+function selectFY(key){
+  const endYear = 2000+parseInt(key.replace('FY',''),10);
+  const fy = fyFromStartYear(endYear-1);
+  STATE.weekStart = weekForDate(fy.start).start;
+  document.getElementById('fyMenu').classList.add('hidden');
+  renderFyPill();
+  render();
+}
+document.addEventListener('click', (e)=>{
+  const wrap = document.getElementById('fyPillWrap');
+  if(wrap && !wrap.contains(e.target)) document.getElementById('fyMenu')?.classList.add('hidden');
+});
+
+/* =========================================================================
+   CALENDAR (month view)
+   ========================================================================= */
+let calCursor = getTodaySydney().slice(0,7); // 'YYYY-MM'
+function renderCalendar(){
+  const [y,m] = calCursor.split('-').map(Number);
+  const monthStart = isoFromParts(y,m,1);
+  const daysInMonth = new Date(Date.UTC(y,m,0)).getUTCDate();
+  const startDow = (dowIndex(monthStart)+6)%7; // Monday-first offset
+  const today = getTodaySydney();
+  let html = `<div class="week-head">
+    <button class="week-nav-btn" onclick="navCalMonth(-1)">‹</button>
+    <div class="eyebrow">${MONTH_LONG[m-1]} ${y}</div>
+    <button class="week-nav-btn" onclick="navCalMonth(1)">›</button>
+  </div>
+  <div class="cal-grid">`;
+  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d=> html += `<div class="cal-dow">${d}</div>`);
+  for(let i=0;i<startDow;i++) html += `<div class="cal-cell blank"></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const iso = isoFromParts(y,m,d);
+    const shifts = STATE.role==='admin' ? shiftsOnDate(iso) : STATE.shifts.filter(s=>s.date===iso);
+    const isToday = iso===today;
+    let cls = 'cal-cell';
+    if(isToday) cls += ' today';
+    if(shifts.length) cls += ' worked';
+    html += `<div class="${cls}"><button onclick="openDayModal('${iso}')">
+      <span class="d">${d}</span>
+      ${STATE.role==='admin' && shifts.length ? `<span class="amt">$${dayTotal(iso).toFixed(0)}</span>` : (shifts.length?`<span class="dot"></span>`:'')}
+    </button></div>`;
+  }
+  html += `</div>
+  <div class="cal-legend">
+    <span><span class="sw" style="background:var(--green-dim);"></span>Worked</span>
+    <span><span class="sw" style="background:var(--accent);opacity:0.5;"></span>Today</span>
+  </div>`;
+  return html;
+}
+function navCalMonth(dir){
+  let [y,m]=calCursor.split('-').map(Number);
+  m+=dir; if(m<1){m=12;y--;} if(m>12){m=1;y++;}
+  calCursor = `${y}-${String(m).padStart(2,'0')}`;
+  render();
+}
+function openDayModal(iso){
+  const shifts = STATE.role==='admin' ? shiftsOnDate(iso) : STATE.shifts.filter(s=>s.date===iso);
+  let body = shifts.length ? shifts.map(s=>{
+    if(STATE.role==='admin'){
+      const emp=getEmployer(s.employerId);
+      return `<div class="shift-row"><div><div class="shift-emp">${escapeHtml(emp?emp.name:'?')}</div><div class="shift-time">${s.start} → ${s.end} · ${s.locked.paidHours.toFixed(2)} hrs</div></div><div class="shift-amt money">$${s.locked.totalPay.toFixed(2)}</div></div>`;
+    }
+    return `<div class="shift-row"><div><div class="shift-emp">${escapeHtml(s.employerName)}</div><div class="shift-time">${s.start} → ${s.end} · ${Number(s.hours).toFixed(2)} hrs</div></div></div>`;
+  }).join('') : `<div class="day-empty">No shifts recorded</div>`;
+  openModal(`
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h3>${DOW_LONG[dowIndex(iso)]} ${formatAUShort(iso)}</h3>
+    ${body}
+    ${STATE.role==='admin' ? `<div class="row" style="margin-top:14px;"><button class="btn btn-primary btn-block" onclick="closeModal();openAddShiftModal();document.getElementById('sDate').value='${iso}';updateCalcPreview();">+ Add shift this day</button></div>` : ''}
+  `);
+}
+
+/* =========================================================================
+   TIMELINE
+   ========================================================================= */
+function renderTimeline(){
+  const fy = fyForDate(STATE.weekStart);
+  let cursor = fy.start;
+  const weeks = [];
+  while(isoCompare(cursor, fy.end) <= 0){
+    const w = weekForDate(cursor);
+    weeks.push(w);
+    cursor = addDays(w.end, 1);
+  }
+  const byMonth = {};
+  for(const w of weeks){
+    const monthKey = w.end.slice(0,7);
+    (byMonth[monthKey] = byMonth[monthKey]||[]).push(w);
+  }
+  let html = `<h2 style="margin-bottom:6px;">${fy.key} timeline</h2><p class="muted small" style="margin-bottom:10px;">${fy.start} to ${fy.end}</p>`;
+  for(const key of Object.keys(byMonth).sort()){
+    const [y,m] = key.split('-').map(Number);
+    html += `<div class="tl-month"><h3>${MONTH_LONG[m-1]} ${y}</h3>`;
+    for(const w of byMonth[key]){
+      const days = weekDays(w.start);
+      const hrs = days.reduce((s,d)=>s+shiftsOnDate(d).reduce((a,x)=>a+x.locked.paidHours,0),0);
+      const amt = days.reduce((s,d)=>s+dayTotal(d),0);
+      if(hrs===0 && amt===0 && isoCompare(w.end, getTodaySydney())>0) continue;
+      html += `<div class="tl-week"><span class="rng">${formatAUShort(w.start)} – ${formatAUShort(w.end)}</span><span class="hrs">${hrs.toFixed(1)} hrs</span><span class="amt">$${amt.toFixed(2)}</span></div>`;
+    }
+    html += `</div>`;
+  }
+  return html;
+}
+
+/* =========================================================================
+   TAX (ATO FY27 resident rates — see ato.gov.au for current figures)
+   ========================================================================= */
+const TAX_BRACKETS = [
+  {min:0, max:18200, rate:0},
+  {min:18200, max:45000, rate:0.15},
+  {min:45000, max:135000, rate:0.30},
+  {min:135000, max:190000, rate:0.37},
+  {min:190000, max:Infinity, rate:0.45},
+];
+const MEDICARE_LEVY_RATE = 0.02;
+function calcIncomeTax(taxable){
+  let tax=0;
+  for(const b of TAX_BRACKETS){
+    if(taxable>b.min){ tax += (Math.min(taxable,b.max)-b.min)*b.rate; }
+  }
+  return tax;
+}
+function currentBracket(taxable){
+  return TAX_BRACKETS.slice().reverse().find(b=>taxable>b.min) || TAX_BRACKETS[0];
+}
+function renderTax(){
+  const fy = fyForDate(STATE.weekStart);
+  const gross = STATE.shifts.filter(s=>isoCompare(s.date,fy.start)>=0 && isoCompare(s.date,fy.end)<=0)
+    .reduce((sum,s)=>sum+(s.locked?.totalPay||0),0);
+  const tax = calcIncomeTax(gross);
+  const medicare = gross * MEDICARE_LEVY_RATE;
+  const total = tax + medicare;
+  const bracket = currentBracket(gross);
+  const net = gross - total;
+  const maxScale = 190000;
+  let barHtml = TAX_BRACKETS.map(b=>{
+    const width = (Math.min(b.max,maxScale)-b.min)/maxScale*100;
+    const color = b.rate===0?'var(--line-soft)': b.rate===bracket.rate?'var(--accent)':'var(--card-2)';
+    return `<div class="seg" style="width:${width}%;background:${color};"></div>`;
+  }).join('');
+  return `
+    <div class="tax-hero">
+      <span class="tax-estimate-badge">Estimate</span>
+      <div class="eyebrow">${fy.key} gross earned</div>
+      <div class="big-num money">$${gross.toFixed(2)}</div>
+      <div class="muted small">Marginal rate ${(bracket.rate*100).toFixed(0)}% · bracket $${bracket.min.toLocaleString()}–${bracket.max===Infinity?'+':'$'+bracket.max.toLocaleString()}</div>
+      <div class="bracket-bar">${barHtml}</div>
+    </div>
+    <div class="card card-pad">
+      <div class="tax-row"><span class="muted">Gross income</span><span class="num">$${gross.toFixed(2)}</span></div>
+      <div class="tax-row"><span class="muted">Estimated income tax</span><span class="num">$${tax.toFixed(2)}</span></div>
+      <div class="tax-row"><span class="muted">Medicare levy (2%)</span><span class="num">$${medicare.toFixed(2)}</span></div>
+      <div class="tax-row"><span class="muted">Estimated total tax</span><span class="num">$${total.toFixed(2)}</span></div>
+      <div class="tax-row"><span class="muted">Estimated take-home</span><span class="num" style="color:var(--green);font-weight:700;">$${net.toFixed(2)}</span></div>
+    </div>
+    <p class="muted small" style="margin-top:12px;">Based on ${fy.key} ATO resident tax rates (0% to \$18,200, 15% to \$45,000, 30% to \$135,000, 37% to \$190,000, 45% above) plus the 2% Medicare levy. Doesn't include PAYG already withheld, other income, deductions, or offsets like LITO — for an exact figure, check with the ATO or a tax agent.</p>
+  `;
+}
+
+/* =========================================================================
+   SEARCH
+   ========================================================================= */
+function openSearchModal(){
+  openModal(`
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h3>Search</h3>
+    <div class="search-box"><span class="muted">⌕</span><input type="text" id="searchInput" placeholder="Employer, date, month, notes…" oninput="runSearch()" autofocus></div>
+    <div id="searchResults"></div>
+  `);
+}
+function runSearch(){
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const el = document.getElementById('searchResults');
+  if(!q){ el.innerHTML=''; return; }
+  const results = STATE.shifts.filter(s=>{
+    const emp = STATE.role==='admin' ? (getEmployer(s.employerId)?.name||'') : (s.employerName||'');
+    const monthName = MONTH_LONG[dateFromISO(s.date).getUTCMonth()].toLowerCase();
+    return emp.toLowerCase().includes(q) || s.date.includes(q) || monthName.includes(q) || (s.notes||'').toLowerCase().includes(q);
+  }).sort((a,b)=>b.date<a.date?-1:1).slice(0,30);
+  if(!results.length){ el.innerHTML = `<p class="muted small">No matches</p>`; return; }
+  el.innerHTML = results.map(s=>{
+    const emp = STATE.role==='admin' ? (getEmployer(s.employerId)?.name||'?') : s.employerName;
+    const amt = STATE.role==='admin' ? `$${s.locked.totalPay.toFixed(2)}` : `${Number(s.hours).toFixed(2)} hrs`;
+    return `<div class="search-result" onclick="closeModal();jumpToDate('${s.date}')"><span>${escapeHtml(emp)} · ${formatAUShort(s.date)}</span><span class="num">${amt}</span></div>`;
+  }).join('');
+}
+function jumpToDate(iso){
+  STATE.weekStart = weekForDate(iso).start;
+  calCursor = iso.slice(0,7);
+  switchTab('diary');
 }
 function weekDays(weekStart){
   const days=[]; let d=weekStart;
@@ -670,8 +983,7 @@ function renderAdminDiary(){
 function renderViewerDiary(){
   const week = weekForDate(STATE.weekStart);
   const days = weekDays(week.start);
-  let html = `<div class="viewer-note">Read-only view — shows days worked, employer, and times only. No pay information.</div>`;
-  html += `<div class="week-head">
+  let html = `<div class="week-head">
       <button class="week-nav-btn" onclick="navWeek(-1)">‹</button>
       <div class="eyebrow">${formatWeekHeading(week.start,week.end)}</div>
       <button class="week-nav-btn" onclick="navWeek(1)">›</button>
@@ -700,24 +1012,105 @@ function renderViewerDiary(){
   return html;
 }
 function renderSettings(){
-  let html = `<h2 style="margin-bottom:16px;">Pay Rates</h2>`;
+  let html = `<h2 style="margin-bottom:4px;">Pay Rates</h2><p class="muted small" style="margin-bottom:16px;">Tap a rate to schedule a future change. Past shifts always keep the rate that applied on their date.</p>`;
   for(const emp of STATE.employers){
     html += `<div class="card card-pad emp-block"><h4>${escapeHtml(emp.name)}</h4>`;
     for(const r of emp.rates){
       const cur = versionForDate(r.versions, getTodaySydney());
-      html += `<div class="rate-row"><span class="muted">${escapeHtml(r.label)}</span><span class="num">$${cur.amount.toFixed(2)}</span></div>`;
+      const upcoming = r.versions.filter(v=>isoCompare(v.effectiveFrom, getTodaySydney())>0).sort((a,b)=>isoCompare(a.effectiveFrom,b.effectiveFrom))[0];
+      html += `<div class="rate-row" onclick="openEditRateModal('${emp.id}','${r.id}')" style="cursor:pointer;">
+        <span class="muted">${escapeHtml(r.label)}${upcoming?`<div class="rate-hist small" style="color:var(--amber);">→ $${upcoming.amount.toFixed(2)} from ${fmtDateShort(upcoming.effectiveFrom)}</div>`:''}</span>
+        <span class="num">$${cur.amount.toFixed(2)}</span>
+      </div>`;
     }
     for(const b of (emp.bonuses||[])){
       const cur = versionForDate(b.versions, getTodaySydney());
-      html += `<div class="rate-row"><span class="muted">${escapeHtml(b.label)}</span><span class="num">$${cur.amount.toFixed(2)} ${b.type==='per_hour'?'/hr':'/shift'}</span></div>`;
+      html += `<div class="rate-row" onclick="openEditBonusModal('${emp.id}','${b.id}')" style="cursor:pointer;"><span class="muted">${escapeHtml(b.label)}</span><span class="num">$${cur.amount.toFixed(2)} ${b.type==='per_hour'?'/hr':'/shift'}</span></div>`;
     }
     html += `</div>`;
   }
-  html += `<p class="muted small">Rate editing with scheduled future changes lands in the next phase — this view confirms your current rates loaded correctly from the cloud.</p>`;
   return html;
+}
+function fmtDateShort(iso){ return formatAUShort(iso); }
+function tomorrowSydney(){ return addDays(getTodaySydney(),1); }
+
+function openEditRateModal(empId, rateId){
+  const emp = getEmployer(empId);
+  const rate = emp.rates.find(r=>r.id===rateId);
+  const sorted = [...rate.versions].sort((a,b)=>isoCompare(a.effectiveFrom,b.effectiveFrom));
+  openModal(`
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h3>${escapeHtml(rate.label)}</h3>
+    <p class="muted small">${escapeHtml(emp.name)}</p>
+    <div class="card card-pad small" style="margin-bottom:14px;">
+      <strong>History</strong>
+      ${sorted.map(v=>`<div class="row" style="margin-top:6px;"><span>${fmtDateShort(v.effectiveFrom)}</span><span class="spacer"></span><span class="num">$${v.amount.toFixed(2)}</span></div>`).join('')}
+    </div>
+    <div class="field-row">
+      <div class="field"><label>New amount ($)</label><input type="number" step="0.01" id="rNewAmount"></div>
+      <div class="field"><label>Effective from</label><input type="date" id="rNewDate" min="${tomorrowSydney()}" value="${tomorrowSydney()}"></div>
+    </div>
+    <p class="muted small">Changes only ever apply from a future date — shifts already recorded keep the rate that was current on their date.</p>
+    <div class="row wrap"><button class="btn btn-primary" onclick="saveRateVersion('${empId}','${rateId}')">Schedule change</button><button class="btn" onclick="closeModal()">Cancel</button></div>
+  `);
+}
+async function saveRateVersion(empId, rateId){
+  const emp = getEmployer(empId);
+  const rate = emp.rates.find(r=>r.id===rateId);
+  const amount = Number(document.getElementById('rNewAmount').value);
+  const effectiveFrom = document.getElementById('rNewDate').value;
+  if(isNaN(amount) || !effectiveFrom){ toast('Enter an amount and a date'); return; }
+  if(isoCompare(effectiveFrom, tomorrowSydney())<0){ toast('Effective date must be in the future'); return; }
+  rate.versions = rate.versions.filter(v=>v.effectiveFrom!==effectiveFrom);
+  rate.versions.push({amount, effectiveFrom});
+  await saveEmployer(emp);
+  closeModal(); render();
+  toast(`New rate scheduled from ${fmtDateShort(effectiveFrom)}`);
+}
+function openEditBonusModal(empId, bonusId){
+  const emp = getEmployer(empId);
+  const bonus = emp.bonuses.find(b=>b.id===bonusId);
+  const sorted = [...bonus.versions].sort((a,b)=>isoCompare(a.effectiveFrom,b.effectiveFrom));
+  openModal(`
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h3>${escapeHtml(bonus.label)}</h3>
+    <p class="muted small">${escapeHtml(emp.name)} · ${bonus.type==='per_hour'?'per paid hour':'per completed shift'}</p>
+    <div class="card card-pad small" style="margin-bottom:14px;">
+      <strong>History</strong>
+      ${sorted.map(v=>`<div class="row" style="margin-top:6px;"><span>${fmtDateShort(v.effectiveFrom)}</span><span class="spacer"></span><span class="num">$${v.amount.toFixed(2)}</span></div>`).join('')}
+    </div>
+    <div class="field-row">
+      <div class="field"><label>New amount ($)</label><input type="number" step="0.01" id="bNewAmount"></div>
+      <div class="field"><label>Effective from</label><input type="date" id="bNewDate" min="${tomorrowSydney()}" value="${tomorrowSydney()}"></div>
+    </div>
+    <p class="muted small">Changes only ever apply from a future date.</p>
+    <div class="row wrap"><button class="btn btn-primary" onclick="saveBonusVersion('${empId}','${bonusId}')">Schedule change</button><button class="btn" onclick="closeModal()">Cancel</button></div>
+  `);
+}
+async function saveBonusVersion(empId, bonusId){
+  const emp = getEmployer(empId);
+  const bonus = emp.bonuses.find(b=>b.id===bonusId);
+  const amount = Number(document.getElementById('bNewAmount').value);
+  const effectiveFrom = document.getElementById('bNewDate').value;
+  if(isNaN(amount) || !effectiveFrom){ toast('Enter an amount and a date'); return; }
+  if(isoCompare(effectiveFrom, tomorrowSydney())<0){ toast('Effective date must be in the future'); return; }
+  bonus.versions = bonus.versions.filter(v=>v.effectiveFrom!==effectiveFrom);
+  bonus.versions.push({amount, effectiveFrom});
+  await saveEmployer(emp);
+  closeModal(); render();
+  toast(`New amount scheduled from ${fmtDateShort(effectiveFrom)}`);
+}
+async function saveEmployer(emp){
+  setSync('saving','Saving…');
+  const row = { id:emp.id, owner_id:STATE.uid, name:emp.name, rates:emp.rates, bonuses:emp.bonuses, break_rule:emp.breakRule };
+  if(!navigator.onLine){ offlineQueue.push({type:'upsert', table:'employers', row}); persistQueue(); setSync('error','Waiting to sync'); return; }
+  const {error} = await sb.from('employers').upsert(row);
+  setSync(error?'error':'saved', error?'⚠️ Unable to save':'Saved ✓');
+  if(error){ offlineQueue.push({type:'upsert', table:'employers', row}); persistQueue(); }
 }
 function navWeek(dir){
   STATE.weekStart = addDays(weekForDate(STATE.weekStart).start, dir*7);
+  renderFyPill();
   render();
 }
 function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
