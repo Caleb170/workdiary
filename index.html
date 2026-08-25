@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>WorkQuest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --bg:#0B0D12; --bg-2:#12151C; --card:#161A23; --card-2:#1D2230;
+  --line:#262B38; --line-soft:#1E222D;
+  --text:#F4F5F7; --text-dim:#9AA1B2; --text-faint:#5C6377;
+  --green:#34D399; --green-dim:#0F2B22;
+  --amber:#F5B44D; --amber-dim:#2E2311;
+  --rust:#F16C6C; --rust-dim:#2E1717;
+  --accent:#7C9CFF;
+  --radius:16px; --radius-sm:10px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:'Inter',system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh; padding-bottom:env(safe-area-inset-bottom);
+}
+.num,.money{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;}
+h1,h2,h3,.display{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:-0.01em;color:var(--text);margin:0;}
+button{font-family:inherit;cursor:pointer;}
+input,select,textarea{
+  width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);
+  background:var(--bg-2);color:var(--text);font-size:15px;font-family:'Inter',sans-serif;
+}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;}
+label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em;}
+.field{margin-bottom:14px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.hidden{display:none !important;}
+
+/* ---- Login ---- */
+#login-screen{
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;text-align:center;
+}
+.login-title{font-family:'Fraunces',serif;font-size:34px;font-weight:700;letter-spacing:-0.01em;}
+.login-sub{color:var(--text-dim);font-size:14px;margin:6px 0 32px;}
+.pin-boxes{display:flex;gap:10px;margin-bottom:24px;}
+.pin-boxes input{
+  width:52px;height:60px;text-align:center;font-size:24px;font-family:'IBM Plex Mono';
+  border-radius:12px;background:var(--card);border:1px solid var(--line);
+}
+.login-btn{
+  width:100%;max-width:280px;padding:14px;border-radius:12px;border:none;
+  background:var(--accent);color:#0B0D12;font-weight:700;font-size:15px;
+}
+.login-btn:disabled{opacity:0.4;}
+.login-error{color:var(--rust);font-size:13px;margin-top:14px;min-height:18px;}
+.login-loading{color:var(--text-dim);font-size:13px;margin-top:14px;}
+
+/* ---- App shell ---- */
+#app-screen{max-width:640px;margin:0 auto;padding:0 16px 100px;}
+.topbar{
+  position:sticky;top:0;z-index:40;background:rgba(11,13,18,0.85);backdrop-filter:blur(14px);
+  padding:16px 16px 10px;margin:0 -16px;border-bottom:1px solid var(--line-soft);
+}
+.topbar-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.brand{font-family:'Fraunces',serif;font-weight:700;font-size:19px;display:flex;align-items:center;gap:8px;}
+.role-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--card-2);color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;}
+.sync-pill{
+  display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-dim);
+  padding:5px 10px;border-radius:999px;background:var(--card-2);
+}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text-faint);}
+.sync-dot.saved{background:var(--green);}
+.sync-dot.saving{background:var(--amber);animation:pulse 1s infinite;}
+.sync-dot.error{background:var(--rust);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.icon-btn{background:none;border:none;color:var(--text-dim);font-size:18px;padding:6px;}
+
+.tabs{display:flex;gap:4px;margin-top:14px;overflow-x:auto;}
+.tab{
+  background:none;border:none;color:var(--text-faint);padding:8px 4px 10px;
+  font-size:13.5px;font-weight:700;white-space:nowrap;border-bottom:2px solid transparent;flex:1;
+}
+.tab.active{color:var(--text);border-bottom-color:var(--accent);}
+
+.section{padding-top:20px;}
+.card{background:var(--card);border:1px solid var(--line-soft);border-radius:var(--radius);}
+.card-pad{padding:18px;}
+.eyebrow{text-transform:uppercase;font-size:11px;letter-spacing:0.09em;font-weight:700;color:var(--text-faint);margin:0 0 4px;}
+.muted{color:var(--text-dim);}
+.small{font-size:12.5px;}
+.row{display:flex;align-items:center;gap:8px;}
+.row.wrap{flex-wrap:wrap;}
+.spacer{flex:1;}
+
+.btn{border-radius:10px;border:1px solid var(--line);background:var(--card-2);color:var(--text);padding:10px 16px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:6px;}
+.btn:active{transform:scale(0.98);}
+.btn-primary{background:var(--accent);color:#0B0D12;border-color:var(--accent);}
+.btn-danger{color:var(--rust);border-color:var(--rust-dim);}
+.btn-sm{padding:7px 12px;font-size:12.5px;}
+.btn-block{width:100%;justify-content:center;}
+.fab{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--accent);color:#0B0D12;border:none;border-radius:999px;
+  padding:15px 26px;font-weight:700;font-size:15px;box-shadow:0 8px 24px rgba(124,156,255,0.35);
+  z-index:50;display:flex;align-items:center;gap:8px;
+}
+
+.week-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.week-nav-btn{background:var(--card-2);border:1px solid var(--line);color:var(--text);border-radius:8px;width:34px;height:34px;font-size:15px;}
+.week-total{font-family:'Fraunces',serif;font-weight:700;font-size:22px;color:var(--green);}
+
+.day-card{background:var(--card);border:1px solid var(--line-soft);border-radius:14px;padding:14px 16px;margin-bottom:10px;}
+.day-card.today{border-color:var(--accent);}
+.day-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;}
+.day-dow{font-family:'Fraunces',serif;font-weight:600;font-size:15px;}
+.day-date{color:var(--text-faint);font-size:12px;margin-left:6px;}
+.day-status{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;}
+.st-worked{background:var(--green-dim);color:var(--green);}
+.st-planned{background:var(--amber-dim);color:var(--amber);}
+.st-none{background:var(--card-2);color:var(--text-faint);}
+.shift-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line-soft);font-size:13.5px;}
+.shift-row:first-of-type{border-top:none;}
+.shift-emp{font-weight:600;}
+.shift-time{color:var(--text-dim);font-size:12.5px;}
+.shift-amt{margin-left:auto;font-weight:700;color:var(--green);}
+.shift-actions{display:flex;gap:4px;}
+.day-empty{color:var(--text-faint);font-size:13px;font-style:italic;padding:2px 0;}
+.day-total{text-align:right;font-size:13px;font-weight:700;color:var(--green);margin-top:6px;}
+
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:flex-end;justify-content:center;z-index:100;}
+@media(min-width:640px){.modal-backdrop{align-items:center;}}
+.modal{background:var(--bg-2);border-radius:18px 18px 0 0;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;padding:22px;border-top:1px solid var(--line);}
+@media(min-width:640px){.modal{border-radius:18px;}}
+.modal h3{margin:0 0 16px;font-size:19px;}
+.modal-close{float:right;background:none;border:none;font-size:20px;color:var(--text-dim);}
+.calc-preview{background:var(--bg);border:1px solid var(--line-soft);border-radius:10px;padding:12px;font-size:13px;margin:14px 0;}
+.calc-line{display:flex;justify-content:space-between;padding:3px 0;color:var(--text-dim);}
+.calc-total{display:flex;justify-content:space-between;padding-top:8px;margin-top:6px;border-top:1px solid var(--line-soft);font-weight:700;color:var(--green);font-size:15px;}
+
+.rate-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--line-soft);font-size:13.5px;}
+.rate-row:first-of-type{border-top:none;}
+.emp-block{margin-bottom:18px;}
+.emp-block h4{font-size:15px;margin-bottom:2px;}
+
+.empty-state{text-align:center;padding:48px 16px;color:var(--text-dim);}
+.empty-state .big{font-size:30px;margin-bottom:10px;}
+#toast{
+  position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--card-2);border:1px solid var(--line);color:var(--text);padding:11px 18px;border-radius:10px;
+  font-size:13.5px;opacity:0;pointer-events:none;transition:all 0.25s ease;z-index:200;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.viewer-note{background:var(--card-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:12.5px;color:var(--text-dim);margin-bottom:16px;}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-title">WorkQuest</div>
+  <div class="login-sub">Your work diary</div>
+  <div class="pin-boxes" id="pinBoxes">
+    <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+    <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+    <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+    <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+  </div>
+  <button class="login-btn" id="loginBtn" disabled onclick="attemptLogin()">Continue</button>
+  <div class="login-loading hidden" id="loginLoading">Signing in…</div>
+  <div class="login-error" id="loginError"></div>
+</div>
+
+<div id="app-screen" class="hidden">
+  <div class="topbar">
+    <div class="topbar-row">
+      <div class="brand">WorkQuest <span class="role-badge" id="roleBadge"></span></div>
+      <div class="row">
+        <div class="sync-pill"><span class="sync-dot" id="syncDot"></span><span id="syncText">—</span></div>
+        <button class="icon-btn" onclick="logout()" title="Log out">⎋</button>
+      </div>
+    </div>
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-tab="diary" onclick="switchTab('diary')">Diary</button>
+      <button class="tab" data-tab="settings" onclick="switchTab('settings')">Pay Rates</button>
+    </div>
+  </div>
+  <div class="section" id="content"></div>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toast"></div>
+
+<script>
+/* =========================================================================
+   CONFIG
+   ========================================================================= */
+const SUPABASE_URL = 'https://amppadqaygmfqtcsiesn.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_O03dMgtLJEdG5RnmGPt2ng_dh2uQj8r';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Deterministic PIN -> credential mapping. See setup notes: create these two
+// auth users in the Supabase dashboard with these exact passwords.
+function credsForCode(code){
+  return { email: `code-${code}@workquest.internal`, password: `WQ-${code}-Wq9x2LmP!` };
+}
+const ROLE_FOR_CODE = { '1703':'admin', '1804':'viewer' };
+
+/* =========================================================================
+   DATE / FY ENGINE (ported from original app, unchanged logic)
+   ========================================================================= */
+const DOW_SHORT=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DOW_LONG=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTH_LONG=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTH_SHORT=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function isoFromParts(y,m,d){return `${String(y).padStart(4,'0')}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
+function dateFromISO(iso){const[y,m,d]=iso.split('-').map(Number);return new Date(Date.UTC(y,m-1,d,12,0,0));}
+function isoFromDate(dt){return isoFromParts(dt.getUTCFullYear(),dt.getUTCMonth()+1,dt.getUTCDate());}
+function addDays(iso,n){const dt=dateFromISO(iso);dt.setUTCDate(dt.getUTCDate()+n);return isoFromDate(dt);}
+function dowIndex(iso){return dateFromISO(iso).getUTCDay();}
+function dowShort(iso){return DOW_SHORT[dowIndex(iso)];}
+function isoCompare(a,b){return a<b?-1:(a>b?1:0);}
+function getTodaySydney(){
+  const fmt=new Intl.DateTimeFormat('en-CA',{timeZone:'Australia/Sydney',year:'numeric',month:'2-digit',day:'2-digit'});
+  const p=fmt.formatToParts(new Date());
+  return `${p.find(x=>x.type==='year').value}-${p.find(x=>x.type==='month').value}-${p.find(x=>x.type==='day').value}`;
+}
+function formatAUShort(iso){const dt=dateFromISO(iso);return `${dt.getUTCDate()} ${MONTH_SHORT[dt.getUTCMonth()]}`;}
+function formatWeekHeading(s,e){
+  const sd=dateFromISO(s),ed=dateFromISO(e);
+  const sameMonth=sd.getUTCMonth()===ed.getUTCMonth()&&sd.getUTCFullYear()===ed.getUTCFullYear();
+  if(sameMonth) return `${sd.getUTCDate()} to ${ed.getUTCDate()} ${MONTH_LONG[ed.getUTCMonth()]}`;
+  return `${sd.getUTCDate()} ${MONTH_SHORT[sd.getUTCMonth()]} to ${ed.getUTCDate()} ${MONTH_SHORT[ed.getUTCMonth()]}`;
+}
+function fyFromStartYear(startYear){
+  const endYear=startYear+1;
+  return {key:'FY'+String(endYear).slice(-2),startYear,endYear,start:isoFromParts(startYear,7,1),end:isoFromParts(endYear,6,30)};
+}
+function fyForDate(iso){
+  const dt=dateFromISO(iso),y=dt.getUTCFullYear(),m=dt.getUTCMonth()+1;
+  return fyFromStartYear(m>=7?y:y-1);
+}
+function weekForDate(iso){
+  // Monday-Sunday weeks; first week of FY may start mid-week.
+  const fy=fyForDate(iso);
+  let cursor=fy.start,firstEnd=fy.start;
+  while(dowIndex(firstEnd)!==0) firstEnd=addDays(firstEnd,1);
+  if(isoCompare(firstEnd,fy.end)>0) firstEnd=fy.end;
+  if(isoCompare(iso,fy.start)>=0 && isoCompare(iso,firstEnd)<=0) return {start:fy.start,end:firstEnd};
+  cursor=addDays(firstEnd,1);
+  while(isoCompare(cursor,fy.end)<=0){
+    let end=addDays(cursor,6);
+    if(isoCompare(end,fy.end)>0) end=fy.end;
+    if(isoCompare(iso,cursor)>=0 && isoCompare(iso,end)<=0) return {start:cursor,end};
+    cursor=addDays(end,1);
+  }
+  return {start:fy.start,end:firstEnd};
+}
+
+/* -------------------------------------------------------------------------
+   NSW PUBLIC HOLIDAYS (condensed from original — 2025-2027 confirmed)
+   ------------------------------------------------------------------------- */
+const NSW_HOLIDAYS_KNOWN={
+  2026:[['2026-01-01',true],['2026-01-26',true],['2026-04-03',true],['2026-04-04',true],['2026-04-05',true],['2026-04-06',true],
+        ['2026-04-25',true],['2026-04-27',true],['2026-06-08',true],['2026-08-03',false],['2026-10-05',true],['2026-12-25',true],
+        ['2026-12-26',true],['2026-12-28',true]],
+  2027:[['2027-01-01',true],['2027-01-26',true],['2027-03-26',true],['2027-03-27',true],['2027-03-28',true],['2027-03-29',true],
+        ['2027-04-25',true],['2027-04-26',true],['2027-06-14',true],['2027-08-02',false],['2027-10-04',true],['2027-12-25',true],
+        ['2027-12-26',true],['2027-12-27',true],['2027-12-28',true]],
+};
+function isPublicHoliday(iso){
+  const year=parseInt(iso.slice(0,4),10);
+  const list=NSW_HOLIDAYS_KNOWN[year]||[];
+  const hit=list.find(h=>h[0]===iso);
+  return !!(hit && hit[1]);
+}
+
+/* =========================================================================
+   PAY ENGINE (ported from original app, unchanged logic)
+   ========================================================================= */
+function uid(prefix){return (prefix||'id')+'_'+Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);}
+function timeToMinutes(t){const[h,m]=t.split(':').map(Number);return h*60+m;}
+function versionForDate(versions,iso){
+  let best=null;
+  for(const v of versions){ if(isoCompare(v.effectiveFrom,iso)<=0 && (!best||isoCompare(v.effectiveFrom,best.effectiveFrom)>0)) best=v; }
+  return best||versions[0];
+}
+function overlapMinutes(aS,aE,bS,bE){const s=Math.max(aS,bS),e=Math.min(aE,bE);return Math.max(0,e-s);}
+function computeBreakMinutes(shift,employer,rawMinutes){
+  if(shift.breakMode==='manual') return shift.breakMinutesManual||0;
+  const br=employer.breakRule;
+  if(!br||!br.enabled) return 0;
+  return (rawMinutes/60) > br.triggerHours ? br.breakMinutes : 0;
+}
+function calculateShiftPay(shift, employer){
+  const result={grossPay:0,rawHours:0,paidHours:0,breakMinutes:0,breakdown:[],bonusBreakdown:[],holiday:false,employerName:employer?employer.name:'Unknown',overridden:false,noRateFound:false};
+  if(!employer||!shift.start||!shift.end) return result;
+  const startMin=timeToMinutes(shift.start);
+  let endMin=timeToMinutes(shift.end);
+  if(endMin<=startMin) endMin+=24*60;
+  const rawMinutes=endMin-startMin;
+  result.rawHours=rawMinutes/60;
+  const breakMinutes=computeBreakMinutes(shift,employer,rawMinutes);
+  result.breakMinutes=breakMinutes;
+  const paidMinutes=Math.max(0,rawMinutes-breakMinutes);
+  result.paidHours=paidMinutes/60;
+  const isPH=isPublicHoliday(shift.date);
+  result.holiday=isPH;
+  const day=dowShort(shift.date);
+  if(shift.rateOverride!=null && shift.rateOverride!==''){
+    const amt=Number(shift.rateOverride);
+    result.overridden=true;
+    result.breakdown.push({label:'Custom rate',hours:result.rawHours,rate:amt,amount:amt*result.rawHours});
+    result.grossPay=amt*result.paidHours;
+  } else {
+    let candidates=employer.rates.filter(r=> isPH ? r.days.includes('PH') : r.days.includes(day));
+    if(!candidates.length && isPH) candidates=employer.rates.filter(r=>r.days.includes(day));
+    if(!candidates.length) result.noRateFound=true;
+    let grossRaw=0;
+    for(const r of candidates){
+      const winFrom=r.timeFrom?timeToMinutes(r.timeFrom):0;
+      const winTo=r.timeTo?timeToMinutes(r.timeTo):24*60;
+      const mins=overlapMinutes(startMin,endMin,winFrom,winTo);
+      if(mins<=0) continue;
+      const amt=versionForDate(r.versions,shift.date)?.amount||0;
+      const hrs=mins/60;
+      grossRaw+=amt*hrs;
+      result.breakdown.push({label:r.label,hours:hrs,rate:amt,amount:amt*hrs});
+    }
+    const blended=result.rawHours>0?grossRaw/result.rawHours:0;
+    result.grossPay=blended*result.paidHours;
+  }
+  let bonusTotal=0;
+  if(!result.overridden){
+    for(const b of (employer.bonuses||[])){
+      const amt=versionForDate(b.versions,shift.date)?.amount||0;
+      if(b.type==='per_hour'){ const v=amt*result.paidHours; bonusTotal+=v; result.bonusBreakdown.push({label:b.label,amount:v}); }
+      else if(b.type==='per_shift'){ bonusTotal+=amt; result.bonusBreakdown.push({label:b.label,amount:amt}); }
+    }
+  }
+  result.bonusTotal=bonusTotal;
+  result.totalPay=result.grossPay+bonusTotal;
+  return result;
+}
+
+/* =========================================================================
+   DEFAULT EMPLOYERS + FY27 SEED SHIFTS
+   ========================================================================= */
+const FY27_START='2026-07-01';
+function mkRate(label,days,timeFrom,timeTo,amount){return {id:uid('rate'),label,days,timeFrom,timeTo,versions:[{amount,effectiveFrom:FY27_START}]};}
+function mkBonus(label,type,amount){return {id:uid('bonus'),label,type,versions:[{amount,effectiveFrom:FY27_START}]};}
+function defaultEmployers(){
+  return [
+    { id:'emp_coles', name:'Coles',
+      rates:[ mkRate('Mon–Fri before 6pm',['Mon','Tue','Wed','Thu','Fri'],null,'18:00',18.12),
+              mkRate('Mon–Fri after 6pm',['Mon','Tue','Wed','Thu','Fri'],'18:00',null,21.75),
+              mkRate('Saturday',['Sat'],null,null,21.75),
+              mkRate('Sunday before 9am',['Sun'],null,'09:00',32.62),
+              mkRate('Sunday from 9am',['Sun'],'09:00',null,25.37),
+              mkRate('NSW public holiday',['PH'],null,null,32.62) ],
+      bonuses:[], breakRule:{enabled:true,triggerHours:5,breakMinutes:30} },
+    { id:'emp_maccas', name:"McDonald's",
+      rates:[ mkRate('Mon–Fri',['Mon','Tue','Wed','Thu','Fri'],null,null,13.91),
+              mkRate('Sat–Sun',['Sat','Sun'],null,null,17.39),
+              mkRate('NSW public holiday',['PH'],null,null,31.30) ],
+      bonuses:[ mkBonus('Crew Coach bonus','per_hour',0.50), mkBonus('Shift bonus','per_shift',1.25) ],
+      breakRule:{enabled:true,triggerHours:5,breakMinutes:30} },
+    { id:'emp_gym', name:'Gym',
+      rates:[ mkRate('Mon–Fri',['Mon','Tue','Wed','Thu','Fri'],null,null,17.70) ],
+      bonuses:[], breakRule:{enabled:false,triggerHours:5,breakMinutes:30} },
+  ];
+}
+const SEED_SHIFTS=[
+  {date:'2026-07-16',employerId:'emp_gym',start:'16:00',end:'19:30'},
+  {date:'2026-07-17',employerId:'emp_coles',start:'09:00',end:'16:00'},
+  {date:'2026-07-18',employerId:'emp_coles',start:'17:15',end:'21:00'},
+  {date:'2026-07-20',employerId:'emp_gym',start:'16:00',end:'19:30'},
+  {date:'2026-07-21',employerId:'emp_gym',start:'16:00',end:'19:30'},
+  {date:'2026-07-22',employerId:'emp_gym',start:'16:00',end:'19:30'},
+  {date:'2026-07-23',employerId:'emp_gym',start:'16:00',end:'19:30'},
+  {date:'2026-07-25',employerId:'emp_maccas',start:'06:00',end:'14:00'},
+  {date:'2026-07-25',employerId:'emp_coles',start:'19:00',end:'22:00'},
+  {date:'2026-07-26',employerId:'emp_coles',start:'09:00',end:'14:00'},
+  {date:'2026-07-27',employerId:'emp_gym',start:'16:00',end:'19:30'},
+  {date:'2026-07-28',employerId:'emp_coles',start:'16:00',end:'19:00'},
+  {date:'2026-07-29',employerId:'emp_coles',start:'19:00',end:'22:00'},
+  {date:'2026-07-30',employerId:'emp_gym',start:'16:00',end:'19:30'},
+  {date:'2026-07-31',employerId:'emp_coles',start:'16:00',end:'19:45'},
+  {date:'2026-08-01',employerId:'emp_maccas',start:'06:00',end:'14:00'},
+  {date:'2026-08-02',employerId:'emp_coles',start:'07:00',end:'10:45'},
+  {date:'2026-08-06',employerId:'emp_gym',start:'16:00',end:'19:30'},
+  {date:'2026-08-10',employerId:'emp_gym',start:'16:00',end:'19:30'},
+  {date:'2026-08-13',employerId:'emp_gym',start:'16:00',end:'19:30'},
+  {date:'2026-08-15',employerId:'emp_coles',start:'18:30',end:'22:00'},
+  {date:'2026-08-16',employerId:'emp_coles',start:'08:00',end:'13:00'},
+  {date:'2026-08-17',employerId:'emp_gym',start:'16:00',end:'19:30'},
+  {date:'2026-08-18',employerId:'emp_coles',start:'18:30',end:'22:00'},
+  {date:'2026-08-19',employerId:'emp_coles',start:'18:30',end:'22:00'},
+  {date:'2026-08-20',employerId:'emp_gym',start:'16:00',end:'19:30'},
+  {date:'2026-08-22',employerId:'emp_maccas',start:'06:00',end:'10:30'},
+  {date:'2026-08-22',employerId:'emp_coles',start:'16:00',end:'21:00'},
+  {date:'2026-08-23',employerId:'emp_coles',start:'07:00',end:'15:00'},
+  {date:'2026-08-24',employerId:'emp_gym',start:'16:00',end:'19:30'},
+  {date:'2026-08-26',employerId:'emp_coles',start:'18:30',end:'22:00'},
+  {date:'2026-08-27',employerId:'emp_gym',start:'16:00',end:'19:30'},
+  {date:'2026-08-29',employerId:'emp_maccas',start:'06:00',end:'14:00'},
+  {date:'2026-08-29',employerId:'emp_coles',start:'19:00',end:'22:00'},
+];
+
+/* =========================================================================
+   STATE
+   ========================================================================= */
+let STATE={
+  role:null, uid:null, ownerId:null,     // ownerId = whose data we're viewing (self for admin, linked owner for viewer)
+  employers:[], shifts:[], plannedShifts:[],
+  weekStart: weekForDate(getTodaySydney()).start,
+  activeTab:'diary',
+};
+let offlineQueue = JSON.parse(localStorage.getItem('wq_offline_queue')||'[]');
+let realtimeChannel = null;
+
+function getEmployer(id){ return STATE.employers.find(e=>e.id===id); }
+function shiftsOnDate(iso){ return STATE.shifts.filter(s=>s.date===iso).sort((a,b)=>a.start<b.start?-1:1); }
+function dayTotal(iso){ return shiftsOnDate(iso).reduce((sum,s)=>sum+(s.locked?.totalPay||0),0); }
+
+/* =========================================================================
+   AUTH
+   ========================================================================= */
+async function attemptLogin(){
+  const code = [...document.querySelectorAll('#pinBoxes input')].map(i=>i.value).join('');
+  if(code.length!==4) return;
+  const role = ROLE_FOR_CODE[code];
+  setLoginBusy(true);
+  const {email,password} = credsForCode(code);
+  const {data,error} = await sb.auth.signInWithPassword({email,password});
+  setLoginBusy(false);
+  if(error || !role){
+    showLoginError('Incorrect code');
+    return;
+  }
+  STATE.role = role;
+  STATE.uid = data.user.id;
+  await afterLogin();
+}
+function setLoginBusy(b){
+  document.getElementById('loginLoading').classList.toggle('hidden', !b);
+  document.getElementById('loginBtn').disabled = b;
+}
+function showLoginError(msg){
+  document.getElementById('loginError').textContent = msg;
+  document.querySelectorAll('#pinBoxes input').forEach(i=>i.value='');
+  document.querySelectorAll('#pinBoxes input')[0].focus();
+}
+async function afterLogin(){
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app-screen').classList.remove('hidden');
+  document.getElementById('roleBadge').textContent = STATE.role==='admin' ? 'Admin' : 'Viewer';
+  if(STATE.role==='viewer'){
+    document.querySelector('[data-tab="settings"]').classList.add('hidden');
+  }
+  setSync('saving','Loading…');
+  if(STATE.role==='admin'){
+    STATE.ownerId = STATE.uid;
+    await loadAdminData();
+    subscribeRealtimeAdmin();
+  } else {
+    // find which owner this viewer is linked to
+    const {data:links} = await sb.from('viewer_links').select('owner_id').eq('viewer_id', STATE.uid).limit(1);
+    if(!links || !links.length){ setSync('error','No linked account'); return; }
+    STATE.ownerId = links[0].owner_id;
+    await loadViewerData();
+  }
+  setSync('saved','Synced');
+  render();
+}
+function logout(){
+  sb.auth.signOut();
+  location.reload();
+}
+
+/* =========================================================================
+   DATA LOADING
+   ========================================================================= */
+async function loadAdminData(){
+  let {data:employers} = await sb.from('employers').select('*').order('created_at');
+  if(!employers || !employers.length){
+    // First run: seed defaults + historical shifts
+    await seedAccount();
+    ({data:employers} = await sb.from('employers').select('*').order('created_at'));
+  }
+  STATE.employers = (employers||[]).map(rowToEmployer);
+  const {data:shifts} = await sb.from('shifts').select('*').order('date');
+  STATE.shifts = (shifts||[]).map(rowToShift);
+  const {data:planned} = await sb.from('planned_shifts').select('*').order('date');
+  STATE.plannedShifts = planned||[];
+}
+async function loadViewerData(){
+  const {data,error} = await sb.rpc('get_shared_shifts', {p_owner_id: STATE.ownerId});
+  if(error){ toast('Could not load shared shifts'); STATE.shifts=[]; return; }
+  STATE.shifts = (data||[]).map(r=>({
+    id: r.date+r.employer+r.start_time, date:r.date, employerName:r.employer,
+    start:r.start_time, end:r.end_time, hours:r.hours, status:r.status, source:r.source,
+  }));
+}
+function rowToEmployer(row){
+  return { id:row.id, name:row.name, rates:row.rates, bonuses:row.bonuses, breakRule:row.break_rule };
+}
+function rowToShift(row){
+  return {
+    id:row.id, date:row.date, employerId:row.employer_id, start:row.start_time, end:row.end_time,
+    breakMode:row.break_mode, breakMinutesManual:row.break_minutes_manual, notes:row.notes,
+    payDate:row.pay_date, rateOverride:row.rate_override, locked:row.locked_calc,
+  };
+}
+async function seedAccount(){
+  const employers = defaultEmployers();
+  const empRows = employers.map(e=>({
+    id:e.id, owner_id:STATE.uid, name:e.name, rates:e.rates, bonuses:e.bonuses, break_rule:e.breakRule,
+  }));
+  await sb.from('employers').insert(empRows);
+  const shiftRows = SEED_SHIFTS.map(s=>{
+    const emp = employers.find(e=>e.id===s.employerId);
+    const shiftDraft = {date:s.date,employerId:s.employerId,start:s.start,end:s.end,breakMode:'auto',breakMinutesManual:null,rateOverride:null};
+    const locked = calculateShiftPay(shiftDraft, emp);
+    return {
+      id:uid('shift'), owner_id:STATE.uid, date:s.date, employer_id:s.employerId,
+      start_time:s.start, end_time:s.end, break_mode:'auto', break_minutes_manual:null,
+      notes:'', pay_date:null, rate_override:null, locked_calc:locked,
+    };
+  });
+  await sb.from('shifts').insert(shiftRows);
+}
+
+/* =========================================================================
+   REALTIME + SYNC STATUS
+   ========================================================================= */
+function subscribeRealtimeAdmin(){
+  realtimeChannel = sb.channel('wq-admin-'+STATE.uid)
+    .on('postgres_changes', {event:'*', schema:'public', table:'shifts', filter:`owner_id=eq.${STATE.uid}`}, handleRealtimeShiftChange)
+    .on('postgres_changes', {event:'*', schema:'public', table:'employers', filter:`owner_id=eq.${STATE.uid}`}, ()=>loadAdminData().then(render))
+    .subscribe();
+}
+function handleRealtimeShiftChange(payload){
+  // Refresh shifts list on any remote change (simple, correct; can optimise later)
+  sb.from('shifts').select('*').order('date').then(({data})=>{
+    STATE.shifts = (data||[]).map(rowToShift);
+    render();
+    setSync('saved','Synced ✓');
+  });
+}
+function setSync(state,text){
+  const dot=document.getElementById('syncDot'), t=document.getElementById('syncText');
+  if(!dot) return;
+  dot.className='sync-dot '+state;
+  t.textContent=text;
+}
+window.addEventListener('offline', ()=> setSync('error','Offline'));
+window.addEventListener('online', ()=>{ setSync('saving','Syncing…'); flushOfflineQueue(); });
+
+async function flushOfflineQueue(){
+  if(!offlineQueue.length){ setSync('saved','Synced'); return; }
+  const queue=[...offlineQueue]; offlineQueue=[]; persistQueue();
+  for(const op of queue){
+    try{
+      if(op.type==='upsert') await sb.from(op.table).upsert(op.row);
+      if(op.type==='delete') await sb.from(op.table).delete().eq('id', op.id);
+    }catch(e){ offlineQueue.push(op); }
+  }
+  persistQueue();
+  setSync(offlineQueue.length?'error':'saved', offlineQueue.length?'⚠️ Unable to save':'Synced');
+}
+function persistQueue(){ localStorage.setItem('wq_offline_queue', JSON.stringify(offlineQueue)); }
+
+/* Queue-aware write: tries the network, falls back to offline queue */
+async function writeShift(row, isNew){
+  setSync('saving','Saving…');
+  localStorage.setItem('wq_cache_shifts', JSON.stringify(STATE.shifts)); // local cache
+  if(!navigator.onLine){
+    offlineQueue.push({type:'upsert', table:'shifts', row});
+    persistQueue();
+    setSync('error','Waiting to sync');
+    return;
+  }
+  const {error} = await sb.from('shifts').upsert(row);
+  if(error){
+    offlineQueue.push({type:'upsert', table:'shifts', row});
+    persistQueue();
+    setSync('error','⚠️ Unable to save');
+  } else {
+    setSync('saved','Saved ✓');
+  }
+}
+async function deleteShiftRow(id){
+  setSync('saving','Saving…');
+  if(!navigator.onLine){ offlineQueue.push({type:'delete', table:'shifts', id}); persistQueue(); setSync('error','Waiting to sync'); return; }
+  const {error} = await sb.from('shifts').delete().eq('id', id);
+  setSync(error?'error':'saved', error?'⚠️ Unable to save':'Saved ✓');
+}
+
+/* =========================================================================
+   RENDER
+   ========================================================================= */
+function switchTab(tab){
+  STATE.activeTab = tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
+  render();
+}
+function render(){
+  const el = document.getElementById('content');
+  if(STATE.activeTab==='diary') el.innerHTML = STATE.role==='admin' ? renderAdminDiary() : renderViewerDiary();
+  else if(STATE.activeTab==='settings') el.innerHTML = renderSettings();
+  if(STATE.role==='admin'){
+    const fab = document.getElementById('fabAdd') || document.createElement('button');
+    fab.id='fabAdd'; fab.className='fab'; fab.innerHTML='+ Add shift'; fab.onclick=openAddShiftModal;
+    if(!document.getElementById('fabAdd')) document.body.appendChild(fab);
+  }
+}
+function weekDays(weekStart){
+  const days=[]; let d=weekStart;
+  const end = addDays(weekStart,6);
+  while(isoCompare(d,end)<=0){ days.push(d); d=addDays(d,1); }
+  return days;
+}
+function renderAdminDiary(){
+  const week = weekForDate(STATE.weekStart);
+  const days = weekDays(week.start);
+  const total = days.reduce((s,d)=>s+dayTotal(d),0);
+  const today = getTodaySydney();
+  let html = `
+    <div class="week-head">
+      <button class="week-nav-btn" onclick="navWeek(-1)">‹</button>
+      <div style="text-align:center;">
+        <div class="eyebrow">${formatWeekHeading(week.start,week.end)}</div>
+        <div class="week-total">$${total.toFixed(2)}</div>
+      </div>
+      <button class="week-nav-btn" onclick="navWeek(1)">›</button>
+    </div>`;
+  for(const d of days){
+    const shifts = shiftsOnDate(d);
+    const isToday = d===today;
+    html += `<div class="day-card ${isToday?'today':''}">
+      <div class="day-top">
+        <div><span class="day-dow">${DOW_LONG[dowIndex(d)]}</span><span class="day-date">${formatAUShort(d)}</span></div>
+        <span class="day-status ${shifts.length?'st-worked':'st-none'}">${shifts.length? (shifts.length>1?shifts.length+' shifts':'Worked') : 'No shift'}</span>
+      </div>`;
+    if(!shifts.length){
+      html += `<div class="day-empty">No shifts recorded</div>`;
+    } else {
+      for(const s of shifts){
+        const emp = getEmployer(s.employerId);
+        html += `<div class="shift-row">
+          <div>
+            <div class="shift-emp">${escapeHtml(emp?emp.name:'?')}</div>
+            <div class="shift-time">${s.start} → ${s.end} · ${s.locked.paidHours.toFixed(2)} hrs</div>
+          </div>
+          <div class="shift-amt money">$${s.locked.totalPay.toFixed(2)}</div>
+          <div class="shift-actions">
+            <button class="btn btn-sm" onclick="openEditShiftModal('${s.id}')">Edit</button>
+          </div>
+        </div>`;
+      }
+      if(shifts.length>1) html += `<div class="day-total">Day total $${dayTotal(d).toFixed(2)}</div>`;
+    }
+    html += `</div>`;
+  }
+  return html;
+}
+function renderViewerDiary(){
+  const week = weekForDate(STATE.weekStart);
+  const days = weekDays(week.start);
+  let html = `<div class="viewer-note">Read-only view — shows days worked, employer, and times only. No pay information.</div>`;
+  html += `<div class="week-head">
+      <button class="week-nav-btn" onclick="navWeek(-1)">‹</button>
+      <div class="eyebrow">${formatWeekHeading(week.start,week.end)}</div>
+      <button class="week-nav-btn" onclick="navWeek(1)">›</button>
+    </div>`;
+  const today = getTodaySydney();
+  for(const d of days){
+    const shifts = STATE.shifts.filter(s=>s.date===d);
+    html += `<div class="day-card ${d===today?'today':''}">
+      <div class="day-top">
+        <div><span class="day-dow">${DOW_LONG[dowIndex(d)]}</span><span class="day-date">${formatAUShort(d)}</span></div>
+        <span class="day-status ${shifts.length?'st-worked':'st-none'}">${shifts.length?shifts.length+' shift'+(shifts.length>1?'s':''):'No shift'}</span>
+      </div>`;
+    if(!shifts.length){ html+=`<div class="day-empty">No shifts</div>`; }
+    else{
+      for(const s of shifts){
+        html += `<div class="shift-row">
+          <div>
+            <div class="shift-emp">${escapeHtml(s.employerName)} ${s.status==='planned'?'<span class="day-status st-planned" style="margin-left:6px;">Planned</span>':''}</div>
+            <div class="shift-time">${s.start} → ${s.end} · ${Number(s.hours).toFixed(2)} hrs</div>
+          </div>
+        </div>`;
+      }
+    }
+    html += `</div>`;
+  }
+  return html;
+}
+function renderSettings(){
+  let html = `<h2 style="margin-bottom:16px;">Pay Rates</h2>`;
+  for(const emp of STATE.employers){
+    html += `<div class="card card-pad emp-block"><h4>${escapeHtml(emp.name)}</h4>`;
+    for(const r of emp.rates){
+      const cur = versionForDate(r.versions, getTodaySydney());
+      html += `<div class="rate-row"><span class="muted">${escapeHtml(r.label)}</span><span class="num">$${cur.amount.toFixed(2)}</span></div>`;
+    }
+    for(const b of (emp.bonuses||[])){
+      const cur = versionForDate(b.versions, getTodaySydney());
+      html += `<div class="rate-row"><span class="muted">${escapeHtml(b.label)}</span><span class="num">$${cur.amount.toFixed(2)} ${b.type==='per_hour'?'/hr':'/shift'}</span></div>`;
+    }
+    html += `</div>`;
+  }
+  html += `<p class="muted small">Rate editing with scheduled future changes lands in the next phase — this view confirms your current rates loaded correctly from the cloud.</p>`;
+  return html;
+}
+function navWeek(dir){
+  STATE.weekStart = addDays(weekForDate(STATE.weekStart).start, dir*7);
+  render();
+}
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* =========================================================================
+   ADD / EDIT SHIFT MODAL
+   ========================================================================= */
+function openModal(html){
+  document.getElementById('modalRoot').innerHTML = `<div class="modal-backdrop" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`;
+}
+function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
+function openAddShiftModal(){
+  renderShiftModal(null);
+}
+function openEditShiftModal(id){
+  renderShiftModal(STATE.shifts.find(s=>s.id===id));
+}
+function renderShiftModal(existing){
+  const empOptions = STATE.employers.map(e=>`<option value="${e.id}" ${existing&&existing.employerId===e.id?'selected':''}>${escapeHtml(e.name)}</option>`).join('');
+  openModal(`
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h3>${existing?'Edit shift':'+ Add shift'}</h3>
+    <div class="field"><label>Date</label><input type="date" id="sDate" value="${existing?existing.date:getTodaySydney()}" onchange="updateCalcPreview()"></div>
+    <div class="field"><label>Employer</label><select id="sEmp" onchange="updateCalcPreview()">${empOptions}</select></div>
+    <div class="field-row">
+      <div class="field"><label>Start</label><input type="time" id="sStart" value="${existing?existing.start:'16:00'}" oninput="updateCalcPreview()"></div>
+      <div class="field"><label>End</label><input type="time" id="sEnd" value="${existing?existing.end:'19:30'}" oninput="updateCalcPreview()"></div>
+    </div>
+    <div class="field"><label>Notes</label><input type="text" id="sNotes" value="${existing?escapeHtml(existing.notes||''):''}"></div>
+    <div class="calc-preview" id="calcPreview"></div>
+    <div class="row wrap">
+      <button class="btn btn-primary" onclick="saveShiftModal('${existing?existing.id:''}')">${existing?'Save changes':'Add shift'}</button>
+      ${existing?`<button class="btn btn-danger" onclick="deleteShiftModal('${existing.id}')">Delete</button>`:''}
+      <button class="btn" onclick="closeModal()">Cancel</button>
+    </div>
+  `);
+  updateCalcPreview();
+}
+function updateCalcPreview(){
+  const empId=document.getElementById('sEmp').value;
+  const date=document.getElementById('sDate').value;
+  const start=document.getElementById('sStart').value;
+  const end=document.getElementById('sEnd').value;
+  const emp=getEmployer(empId);
+  if(!emp||!date||!start||!end) return;
+  const calc=calculateShiftPay({date,start,end,breakMode:'auto',rateOverride:null}, emp);
+  let html = calc.breakdown.map(b=>`<div class="calc-line"><span>${escapeHtml(b.label)} (${b.hours.toFixed(2)}h)</span><span>$${b.amount.toFixed(2)}</span></div>`).join('');
+  if(calc.breakMinutes>0) html += `<div class="calc-line"><span>Unpaid break</span><span>-${calc.breakMinutes} min</span></div>`;
+  calc.bonusBreakdown.forEach(b=> html += `<div class="calc-line"><span>${escapeHtml(b.label)}</span><span>$${b.amount.toFixed(2)}</span></div>`);
+  html += `<div class="calc-total"><span>Total (${calc.paidHours.toFixed(2)} paid hrs)</span><span>$${calc.totalPay.toFixed(2)}</span></div>`;
+  document.getElementById('calcPreview').innerHTML = html;
+}
+async function saveShiftModal(existingId){
+  const empId=document.getElementById('sEmp').value;
+  const date=document.getElementById('sDate').value;
+  const start=document.getElementById('sStart').value;
+  const end=document.getElementById('sEnd').value;
+  const notes=document.getElementById('sNotes').value;
+  const emp=getEmployer(empId);
+  const draft={date,start,end,breakMode:'auto',breakMinutesManual:null,rateOverride:null};
+  const locked=calculateShiftPay(draft,emp);
+  const id = existingId || uid('shift');
+  const row = {
+    id, owner_id:STATE.uid, date, employer_id:empId, start_time:start, end_time:end,
+    break_mode:'auto', break_minutes_manual:null, notes, pay_date:null, rate_override:null, locked_calc:locked,
+  };
+  const shiftObj = rowToShift(row);
+  const idx = STATE.shifts.findIndex(s=>s.id===id);
+  if(idx>=0) STATE.shifts[idx]=shiftObj; else STATE.shifts.push(shiftObj);
+  closeModal(); render();
+  await writeShift(row);
+  toast(existingId?'Shift updated':'Shift added');
+}
+async function deleteShiftModal(id){
+  if(!confirm('Delete this shift?')) return;
+  STATE.shifts = STATE.shifts.filter(s=>s.id!==id);
+  closeModal(); render();
+  await deleteShiftRow(id);
+  toast('Shift deleted');
+}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* =========================================================================
+   PIN INPUT UX
+   ========================================================================= */
+(function initPinBoxes(){
+  const boxes=[...document.querySelectorAll('#pinBoxes input')];
+  boxes.forEach((box,i)=>{
+    box.addEventListener('input',()=>{
+      box.value = box.value.replace(/[^0-9]/g,'');
+      if(box.value && i<boxes.length-1) boxes[i+1].focus();
+      document.getElementById('loginBtn').disabled = boxes.some(b=>!b.value);
+    });
+    box.addEventListener('keydown',(e)=>{
+      if(e.key==='Backspace' && !box.value && i>0) boxes[i-1].focus();
+      if(e.key==='Enter' && !document.getElementById('loginBtn').disabled) attemptLogin();
+    });
+  });
+  boxes[0].focus();
+})();
+
+/* =========================================================================
+   INIT — restore session if one exists
+   ========================================================================= */
+(async function init(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(session){
+    const code = session.user.email.match(/^code-(\d+)@/)?.[1];
+    const role = ROLE_FOR_CODE[code];
+    if(role){
+      STATE.role=role; STATE.uid=session.user.id;
+      await afterLogin();
+      return;
+    }
+  }
+})();
+</script>
+</body>
+</html>
