@@ -212,6 +212,15 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
 .ticker-num{font-family:'Fraunces',serif;font-weight:700;font-size:44px;text-align:center;color:var(--green);margin:14px 0 4px;}
 .ticker-sub{text-align:center;color:var(--text-dim);font-size:13px;margin-bottom:18px;}
 .ticker-onbreak{background:var(--amber-dim);color:var(--amber);text-align:center;padding:8px;border-radius:10px;font-size:12.5px;font-weight:700;margin-bottom:14px;}
+.ticker-ring-wrap{position:relative;width:220px;height:220px;margin:14px auto 8px;}
+.ticker-glow{position:absolute;inset:18px;border-radius:50%;filter:blur(28px);opacity:0.35;z-index:0;animation:tickerBreathe 2.4s ease-in-out infinite;}
+@keyframes tickerBreathe{0%,100%{transform:scale(0.94);opacity:0.28;}50%{transform:scale(1.05);opacity:0.42;}}
+.ticker-amt-bump{animation:tickerBump 0.35s ease;}
+@keyframes tickerBump{0%{transform:scale(1);}35%{transform:scale(1.08);}100%{transform:scale(1);}}
+.ticker-breakdown{background:var(--bg-2);border:1px solid var(--line-soft);border-radius:12px;padding:12px 14px;margin-top:6px;}
+.ticker-breakdown-row{display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;color:var(--text-dim);}
+.ticker-breakdown-row.total{border-top:1px solid var(--line-soft);margin-top:4px;padding-top:8px;font-weight:700;color:var(--text);}
+.ticker-clock-row{display:flex;justify-content:space-between;font-size:12px;color:var(--text-faint);margin:2px 0 12px;padding:0 4px;}
 
 /* ---- Custom date/time pickers ---- */
 .date-picker-btn{display:flex;align-items:center;justify-content:space-between;width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg-2);color:var(--text);font-size:15px;font-weight:600;}
@@ -830,14 +839,24 @@ function calcElapsedPay(shift, employer, nowMinSinceMidnight){
     grossRaw += amt*(mins/60);
   }
   const blended = rawElapsed>0 ? grossRaw/(rawElapsed/60) : 0;
-  let amount = blended*(paidElapsed/60);
+  const basePay = blended*(paidElapsed/60);
+  let hourlyBonus = 0, flatBonus = 0;
+  const bonusLines = [];
   for(const b of (employer.bonuses||[])){
+    const amt = versionForDate(b.versions, shift.date)?.amount||0;
     if(b.type==='per_hour'){
-      const amt=versionForDate(b.versions, shift.date)?.amount||0;
-      amount += amt*(paidElapsed/60);
+      const v = amt*(paidElapsed/60);
+      hourlyBonus += v;
+      bonusLines.push({label:b.label, amount:v});
+    } else if(b.type==='per_shift'){
+      // Counted in full once the shift is underway — it's earned by completing
+      // the shift, and you're currently on it, so it's included in the live total.
+      flatBonus += amt;
+      bonusLines.push({label:b.label, amount:amt});
     }
   }
-  return { amount, paidElapsedMin:paidElapsed, rawElapsedMin:rawElapsed, onBreak };
+  const amount = basePay + hourlyBonus + flatBonus;
+  return { amount, basePay, bonusTotal:hourlyBonus+flatBonus, bonusLines, paidElapsedMin:paidElapsed, rawElapsedMin:rawElapsed, onBreak };
 }
 let tickerBannerInterval=null, tickerModalInterval=null;
 function startTickerWatcher(){
@@ -880,38 +899,47 @@ function openTickerModal(shiftId){
   const shift = STATE.shifts.find(s=>s.id===shiftId);
   if(!shift) return;
   const emp = getEmployer(shift.employerId);
-  const color = emp?.color || 'var(--green)';
+  const color = emp?.color || '#34D399';
   const startMin = timeToMinutes(shift.start);
   let endMin = timeToMinutes(shift.end); if(endMin<=startMin) endMin+=1440;
   const totalMin = endMin-startMin;
   const cur = versionForDate((emp.rates.find(r=>r.days.includes(dowShort(shift.date)))||emp.rates[0]).versions, shift.date);
-  const circumference = 2*Math.PI*80;
+  const circumference = 2*Math.PI*82;
   openModal(`
     <button class="modal-close" onclick="closeModal()">×</button>
     <h3 style="text-align:center;">${emp.icon||''} ${escapeHtml(emp.name)}</h3>
-    <p class="muted small" style="text-align:center;margin-bottom:4px;">${shift.start} → ${shift.end} · ~$${(cur?.amount||0).toFixed(2)}/hr base</p>
+    <p class="muted small" style="text-align:center;margin-bottom:0;">~$${(cur?.amount||0).toFixed(2)}/hr base rate</p>
     <div id="tickerBreakNote"></div>
-    <div style="position:relative;width:200px;height:200px;margin:10px auto 6px;">
-      <svg width="200" height="200" viewBox="0 0 200 200" style="position:absolute;inset:0;">
-        <circle cx="100" cy="100" r="80" fill="none" stroke="var(--line-soft)" stroke-width="10"/>
-        <circle id="tickerRing" cx="100" cy="100" r="80" fill="none" stroke="${color}" stroke-width="10" stroke-linecap="round"
+    <div class="ticker-ring-wrap">
+      <div class="ticker-glow" style="background:${color};"></div>
+      <svg width="220" height="220" viewBox="0 0 220 220" style="position:absolute;inset:0;z-index:1;">
+        <circle cx="110" cy="110" r="82" fill="none" stroke="var(--line-soft)" stroke-width="11"/>
+        <circle id="tickerRing" cx="110" cy="110" r="82" fill="none" stroke="${color}" stroke-width="11" stroke-linecap="round"
           stroke-dasharray="${circumference.toFixed(1)}" stroke-dashoffset="${circumference.toFixed(1)}"
-          transform="rotate(-90 100 100)" style="transition:stroke-dashoffset 0.3s linear;"/>
+          transform="rotate(-90 110 110)" style="transition:stroke-dashoffset 0.25s linear;"/>
       </svg>
-      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-        <div class="ticker-num money" id="tickerAmt" style="font-size:32px;margin:0;color:${color};">$0.00</div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2;">
+        <div class="ticker-num money" id="tickerAmt" style="font-size:34px;margin:0;color:${color};">$0.00</div>
         <div class="ticker-sub" id="tickerElapsed" style="margin:2px 0 0;font-size:11.5px;">0:00 elapsed</div>
+        <div class="ticker-sub" id="tickerRemaining" style="font-size:10.5px;margin-top:1px;"></div>
       </div>
     </div>
-    <div class="ticker-sub" id="tickerRemaining" style="margin-bottom:10px;"></div>
+    <div class="ticker-clock-row"><span>Started ${shift.start}</span><span>Ends ${shift.end}</span></div>
+    <div class="ticker-breakdown" id="tickerBreakdown"></div>
   `);
   clearInterval(tickerModalInterval);
+  let lastAmt = null;
   const tick = ()=>{
     const now = sydneyNowParts();
     const calc = calcElapsedPay(shift, emp, now.minutesSinceMidnight);
     const amtEl = document.getElementById('tickerAmt');
     if(!amtEl){ clearInterval(tickerModalInterval); return; }
-    amtEl.textContent = '$'+calc.amount.toFixed(2);
+    const amtStr = '$'+calc.amount.toFixed(2);
+    if(lastAmt!==null && amtStr!==lastAmt){
+      amtEl.classList.remove('ticker-amt-bump'); void amtEl.offsetWidth; amtEl.classList.add('ticker-amt-bump');
+    }
+    lastAmt = amtStr;
+    amtEl.textContent = amtStr;
     const h = Math.floor(calc.rawElapsedMin/60), m = Math.floor(calc.rawElapsedMin%60), s = Math.floor((calc.rawElapsedMin*60)%60);
     document.getElementById('tickerElapsed').textContent = `${h>0?h+'h ':''}${m}m ${s}s elapsed`;
     document.getElementById('tickerBreakNote').innerHTML = calc.onBreak ? `<div class="ticker-onbreak">☕ On unpaid break — resumes shortly</div>` : '';
@@ -920,7 +948,12 @@ function openTickerModal(shiftId){
     if(ring) ring.style.strokeDashoffset = (circumference*(1-pct)).toFixed(1);
     const remainMin = Math.max(0, totalMin-calc.rawElapsedMin);
     const rh=Math.floor(remainMin/60), rm=Math.floor(remainMin%60);
-    document.getElementById('tickerRemaining').textContent = remainMin>0 ? `${rh>0?rh+'h ':''}${rm}m left on shift` : 'Shift ending now';
+    document.getElementById('tickerRemaining').textContent = remainMin>0 ? `${rh>0?rh+'h ':''}${rm}m left` : 'Wrapping up';
+    document.getElementById('tickerBreakdown').innerHTML = `
+      <div class="ticker-breakdown-row"><span>Base pay (${calc.paidElapsedMin>0?(calc.paidElapsedMin/60).toFixed(2):'0.00'} paid hrs)</span><span>$${calc.basePay.toFixed(2)}</span></div>
+      ${calc.bonusLines.map(b=>`<div class="ticker-breakdown-row"><span>${escapeHtml(b.label)}</span><span>+$${b.amount.toFixed(2)}</span></div>`).join('')}
+      <div class="ticker-breakdown-row total"><span>Total so far</span><span>$${calc.amount.toFixed(2)}</span></div>
+    `;
   };
   tick();
   tickerModalInterval = setInterval(tick, 250);
