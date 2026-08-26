@@ -4,9 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>WorkQuest</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0B0D12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WorkQuest">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230B0D12'/%3E%3Ctext x='90' y='115' font-size='90' text-anchor='middle' fill='%237C9CFF' font-family='Georgia,serif' font-weight='700'%3EW%3C/text%3E%3C/svg%3E">
+<script>
+if('serviceWorker' in navigator){ window.addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
   --bg:#0B0D12; --bg-2:#12151C; --card:#161A23; --card-2:#1D2230;
@@ -202,6 +212,23 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
 .ticker-num{font-family:'Fraunces',serif;font-weight:700;font-size:44px;text-align:center;color:var(--green);margin:14px 0 4px;}
 .ticker-sub{text-align:center;color:var(--text-dim);font-size:13px;margin-bottom:18px;}
 .ticker-onbreak{background:var(--amber-dim);color:var(--amber);text-align:center;padding:8px;border-radius:10px;font-size:12.5px;font-weight:700;margin-bottom:14px;}
+
+/* ---- Custom date/time pickers ---- */
+.date-picker-btn{display:flex;align-items:center;justify-content:space-between;width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg-2);color:var(--text);font-size:15px;font-weight:600;}
+.mini-cal{background:var(--bg-2);border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:8px;}
+.mini-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-weight:700;font-size:13.5px;}
+.mini-cal-nav{background:var(--card-2);border:1px solid var(--line);color:var(--text);border-radius:7px;width:26px;height:26px;font-size:13px;}
+.mini-cal-nav:disabled{opacity:0.3;}
+.mini-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.mini-cal-dow{text-align:center;font-size:9px;font-weight:700;color:var(--text-faint);padding-bottom:3px;}
+.mini-cal-day{aspect-ratio:1;border-radius:7px;border:none;background:transparent;color:var(--text);font-size:12px;font-family:inherit;}
+.mini-cal-day.sel{background:var(--accent);color:var(--on-accent);font-weight:700;}
+.mini-cal-day.tod{border:1px solid var(--accent);}
+.mini-cal-day.blank{visibility:hidden;}
+.time-picker-row{display:flex;align-items:center;gap:6px;}
+.time-picker-row select{flex:1;text-align:center;font-weight:600;}
+.ampm-toggle{width:56px;flex-shrink:0;border-radius:9px;border:1px solid var(--line);background:var(--card-2);color:var(--text);font-weight:700;font-size:12.5px;padding:11px 0;}
+.ampm-toggle.pm{background:var(--accent);color:var(--on-accent);border-color:var(--accent);}
 
 .week-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .week-nav-btn{background:var(--card-2);border:1px solid var(--line);color:var(--text);border-radius:8px;width:34px;height:34px;font-size:15px;}
@@ -459,7 +486,7 @@ function mkRate(label,days,timeFrom,timeTo,amount){return {id:uid('rate'),label,
 function mkBonus(label,type,amount){return {id:uid('bonus'),label,type,versions:[{amount,effectiveFrom:FY27_START}]};}
 function defaultEmployers(){
   return [
-    { id:'emp_coles', name:'Coles',
+    { id:'emp_coles', name:'Coles', icon:'🛒', color:'#E4572E',
       rates:[ mkRate('Mon–Fri before 6pm',['Mon','Tue','Wed','Thu','Fri'],null,'18:00',18.12),
               mkRate('Mon–Fri after 6pm',['Mon','Tue','Wed','Thu','Fri'],'18:00',null,21.75),
               mkRate('Saturday',['Sat'],null,null,21.75),
@@ -467,13 +494,13 @@ function defaultEmployers(){
               mkRate('Sunday from 9am',['Sun'],'09:00',null,25.37),
               mkRate('NSW public holiday',['PH'],null,null,32.62) ],
       bonuses:[], breakRule:{enabled:true,triggerHours:5,breakMinutes:30} },
-    { id:'emp_maccas', name:"McDonald's",
+    { id:'emp_maccas', name:"McDonald's", icon:'🍟', color:'#FFC72C',
       rates:[ mkRate('Mon–Fri',['Mon','Tue','Wed','Thu','Fri'],null,null,13.91),
               mkRate('Sat–Sun',['Sat','Sun'],null,null,17.39),
               mkRate('NSW public holiday',['PH'],null,null,31.30) ],
       bonuses:[ mkBonus('Crew Coach bonus','per_hour',0.50), mkBonus('Shift bonus','per_shift',1.25) ],
       breakRule:{enabled:true,triggerHours:5,breakMinutes:30} },
-    { id:'emp_gym', name:'Gym',
+    { id:'emp_gym', name:'Gym', icon:'🏋️', color:'#34D399',
       rates:[ mkRate('Mon–Fri',['Mon','Tue','Wed','Thu','Fri'],null,null,17.70) ],
       bonuses:[], breakRule:{enabled:false,triggerHours:5,breakMinutes:30} },
   ];
@@ -632,19 +659,20 @@ async function loadViewerData(){
   }));
 }
 function rowToEmployer(row){
-  return { id:row.id, name:row.name, rates:row.rates, bonuses:row.bonuses, breakRule:row.break_rule };
+  return { id:row.id, name:row.name, rates:row.rates, bonuses:row.bonuses, breakRule:row.break_rule, archived:!!row.archived, icon:row.icon||'💼', color:row.color||'#7C9CFF' };
 }
 function rowToShift(row){
   return {
     id:row.id, date:row.date, employerId:row.employer_id, start:row.start_time, end:row.end_time,
     breakMode:row.break_mode, breakMinutesManual:row.break_minutes_manual, notes:row.notes,
-    payDate:row.pay_date, rateOverride:row.rate_override, locked:row.locked_calc,
+    payDate:row.pay_date, rateOverride:row.rate_override, locked:row.locked_calc, seriesId:row.series_id||null,
   };
 }
 async function seedAccount(){
   const employers = defaultEmployers();
   const empRows = employers.map(e=>({
     id:e.id, owner_id:STATE.uid, name:e.name, rates:e.rates, bonuses:e.bonuses, break_rule:e.breakRule,
+    icon:e.icon, color:e.color, archived:false,
   }));
   await sb.from('employers').insert(empRows);
   const shiftRows = SEED_SHIFTS.map(s=>{
@@ -821,34 +849,61 @@ function refreshOnShiftBanner(){
   const banner = document.getElementById('onShiftBanner');
   if(!banner) return;
   const active = findActiveShift();
-  if(!active){ banner.classList.add('hidden'); banner.innerHTML=''; return; }
+  if(!active){ banner.classList.add('hidden'); banner.innerHTML=''; clearInterval(_bannerTickInterval); return; }
   const emp = getEmployer(active.employerId);
   banner.classList.remove('hidden');
-  banner.innerHTML = `<div class="onshift-banner" onclick="openTickerModal('${active.id}')">
-    <span class="onshift-dot"></span>
-    <span class="label">On shift now — ${escapeHtml(emp?emp.name:'')}</span>
-    <span class="amt" id="bannerAmt">…</span>
+  banner.innerHTML = `<div class="onshift-banner" style="border-color:${emp?.color||'var(--green)'};background:linear-gradient(90deg,${hexAlpha(emp?.color||'#34D399',0.16)},var(--card));" onclick="openTickerModal('${active.id}')">
+    <span class="onshift-dot" style="background:${emp?.color||'var(--green)'};"></span>
+    <span class="label">${emp&&emp.icon?emp.icon+' ':''}On shift — ${escapeHtml(emp?emp.name:'')}</span>
+    <span class="amt" id="bannerAmt" style="color:${emp?.color||'var(--green)'};">…</span>
   </div>`;
-  updateBannerAmt(active,emp);
+  clearInterval(_bannerTickInterval);
+  const upd = ()=>{
+    const nowActive = findActiveShift();
+    if(!nowActive){ clearInterval(_bannerTickInterval); refreshOnShiftBanner(); return; }
+    const el = document.getElementById('bannerAmt');
+    if(!el) return;
+    const now = sydneyNowParts();
+    const calc = calcElapsedPay(nowActive, emp, now.minutesSinceMidnight);
+    el.textContent = '$'+calc.amount.toFixed(2);
+  };
+  upd();
+  _bannerTickInterval = setInterval(upd, 1000);
 }
-function updateBannerAmt(shift,emp){
-  const el = document.getElementById('bannerAmt');
-  if(!el) return;
-  const now = sydneyNowParts();
-  const calc = calcElapsedPay(shift, emp, now.minutesSinceMidnight);
-  el.textContent = '$'+calc.amount.toFixed(2);
+let _bannerTickInterval=null;
+function hexAlpha(hex, alpha){
+  const h = hex.replace('#','');
+  const r=parseInt(h.substring(0,2),16), g=parseInt(h.substring(2,4),16), b=parseInt(h.substring(4,6),16);
+  return `rgba(${r},${g},${b},${alpha})`;
 }
 function openTickerModal(shiftId){
   const shift = STATE.shifts.find(s=>s.id===shiftId);
   if(!shift) return;
   const emp = getEmployer(shift.employerId);
+  const color = emp?.color || 'var(--green)';
+  const startMin = timeToMinutes(shift.start);
+  let endMin = timeToMinutes(shift.end); if(endMin<=startMin) endMin+=1440;
+  const totalMin = endMin-startMin;
+  const cur = versionForDate((emp.rates.find(r=>r.days.includes(dowShort(shift.date)))||emp.rates[0]).versions, shift.date);
+  const circumference = 2*Math.PI*80;
   openModal(`
     <button class="modal-close" onclick="closeModal()">×</button>
-    <h3>${escapeHtml(emp.name)}</h3>
-    <p class="muted small" style="text-align:center;">${shift.start} → ${shift.end}</p>
+    <h3 style="text-align:center;">${emp.icon||''} ${escapeHtml(emp.name)}</h3>
+    <p class="muted small" style="text-align:center;margin-bottom:4px;">${shift.start} → ${shift.end} · ~$${(cur?.amount||0).toFixed(2)}/hr base</p>
     <div id="tickerBreakNote"></div>
-    <div class="ticker-num money" id="tickerAmt">$0.00</div>
-    <div class="ticker-sub" id="tickerElapsed">0:00 elapsed</div>
+    <div style="position:relative;width:200px;height:200px;margin:10px auto 6px;">
+      <svg width="200" height="200" viewBox="0 0 200 200" style="position:absolute;inset:0;">
+        <circle cx="100" cy="100" r="80" fill="none" stroke="var(--line-soft)" stroke-width="10"/>
+        <circle id="tickerRing" cx="100" cy="100" r="80" fill="none" stroke="${color}" stroke-width="10" stroke-linecap="round"
+          stroke-dasharray="${circumference.toFixed(1)}" stroke-dashoffset="${circumference.toFixed(1)}"
+          transform="rotate(-90 100 100)" style="transition:stroke-dashoffset 0.3s linear;"/>
+      </svg>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div class="ticker-num money" id="tickerAmt" style="font-size:32px;margin:0;color:${color};">$0.00</div>
+        <div class="ticker-sub" id="tickerElapsed" style="margin:2px 0 0;font-size:11.5px;">0:00 elapsed</div>
+      </div>
+    </div>
+    <div class="ticker-sub" id="tickerRemaining" style="margin-bottom:10px;"></div>
   `);
   clearInterval(tickerModalInterval);
   const tick = ()=>{
@@ -859,10 +914,16 @@ function openTickerModal(shiftId){
     amtEl.textContent = '$'+calc.amount.toFixed(2);
     const h = Math.floor(calc.rawElapsedMin/60), m = Math.floor(calc.rawElapsedMin%60), s = Math.floor((calc.rawElapsedMin*60)%60);
     document.getElementById('tickerElapsed').textContent = `${h>0?h+'h ':''}${m}m ${s}s elapsed`;
-    document.getElementById('tickerBreakNote').innerHTML = calc.onBreak ? `<div class="ticker-onbreak">On unpaid break — resumes shortly</div>` : '';
+    document.getElementById('tickerBreakNote').innerHTML = calc.onBreak ? `<div class="ticker-onbreak">☕ On unpaid break — resumes shortly</div>` : '';
+    const pct = Math.min(1, calc.rawElapsedMin/totalMin);
+    const ring = document.getElementById('tickerRing');
+    if(ring) ring.style.strokeDashoffset = (circumference*(1-pct)).toFixed(1);
+    const remainMin = Math.max(0, totalMin-calc.rawElapsedMin);
+    const rh=Math.floor(remainMin/60), rm=Math.floor(remainMin%60);
+    document.getElementById('tickerRemaining').textContent = remainMin>0 ? `${rh>0?rh+'h ':''}${rm}m left on shift` : 'Shift ending now';
   };
   tick();
-  tickerModalInterval = setInterval(tick, 1000);
+  tickerModalInterval = setInterval(tick, 250);
 }
 
 /* =========================================================================
@@ -930,6 +991,7 @@ function renderCalendar(){
     const shifts = STATE.role==='admin' ? shiftsOnDate(iso) : STATE.shifts.filter(s=>s.date===iso);
     const isToday = iso===today;
     const holiday = STATE.role==='admin' && isHoliday(iso);
+    const isPH = isPublicHoliday(iso);
     const isFuture = isoCompare(iso,today)>0;
     let cls = 'cal-cell';
     if(isToday) cls += ' today';
@@ -940,6 +1002,7 @@ function renderCalendar(){
     if(holiday){ inner += `<span class="na">N/A</span>`; }
     else if(STATE.role==='admin' && shifts.length){ inner += `<span class="amt">$${dayTotal(iso).toFixed(0)}</span>`; }
     else if(shifts.length){ inner += `<span class="dot"></span>`; }
+    if(isPH && !holiday){ inner += `<span style="display:block;font-size:8.5px;font-weight:700;color:var(--accent);margin-top:2px;">PH</span>`; }
     html += `<div class="${cls}"><button onclick="openDayModal('${iso}')">${inner}</button></div>`;
   }
   html += `</div>
@@ -962,7 +1025,7 @@ function openDayModal(iso){
   let body = shifts.length ? shifts.map(s=>{
     if(STATE.role==='admin'){
       const emp=getEmployer(s.employerId);
-      return `<div class="shift-row"><div><div class="shift-emp">${escapeHtml(emp?emp.name:'?')}</div><div class="shift-time">${s.start} → ${s.end} · ${s.locked.paidHours.toFixed(2)} hrs</div></div><div class="shift-amt money">$${s.locked.totalPay.toFixed(2)}</div></div>`;
+      return `<div class="shift-row" style="border-left:3px solid ${emp?emp.color||'var(--accent)':'var(--accent)'};padding-left:8px;"><div><div class="shift-emp">${emp?emp.icon||'':''} ${escapeHtml(emp?emp.name:'?')}</div><div class="shift-time">${s.start} → ${s.end} · ${s.locked.paidHours.toFixed(2)} hrs</div></div><div class="shift-amt money">$${s.locked.totalPay.toFixed(2)}</div></div>`;
     }
     return `<div class="shift-row"><div><div class="shift-emp">${escapeHtml(s.employerName)}</div><div class="shift-time">${s.start} → ${s.end} · ${Number(s.hours).toFixed(2)} hrs</div></div></div>`;
   }).join('') : `<div class="day-empty">No shifts recorded</div>`;
@@ -970,7 +1033,7 @@ function openDayModal(iso){
     <button class="modal-close" onclick="closeModal()">×</button>
     <h3>${DOW_LONG[dowIndex(iso)]} ${formatAUShort(iso)}</h3>
     ${body}
-    ${STATE.role==='admin' ? `<div class="row" style="margin-top:14px;"><button class="btn btn-primary btn-block" onclick="closeModal();openAddShiftModal();document.getElementById('sDate').value='${iso}';updateCalcPreview();">+ Add shift this day</button></div>` : ''}
+    ${STATE.role==='admin' ? `<div class="row" style="margin-top:14px;"><button class="btn btn-primary btn-block" onclick="closeModal();openAddShiftModal();selectMiniCalDate('sDate','${iso}');">+ Add shift this day</button></div>` : ''}
   `);
 }
 
@@ -1040,36 +1103,51 @@ function currentBracket(taxable){
 }
 function renderTax(){
   const fy = fyForDate(STATE.weekStart);
-  const gross = STATE.shifts.filter(s=>isoCompare(s.date,fy.start)>=0 && isoCompare(s.date,fy.end)<=0)
+  const today = getTodaySydney();
+  // Only shifts that have actually happened count as earned — future-dated (scheduled) shifts don't.
+  const gross = STATE.shifts.filter(s=>isoCompare(s.date,fy.start)>=0 && isoCompare(s.date,fy.end)<=0 && isoCompare(s.date,today)<=0)
     .reduce((sum,s)=>sum+(s.locked?.totalPay||0),0);
   const tax = calcIncomeTax(gross);
   const medicare = calcMedicareLevy(gross);
   const total = tax + medicare;
   const bracket = currentBracket(gross);
   const net = gross - total;
-  const maxScale = 190000;
-  let barHtml = TAX_BRACKETS.map(b=>{
-    const width = (Math.min(b.max,maxScale)-b.min)/maxScale*100;
-    const color = b.rate===0?'var(--line-soft)': b.rate===bracket.rate?'var(--accent)':'var(--card-2)';
-    return `<div class="seg" style="width:${width}%;background:${color};"></div>`;
-  }).join('');
+  const bracketFloor = bracket.min;
+  const bracketCeil = bracket.max===Infinity ? bracketFloor+50000 : bracket.max;
+  const inBracketPct = bracket.max===Infinity ? 100 : Math.min(100, Math.max(0,(gross-bracketFloor)/(bracketCeil-bracketFloor)*100));
   return `
     ${renderPredictionCard(fy)}
     <div class="tax-hero">
       <span class="tax-estimate-badge">Estimate</span>
-      <div class="eyebrow">${fy.key} gross earned</div>
+      <div class="eyebrow">${fy.key} gross earned to date</div>
       <div class="big-num money">$${gross.toFixed(2)}</div>
-      <div class="muted small">Marginal rate ${(bracket.rate*100).toFixed(0)}% · bracket $${bracket.min.toLocaleString()}–${bracket.max===Infinity?'+':'$'+bracket.max.toLocaleString()}</div>
-      <div class="bracket-bar">${barHtml}</div>
+      <div class="muted small">Only shifts up to today (${formatAUShort(today)}) count — scheduled future shifts aren't included yet.</div>
     </div>
-    <div class="card card-pad">
+    <div class="card card-pad" style="margin-bottom:16px;">
       <div class="tax-row"><span class="muted">Gross income</span><span class="num">$${gross.toFixed(2)}</span></div>
       <div class="tax-row"><span class="muted">Estimated income tax</span><span class="num">$${tax.toFixed(2)}</span></div>
       <div class="tax-row"><span class="muted">Medicare levy (${medicareRatePct(gross).toFixed(2)}%)</span><span class="num">$${medicare.toFixed(2)}</span></div>
       <div class="tax-row"><span class="muted">Estimated total tax</span><span class="num">$${total.toFixed(2)}</span></div>
       <div class="tax-row"><span class="muted">Estimated take-home</span><span class="num" style="color:var(--green);font-weight:700;">$${net.toFixed(2)}</span></div>
     </div>
-    <p class="muted small" style="margin-top:12px;">Income tax based on ${fy.key} ATO resident rates (0% to \$18,200, 15% to \$45,000, 30% to \$135,000, 37% to \$190,000, 45% above). Medicare levy phases in between \$27,222–\$34,027 at 10% of the amount over \$27,222, then applies at a flat 2% of total taxable income above that. Doesn't include PAYG already withheld, other income, deductions, or offsets like LITO — for an exact figure, check with the ATO or a tax agent.</p>
+    <div class="card card-pad" style="margin-bottom:16px;">
+      <div class="eyebrow" style="margin-bottom:8px;">Current bracket</div>
+      <div class="row" style="justify-content:space-between;align-items:baseline;">
+        <span style="font-weight:700;font-size:15px;">$${bracket.min.toLocaleString()}${bracket.max===Infinity?'+':' – $'+bracket.max.toLocaleString()}</span>
+        <span class="num" style="color:var(--accent);font-weight:700;">${(bracket.rate*100).toFixed(0)}% marginal</span>
+      </div>
+      <div class="bracket-bar" style="margin:12px 0 4px;"><div class="seg" style="width:${inBracketPct.toFixed(1)}%;background:var(--accent);"></div></div>
+      <p class="muted small">${bracket.max===Infinity?`$${(gross-bracketFloor).toFixed(2)} into the top bracket.`:`$${(gross-bracketFloor).toFixed(2)} of the $${(bracketCeil-bracketFloor).toLocaleString()} range for this bracket.`}</p>
+    </div>
+    <div class="card card-pad" style="margin-bottom:16px;">
+      <div class="eyebrow" style="margin-bottom:10px;">${fy.key} tax brackets</div>
+      ${TAX_BRACKETS.map(b=>`<div class="tax-row" style="${b.rate===bracket.rate?'color:var(--accent);font-weight:700;':''}">
+        <span>$${b.min.toLocaleString()}${b.max===Infinity?'+':' – $'+b.max.toLocaleString()}</span>
+        <span class="num">${(b.rate*100).toFixed(0)}%</span>
+      </div>`).join('')}
+    </div>
+    <button class="btn btn-block" style="margin-bottom:12px;" onclick="exportFyPdf()">📄 Export ${fy.key} summary as PDF</button>
+    <p class="muted small">Income tax based on ${fy.key} ATO resident rates. Medicare levy phases in between \$27,222–\$34,027 at 10% of the amount over \$27,222, then applies at a flat 2% of total taxable income above that. Doesn't include PAYG already withheld, other income, deductions, or offsets like LITO — for an exact figure, check with the ATO or a tax agent.</p>
   `;
 }
 function renderPredictionCard(fy){
@@ -1101,8 +1179,101 @@ function renderPredictionCard(fy){
 }
 
 /* =========================================================================
-   SEARCH
+   PDF EXPORT (FY summary — for tax records)
    ========================================================================= */
+async function exportFyPdf(){
+  const { jsPDF } = window.jspdf;
+  const fy = fyForDate(STATE.weekStart);
+  const today = getTodaySydney();
+  const fyShifts = STATE.shifts.filter(s=>isoCompare(s.date,fy.start)>=0 && isoCompare(s.date,fy.end)<=0 && isoCompare(s.date,today)<=0)
+    .sort((a,b)=>isoCompare(a.date,b.date));
+  const gross = fyShifts.reduce((sum,s)=>sum+(s.locked?.totalPay||0),0);
+  const totalHours = fyShifts.reduce((sum,s)=>sum+(s.locked?.paidHours||0),0);
+  const tax = calcIncomeTax(gross), medicare = calcMedicareLevy(gross);
+  const net = gross - tax - medicare;
+
+  const doc = new jsPDF();
+  let y = 20;
+  doc.setFont('helvetica','bold'); doc.setFontSize(18);
+  doc.text(`WorkQuest — ${fy.key} Summary`, 14, y); y+=7;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(120);
+  doc.text(`${fy.start} to ${fy.end}  ·  Generated ${today}`, 14, y); y+=10;
+  doc.setTextColor(0);
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.text('Summary', 14, y); y+=7;
+  doc.setFont('helvetica','normal'); doc.setFontSize(11);
+  const lines = [
+    [`Gross income (to date)`, `$${gross.toFixed(2)}`],
+    [`Total paid hours`, `${totalHours.toFixed(2)} hrs`],
+    [`Estimated income tax`, `$${tax.toFixed(2)}`],
+    [`Medicare levy`, `$${medicare.toFixed(2)}`],
+    [`Estimated take-home`, `$${net.toFixed(2)}`],
+  ];
+  lines.forEach(([l,v])=>{ doc.text(l,14,y); doc.text(v,150,y); y+=6.5; });
+  y+=6;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.text('By employer', 14, y); y+=7;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  doc.setFont('helvetica','bold'); doc.text('Employer',14,y); doc.text('Hours',110,y); doc.text('Gross',150,y); doc.setFont('helvetica','normal'); y+=5;
+  doc.setDrawColor(200); doc.line(14,y,196,y); y+=5;
+  for(const emp of STATE.employers){
+    const es = fyShifts.filter(s=>s.employerId===emp.id);
+    if(!es.length) continue;
+    const h = es.reduce((s2,x)=>s2+x.locked.paidHours,0);
+    const g = es.reduce((s2,x)=>s2+x.locked.totalPay,0);
+    doc.text(emp.name,14,y); doc.text(h.toFixed(2),110,y); doc.text(`$${g.toFixed(2)}`,150,y); y+=6;
+  }
+  y+=8;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.text('Shift ledger', 14, y); y+=7;
+  doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  doc.setFont('helvetica','bold'); doc.text('Date',14,y); doc.text('Employer',45,y); doc.text('Time',95,y); doc.text('Hours',140,y); doc.text('Gross',165,y); doc.setFont('helvetica','normal'); y+=5;
+  doc.line(14,y,196,y); y+=5;
+  for(const s of fyShifts){
+    if(y>280){ doc.addPage(); y=20; }
+    const emp = getEmployer(s.employerId);
+    doc.text(s.date,14,y);
+    doc.text((emp?emp.name:'?').slice(0,20),45,y);
+    doc.text(`${s.start}-${s.end}`,95,y);
+    doc.text(s.locked.paidHours.toFixed(2),140,y);
+    doc.text(`$${s.locked.totalPay.toFixed(2)}`,165,y);
+    y+=5.5;
+  }
+  doc.setFontSize(8); doc.setTextColor(150);
+  doc.text('Figures are estimates generated by WorkQuest for personal record-keeping. Confirm with the ATO or a tax agent before lodging.', 14, 290);
+
+  doc.save(`WorkQuest-${fy.key}-summary.pdf`);
+  toast('PDF downloaded');
+}
+
+/* =========================================================================
+   ICS CALENDAR EXPORT (per week)
+   ========================================================================= */
+function exportWeekIcs(){
+  const week = weekForDate(STATE.weekStart);
+  const days = weekDays(week.start);
+  const weekShifts = days.flatMap(d=>shiftsOnDate(d));
+  if(!weekShifts.length){ toast('No shifts this week to export'); return; }
+  const pad=n=>String(n).padStart(2,'0');
+  const toIcsDate=(iso,hm)=>{ const [h,m]=hm.split(':'); return iso.replace(/-/g,'')+'T'+pad(h)+pad(m)+'00'; };
+  let ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//WorkQuest//EN\r\n';
+  for(const s of weekShifts){
+    const emp = getEmployer(s.employerId);
+    const dtStart = toIcsDate(s.date, s.start);
+    let endDate = s.date;
+    if(timeToMinutes(s.end)<=timeToMinutes(s.start)) endDate = addDays(s.date,1);
+    const dtEnd = toIcsDate(endDate, s.end);
+    ics += `BEGIN:VEVENT\r\nUID:${s.id}@workquest\r\nDTSTART:${dtStart}\r\nDTEND:${dtEnd}\r\nSUMMARY:${(emp?emp.name:'Shift')} — $${s.locked.totalPay.toFixed(2)} expected\r\nDESCRIPTION:${s.start} to ${s.end}, ${s.locked.paidHours.toFixed(2)} paid hrs${s.notes?'\\n'+s.notes.replace(/\n/g,'\\n'):''}\r\nEND:VEVENT\r\n`;
+  }
+  ics += 'END:VCALENDAR\r\n';
+  const blob = new Blob([ics], {type:'text/calendar'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `workquest-week-${week.start}.ics`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Calendar file downloaded — open it to add to your calendar');
+}
 function openSearchModal(){
   openModal(`
     <button class="modal-close" onclick="closeModal()">×</button>
@@ -1143,7 +1314,16 @@ function renderAdminDiary(){
   const days = weekDays(week.start);
   const total = days.reduce((s,d)=>s+dayTotal(d),0);
   const today = getTodaySydney();
+  const fy = fyForDate(STATE.weekStart);
+  const fyEarned = STATE.shifts.filter(s=>isoCompare(s.date,fy.start)>=0 && isoCompare(s.date,today)<=0 && isoCompare(s.date,fy.end)<=0)
+    .reduce((sum,s)=>sum+(s.locked?.totalPay||0),0);
   let html = `
+    <div class="card card-pad" style="margin-bottom:16px;background:linear-gradient(135deg,var(--card),var(--card-2));">
+      <div class="row" style="justify-content:space-between;">
+        <div><div class="eyebrow">${fy.key} earned to date</div><div class="display" style="font-size:24px;">$${fyEarned.toFixed(2)}</div></div>
+        <div style="text-align:right;"><div class="eyebrow">This week</div><div class="display" style="font-size:24px;color:var(--green);">$${total.toFixed(2)}</div></div>
+      </div>
+    </div>
     <div class="week-head">
       <button class="week-nav-btn" onclick="navWeek(-1)">‹</button>
       <div style="text-align:center;">
@@ -1151,6 +1331,9 @@ function renderAdminDiary(){
         <div class="week-total">$${total.toFixed(2)}</div>
       </div>
       <button class="week-nav-btn" onclick="navWeek(1)">›</button>
+    </div>
+    <div class="row" style="justify-content:center;margin-bottom:14px;">
+      <button class="btn btn-sm" onclick="exportWeekIcs()">📅 Add this week to Calendar</button>
     </div>`;
   for(const d of days){
     const shifts = shiftsOnDate(d);
@@ -1163,7 +1346,7 @@ function renderAdminDiary(){
     else if(shifts.length){ statusCls='st-worked'; statusLabel = shifts.length>1?shifts.length+' shifts':'Worked'; }
     html += `<div class="day-card ${isToday?'today':''} ${holiday?'holiday':''}">
       <div class="day-top">
-        <div><span class="day-dow">${DOW_LONG[dowIndex(d)]}</span><span class="day-date">${formatAUShort(d)}</span></div>
+        <div><span class="day-dow">${DOW_LONG[dowIndex(d)]}</span><span class="day-date">${formatAUShort(d)}</span>${isPublicHoliday(d)?' <span class="day-status" style="background:var(--card-2);color:var(--accent);">PH</span>':''}</div>
         <span class="day-status ${statusCls}">${statusLabel}</span>
       </div>`;
     if(holiday){
@@ -1176,9 +1359,9 @@ function renderAdminDiary(){
     } else {
       for(const s of shifts){
         const emp = getEmployer(s.employerId);
-        html += `<div class="shift-row">
+        html += `<div class="shift-row" style="border-left:3px solid ${emp?emp.color||'var(--accent)':'var(--accent)'};padding-left:8px;">
           <div>
-            <div class="shift-emp">${escapeHtml(emp?emp.name:'?')}</div>
+            <div class="shift-emp">${emp&&emp.icon?emp.icon+' ':''}${escapeHtml(emp?emp.name:'?')}</div>
             <div class="shift-time">${s.start} → ${s.end} · ${s.locked.paidHours.toFixed(2)} hrs</div>
           </div>
           <div class="shift-amt money" style="${isFuture?'color:var(--amber);':''}">$${s.locked.totalPay.toFixed(2)}</div>
@@ -1229,15 +1412,17 @@ function renderSettings(){
   html += `<div class="card card-pad" style="margin-bottom:22px;">`;
   if(!STATE.holidays.length) html += `<p class="muted small">No holidays set.</p>`;
   STATE.holidays.forEach((h,i)=>{
-    html += `<div class="rate-row"><span>${escapeHtml(h.label||'Holiday')} · ${fmtDateShort(h.start)} – ${fmtDateShort(h.end)}</span><button class="btn btn-sm btn-danger" onclick="removeHoliday(${i})">Remove</button></div>`;
+    html += `<div class="rate-row" style="cursor:pointer;" onclick="openEditHolidayModal(${i})"><span>${escapeHtml(h.label||'Holiday')} · ${fmtDateShort(h.start)} – ${fmtDateShort(h.end)}</span><span class="muted small">Edit ›</span></div>`;
   });
   html += `<button class="btn btn-block" style="margin-top:12px;" onclick="openAddHolidayModal()">+ Add holiday</button></div>`;
 
-  html += `<h2 style="margin-bottom:4px;">Jobs & Pay Rates</h2><p class="muted small" style="margin-bottom:16px;">Tap a rate to schedule a future change — past shifts always keep the rate that applied on their date. Tap a job's Edit button to rename or remove it.</p>`;
-  for(const emp of STATE.employers){
-    html += `<div class="card card-pad emp-block">
+  html += `<h2 style="margin-bottom:4px;">Jobs & Pay Rates</h2><p class="muted small" style="margin-bottom:16px;">Tap a rate to schedule a future change — past shifts always keep the rate that applied on their date. Tap Edit job to rename, recolour, delete, or manage rate tiers and bonuses.</p>`;
+  const activeEmps = STATE.employers.filter(e=>!e.archived);
+  const archivedEmps = STATE.employers.filter(e=>e.archived);
+  for(const emp of activeEmps){
+    html += `<div class="card card-pad emp-block" style="border-left:3px solid ${emp.color||'var(--accent)'};">
       <div class="row" style="justify-content:space-between;margin-bottom:6px;">
-        <h4>${escapeHtml(emp.name)}</h4>
+        <h4>${emp.icon||'💼'} ${escapeHtml(emp.name)}</h4>
         <button class="btn btn-sm" onclick="openEditJobModal('${emp.id}')">Edit job</button>
       </div>`;
     for(const r of emp.rates){
@@ -1255,6 +1440,19 @@ function renderSettings(){
     html += `</div>`;
   }
   html += `<button class="btn btn-block" onclick="openAddJobModal()">+ Add job</button>`;
+  if(archivedEmps.length){
+    html += `<h2 style="margin:26px 0 4px;font-size:16px;color:var(--text-dim);">Archived jobs</h2>`;
+    for(const emp of archivedEmps){
+      html += `<div class="card card-pad emp-block" style="opacity:0.6;border-left:3px solid ${emp.color||'var(--text-faint)'};">
+        <div class="row" style="justify-content:space-between;"><h4>${emp.icon||'💼'} ${escapeHtml(emp.name)}</h4><button class="btn btn-sm" onclick="openEditJobModal('${emp.id}')">Manage</button></div>
+      </div>`;
+    }
+  }
+  html += `<h2 style="margin:26px 0 12px;">Export</h2>
+    <div class="card card-pad" style="margin-bottom:20px;">
+      <p class="muted small" style="margin-bottom:12px;">Download a full summary of the selected financial year — gross income, tax estimate, and a per-employer breakdown — as a PDF for your records or tax return.</p>
+      <button class="btn btn-primary btn-block" onclick="exportFyPdf()">📄 Export ${fyForDate(STATE.weekStart).key} summary as PDF</button>
+    </div>`;
   return html;
 }
 function fmtDateShort(iso){ return formatAUShort(iso); }
@@ -1328,7 +1526,7 @@ async function saveBonusVersion(empId, bonusId){
 }
 async function saveEmployer(emp){
   setSync('saving','Saving…');
-  const row = { id:emp.id, owner_id:STATE.uid, name:emp.name, rates:emp.rates, bonuses:emp.bonuses, break_rule:emp.breakRule };
+  const row = { id:emp.id, owner_id:STATE.uid, name:emp.name, rates:emp.rates, bonuses:emp.bonuses, break_rule:emp.breakRule, archived:!!emp.archived, icon:emp.icon||'💼', color:emp.color||'#7C9CFF' };
   if(!navigator.onLine){ offlineQueue.push({type:'upsert', table:'employers', row}); persistQueue(); setSync('error','Waiting to sync'); return; }
   const {error} = await sb.from('employers').upsert(row);
   setSync(error?'error':'saved', error?'⚠️ Unable to save':'Saved ✓');
@@ -1361,20 +1559,74 @@ async function saveHoliday(){
   toast('Holiday added');
 }
 async function removeHoliday(i){
+  if(!confirm('Cancel this holiday entirely?')) return;
   STATE.holidays.splice(i,1);
   await saveSettings();
   render();
-  toast('Holiday removed');
+  toast('Holiday cancelled');
+}
+function openEditHolidayModal(i){
+  const h = STATE.holidays[i];
+  const today = getTodaySydney();
+  const isOngoing = isoCompare(h.start,today)<=0 && isoCompare(h.end,today)>=0;
+  openModal(`
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h3>Edit holiday</h3>
+    <div class="field"><label>Label</label><input type="text" id="hEditLabel" value="${escapeHtml(h.label||'')}" placeholder="e.g. Bali trip"></div>
+    <div class="field-row">
+      <div class="field"><label>Start date</label><input type="date" id="hEditStart" value="${h.start}"></div>
+      <div class="field"><label>End date</label><input type="date" id="hEditEnd" value="${h.end}"></div>
+    </div>
+    ${isOngoing?`<button class="btn btn-block" style="margin-bottom:10px;" onclick="endHolidayToday(${i})">End holiday today</button>`:''}
+    <div class="row wrap">
+      <button class="btn btn-primary" onclick="saveHolidayEdit(${i})">Save changes</button>
+      <button class="btn btn-danger" onclick="removeHoliday(${i});closeModal();">Cancel holiday</button>
+    </div>
+  `);
+}
+async function saveHolidayEdit(i){
+  const start = document.getElementById('hEditStart').value;
+  const end = document.getElementById('hEditEnd').value;
+  const label = document.getElementById('hEditLabel').value;
+  if(!start || !end || isoCompare(start,end)>0){ toast('Check your dates'); return; }
+  STATE.holidays[i] = {...STATE.holidays[i], start, end, label};
+  await saveSettings();
+  closeModal(); render();
+  toast('Holiday updated');
+}
+async function endHolidayToday(i){
+  const today = getTodaySydney();
+  const yesterday = addDays(today,-1);
+  STATE.holidays[i].end = isoCompare(yesterday, STATE.holidays[i].start)>=0 ? yesterday : STATE.holidays[i].start;
+  await saveSettings();
+  closeModal(); render();
+  toast('Holiday ended');
 }
 
 /* =========================================================================
-   JOBS (employers) — add / edit / delete
+   JOBS (employers) — add / edit / delete / archive, custom rate tiers & bonuses
    ========================================================================= */
+const ICON_CHOICES = ['💼','🛒','🍟','🏋️','☕','🍔','📦','🚚','🧹','🏫','🍽️','💊','🛠️','🧾','🎓','🐾'];
+const COLOR_CHOICES = ['#7C9CFF','#E4572E','#FFC72C','#34D399','#F16C6C','#B98CFF','#4DC9C9','#F5B44D'];
+
+function swatchPickerHtml(name, choices, current, kind){
+  return `<div class="row wrap" id="${name}Picker" style="gap:8px;">${choices.map(c=>{
+    if(kind==='icon') return `<button type="button" onclick="pick${name.charAt(0).toUpperCase()+name.slice(1)}('${c}')" data-val="${c}" style="width:38px;height:38px;border-radius:10px;border:1px solid ${c===current?'var(--accent)':'var(--line)'};background:var(--card-2);font-size:18px;">${c}</button>`;
+    return `<button type="button" onclick="pick${name.charAt(0).toUpperCase()+name.slice(1)}('${c}')" data-val="${c}" style="width:32px;height:32px;border-radius:50%;border:2px solid ${c===current?'var(--text)':'transparent'};background:${c};"></button>`;
+  }).join('')}</div>`;
+}
+let _pendingIcon=null, _pendingColor=null;
+function pickIcon(v){ _pendingIcon=v; document.querySelectorAll('#iconPicker button').forEach(b=>b.style.borderColor = b.dataset.val===v?'var(--accent)':'var(--line)'); }
+function pickColor(v){ _pendingColor=v; document.querySelectorAll('#colorPicker button').forEach(b=>b.style.borderColor = b.dataset.val===v?'var(--text)':'transparent'); }
+
 function openAddJobModal(){
+  _pendingIcon='💼'; _pendingColor='#7C9CFF';
   openModal(`
     <button class="modal-close" onclick="closeModal()">×</button>
     <h3>+ Add job</h3>
     <div class="field"><label>Job name</label><input type="text" id="jName" placeholder="e.g. Woolworths"></div>
+    <div class="field"><label>Icon</label>${swatchPickerHtml('icon', ICON_CHOICES, '💼', 'icon')}</div>
+    <div class="field"><label>Colour</label>${swatchPickerHtml('color', COLOR_CHOICES, '#7C9CFF', 'color')}</div>
     <div class="field-row">
       <div class="field"><label>Starting rate ($/hr)</label><input type="number" step="0.01" id="jRate" value="0.00"></div>
       <div class="field"><label>Effective from</label><input type="date" id="jFrom" value="${getTodaySydney()}"></div>
@@ -1382,7 +1634,7 @@ function openAddJobModal(){
     <div class="field"><label>Break rule</label>
       <select id="jBreak"><option value="on">30 min unpaid break over 5 hrs (standard)</option><option value="off">No automatic break</option></select>
     </div>
-    <p class="muted small">You can add more rate tiers (e.g. weekends, after-hours) once the job is created.</p>
+    <p class="muted small">You can add more rate tiers (e.g. weekends, after-hours, public holidays) and bonuses once the job is created.</p>
     <div class="row wrap"><button class="btn btn-primary" onclick="saveNewJob()">Add job</button><button class="btn" onclick="closeModal()">Cancel</button></div>
   `);
 }
@@ -1393,7 +1645,7 @@ async function saveNewJob(){
   const breakOn = document.getElementById('jBreak').value==='on';
   if(!name || isNaN(rate) || !from){ toast('Fill in all fields'); return; }
   const emp = {
-    id: uid('emp'), name,
+    id: uid('emp'), name, icon:_pendingIcon, color:_pendingColor, archived:false,
     rates: [ mkRate('All days',['Mon','Tue','Wed','Thu','Fri','Sat','Sun','PH'], null, null, rate) ],
     bonuses: [],
     breakRule: {enabled:breakOn, triggerHours:5, breakMinutes:30},
@@ -1404,27 +1656,63 @@ async function saveNewJob(){
   closeModal(); render();
   toast('Job added');
 }
+
 function openEditJobModal(empId){
   const emp = getEmployer(empId);
-  const hasShifts = STATE.shifts.some(s=>s.employerId===empId);
+  _pendingIcon = emp.icon; _pendingColor = emp.color;
+  const today = getTodaySydney();
+  const empShifts = STATE.shifts.filter(s=>s.employerId===empId);
+  const hasFuture = empShifts.some(s=>isoCompare(s.date,today)>0);
+  const hasPast = empShifts.some(s=>isoCompare(s.date,today)<=0);
+  let deleteSection;
+  if(hasFuture){
+    deleteSection = `<p class="muted small">This job has upcoming shifts scheduled. Cancel or reassign those future shifts first before this job can be removed.</p>`;
+  } else if(hasPast){
+    deleteSection = emp.archived
+      ? `<p class="muted small">This job is archived — hidden from Add Shift, but its history is kept.</p><button class="btn btn-block" onclick="restoreJob('${empId}')">Restore job</button>`
+      : `<p class="muted small">This job has past shifts recorded, so its history is kept — but you can archive it so it no longer appears when adding new shifts.</p><button class="btn btn-danger btn-block" onclick="archiveJob('${empId}')">Archive job</button>`;
+  } else {
+    deleteSection = `<p class="muted small">No shifts recorded against this job — safe to delete completely.</p><button class="btn btn-danger btn-block" onclick="deleteJob('${empId}')">Delete job</button>`;
+  }
   openModal(`
     <button class="modal-close" onclick="closeModal()">×</button>
     <h3>Edit job</h3>
     <div class="field"><label>Job name</label><input type="text" id="jEditName" value="${escapeHtml(emp.name)}"></div>
-    <div class="row wrap"><button class="btn btn-primary" onclick="saveJobName('${empId}')">Save name</button></div>
+    <div class="field"><label>Icon</label>${swatchPickerHtml('icon', ICON_CHOICES, emp.icon, 'icon')}</div>
+    <div class="field"><label>Colour</label>${swatchPickerHtml('color', COLOR_CHOICES, emp.color, 'color')}</div>
+    <div class="row wrap"><button class="btn btn-primary" onclick="saveJobName('${empId}')">Save changes</button></div>
     <hr style="border:none;border-top:1px solid var(--line-soft);margin:18px 0;">
-    <p class="muted small">${hasShifts?"This job has shifts recorded against it, so it can't be fully deleted — but you can rename it or set its rates to $0 to retire it.":'No shifts recorded against this job yet — safe to delete.'}</p>
-    ${!hasShifts?`<button class="btn btn-danger btn-block" onclick="deleteJob('${empId}')">Delete job</button>`:''}
+    <div class="row" style="justify-content:space-between;margin-bottom:8px;"><strong style="font-size:14px;">Rate tiers</strong><button class="btn btn-sm" onclick="openAddRateTierModal('${empId}')">+ Add tier</button></div>
+    ${emp.rates.map(r=>`<div class="rate-row"><span class="muted">${escapeHtml(r.label)}</span><button class="btn btn-sm btn-danger" onclick="deleteRateTier('${empId}','${r.id}')">Remove</button></div>`).join('')}
+    <div class="row" style="justify-content:space-between;margin:16px 0 8px;"><strong style="font-size:14px;">Bonuses</strong><button class="btn btn-sm" onclick="openAddBonusModal('${empId}')">+ Add bonus</button></div>
+    ${(emp.bonuses||[]).length ? emp.bonuses.map(b=>`<div class="rate-row"><span class="muted">${escapeHtml(b.label)}</span><button class="btn btn-sm btn-danger" onclick="deleteBonus('${empId}','${b.id}')">Remove</button></div>`).join('') : `<p class="muted small">No bonuses on this job.</p>`}
+    <hr style="border:none;border-top:1px solid var(--line-soft);margin:18px 0;">
+    ${deleteSection}
   `);
 }
 async function saveJobName(empId){
   const emp = getEmployer(empId);
   const name = document.getElementById('jEditName').value.trim();
   if(!name){ toast('Enter a name'); return; }
-  emp.name = name;
+  emp.name = name; emp.icon = _pendingIcon; emp.color = _pendingColor;
   await saveEmployer(emp);
   closeModal(); render();
   toast('Job updated');
+}
+async function archiveJob(empId){
+  if(!confirm('Archive this job? Its history stays intact, but it will no longer appear when adding new shifts.')) return;
+  const emp = getEmployer(empId);
+  emp.archived = true;
+  await saveEmployer(emp);
+  closeModal(); render();
+  toast('Job archived');
+}
+async function restoreJob(empId){
+  const emp = getEmployer(empId);
+  emp.archived = false;
+  await saveEmployer(emp);
+  closeModal(); render();
+  toast('Job restored');
 }
 async function deleteJob(empId){
   if(!confirm('Delete this job? This cannot be undone.')) return;
@@ -1435,6 +1723,91 @@ async function deleteJob(empId){
   setSync('saved','Saved ✓');
   closeModal(); render();
   toast('Job deleted');
+}
+
+/* ---- Custom rate tiers ---- */
+const DOW_CODES = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun','PH'];
+function openAddRateTierModal(empId){
+  openModal(`
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h3>Add rate tier</h3>
+    <div class="field"><label>Label</label><input type="text" id="trLabel" placeholder="e.g. Weekend rate"></div>
+    <div class="field"><label>Applies on</label>
+      <div class="row wrap" style="gap:6px;">${DOW_CODES.map(d=>`<label style="display:flex;align-items:center;gap:4px;background:var(--card-2);padding:6px 10px;border-radius:8px;font-size:12.5px;text-transform:none;font-weight:500;color:var(--text);"><input type="checkbox" class="trDay" value="${d}" style="width:auto;">${d}</label>`).join('')}</div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>From time (optional)</label><input type="time" id="trFrom"></div>
+      <div class="field"><label>To time (optional)</label><input type="time" id="trTo"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Amount ($/hr)</label><input type="number" step="0.01" id="trAmount"></div>
+      <div class="field"><label>Effective from</label><input type="date" id="trFrom2" value="${getTodaySydney()}"></div>
+    </div>
+    <div class="row wrap"><button class="btn btn-primary" onclick="saveRateTier('${empId}')">Add tier</button><button class="btn" onclick="closeModal()">Cancel</button></div>
+  `);
+}
+async function saveRateTier(empId){
+  const emp = getEmployer(empId);
+  const label = document.getElementById('trLabel').value.trim();
+  const days = [...document.querySelectorAll('.trDay:checked')].map(c=>c.value);
+  const timeFrom = document.getElementById('trFrom').value || null;
+  const timeTo = document.getElementById('trTo').value || null;
+  const amount = Number(document.getElementById('trAmount').value);
+  const effectiveFrom = document.getElementById('trFrom2').value;
+  if(!label || !days.length || isNaN(amount) || !effectiveFrom){ toast('Fill in label, at least one day, and an amount'); return; }
+  emp.rates.push(mkRate(label, days, timeFrom, timeTo, amount));
+  emp.rates[emp.rates.length-1].versions = [{amount, effectiveFrom}];
+  await saveEmployer(emp);
+  closeModal(); openEditJobModal(empId);
+  toast('Rate tier added');
+}
+async function deleteRateTier(empId, rateId){
+  const emp = getEmployer(empId);
+  if(emp.rates.length<=1){ toast('A job needs at least one rate tier'); return; }
+  if(!confirm('Remove this rate tier? Shifts already logged keep their locked-in pay.')) return;
+  emp.rates = emp.rates.filter(r=>r.id!==rateId);
+  await saveEmployer(emp);
+  openEditJobModal(empId);
+  toast('Rate tier removed');
+}
+
+/* ---- Custom bonuses ---- */
+function openAddBonusModal(empId){
+  openModal(`
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h3>Add bonus</h3>
+    <div class="field"><label>Label</label><input type="text" id="boLabel" placeholder="e.g. Late-night loading"></div>
+    <div class="field"><label>Type</label>
+      <select id="boType"><option value="per_hour">Per paid hour</option><option value="per_shift">Per completed shift</option></select>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Amount ($)</label><input type="number" step="0.01" id="boAmount"></div>
+      <div class="field"><label>Effective from</label><input type="date" id="boFrom" value="${getTodaySydney()}"></div>
+    </div>
+    <div class="row wrap"><button class="btn btn-primary" onclick="saveBonus('${empId}')">Add bonus</button><button class="btn" onclick="closeModal()">Cancel</button></div>
+  `);
+}
+async function saveBonus(empId){
+  const emp = getEmployer(empId);
+  const label = document.getElementById('boLabel').value.trim();
+  const type = document.getElementById('boType').value;
+  const amount = Number(document.getElementById('boAmount').value);
+  const effectiveFrom = document.getElementById('boFrom').value;
+  if(!label || isNaN(amount) || !effectiveFrom){ toast('Fill in all fields'); return; }
+  emp.bonuses = emp.bonuses || [];
+  emp.bonuses.push(mkBonus(label, type, amount));
+  emp.bonuses[emp.bonuses.length-1].versions = [{amount, effectiveFrom}];
+  await saveEmployer(emp);
+  closeModal(); openEditJobModal(empId);
+  toast('Bonus added');
+}
+async function deleteBonus(empId, bonusId){
+  const emp = getEmployer(empId);
+  if(!confirm('Remove this bonus?')) return;
+  emp.bonuses = emp.bonuses.filter(b=>b.id!==bonusId);
+  await saveEmployer(emp);
+  openEditJobModal(empId);
+  toast('Bonus removed');
 }
 function navWeek(dir){
   STATE.weekStart = addDays(weekForDate(STATE.weekStart).start, dir*7);
@@ -1457,16 +1830,24 @@ function openEditShiftModal(id){
   renderShiftModal(STATE.shifts.find(s=>s.id===id));
 }
 function renderShiftModal(existing){
-  const empOptions = STATE.employers.map(e=>`<option value="${e.id}" ${existing&&existing.employerId===e.id?'selected':''}>${escapeHtml(e.name)}</option>`).join('');
-  const fy = fyForDate(existing?existing.date:getTodaySydney());
+  const empOptions = STATE.employers.filter(e=>!e.archived || (existing&&existing.employerId===e.id)).map(e=>`<option value="${e.id}" ${existing&&existing.employerId===e.id?'selected':''}>${e.icon||''} ${escapeHtml(e.name)}</option>`).join('');
+  const initDate = existing?existing.date:getTodaySydney();
+  const fy = fyForDate(initDate);
+  const initStart = existing?existing.start:'16:00';
+  const initEnd = existing?existing.end:'19:30';
   openModal(`
     <button class="modal-close" onclick="closeModal()">×</button>
     <h3>${existing?'Edit shift':'+ Add shift'}</h3>
-    <div class="field"><label>Date</label><input type="date" id="sDate" value="${existing?existing.date:getTodaySydney()}" onchange="updateCalcPreview();checkPatternHint();"></div>
+    <div class="field">
+      <label>Date</label>
+      <button type="button" class="date-picker-btn" id="sDateBtn" onclick="toggleMiniCal('sDate')"><span id="sDateBtnLabel">${DOW_SHORT[dowIndex(initDate)]}, ${formatAUShort(initDate)} ${initDate.slice(0,4)}</span><span>📅</span></button>
+      <input type="hidden" id="sDate" value="${initDate}">
+      <div class="hidden" id="sDateCalWrap" data-cursor="${initDate.slice(0,7)}" data-fystart="${fy.start}" data-fyend="${fy.end}"></div>
+    </div>
     <div class="field"><label>Employer</label><select id="sEmp" onchange="updateCalcPreview();checkPatternHint();">${empOptions}</select></div>
     <div class="field-row">
-      <div class="field"><label>Start</label><input type="time" id="sStart" value="${existing?existing.start:'16:00'}" oninput="updateCalcPreview();checkPatternHint();"></div>
-      <div class="field"><label>End</label><input type="time" id="sEnd" value="${existing?existing.end:'19:30'}" oninput="updateCalcPreview();checkPatternHint();"></div>
+      <div class="field"><label>Start</label>${timePickerHtml('sStart', initStart)}</div>
+      <div class="field"><label>End</label>${timePickerHtml('sEnd', initEnd)}</div>
     </div>
     <div class="field"><label>Notes</label><input type="text" id="sNotes" value="${existing?escapeHtml(existing.notes||''):''}"></div>
     <div id="patternHint"></div>
@@ -1475,17 +1856,99 @@ function renderShiftModal(existing){
       <input type="checkbox" id="sRepeat" style="width:auto;" onchange="document.getElementById('repeatUntilWrap').classList.toggle('hidden',!this.checked)">
       <label style="margin:0;text-transform:none;font-size:14px;font-weight:500;color:var(--text);">Repeats weekly</label>
     </div>
-    <div class="field hidden" id="repeatUntilWrap"><label>Repeat until</label><input type="date" id="sRepeatUntil" value="${fy.end}"></div>
+    <div class="field hidden" id="repeatUntilWrap"><label>Repeat until</label><input type="date" id="sRepeatUntil" value="${fy.end}" min="${initDate}" max="${fy.end}"></div>
     `:''}
     <div class="calc-preview" id="calcPreview"></div>
     <div class="row wrap">
       <button class="btn btn-primary" onclick="saveShiftModal('${existing?existing.id:''}')">${existing?'Save changes':'Add shift'}</button>
       ${existing?`<button class="btn btn-danger" onclick="deleteShiftModal('${existing.id}')">Delete</button>`:''}
+      ${existing&&existing.seriesId?`<button class="btn btn-danger" onclick="cancelSeries('${existing.seriesId}','${existing.date}')">Cancel this & future in series</button>`:''}
       <button class="btn" onclick="closeModal()">Cancel</button>
     </div>
   `);
+  if(existing&&existing.employerId){ document.getElementById('sEmp').value = existing.employerId; }
   updateCalcPreview();
   if(!existing) checkPatternHint();
+}
+
+/* ---- Custom time picker (hour 1-12, minute quarter-steps, AM/PM toggle) ---- */
+function to12(hm){ let [h,m]=hm.split(':').map(Number); const ampm=h>=12?'PM':'AM'; let h12=h%12; if(h12===0) h12=12; return {h12,m,ampm}; }
+function to24(h12,m,ampm){ let h=h12%12; if(ampm==='PM') h+=12; return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
+function timePickerHtml(id, hm){
+  const {h12,m,ampm} = to12(hm);
+  const nearestM = [0,15,30,45].reduce((a,b)=>Math.abs(b-m)<Math.abs(a-m)?b:a, 0);
+  const hourOpts = Array.from({length:12},(_,i)=>i+1).map(h=>`<option value="${h}" ${h===h12?'selected':''}>${h}</option>`).join('');
+  const minOpts = [0,15,30,45].map(mm=>`<option value="${mm}" ${mm===nearestM?'selected':''}>${String(mm).padStart(2,'0')}</option>`).join('');
+  return `
+    <div class="time-picker-row">
+      <select id="${id}Hour" onchange="updateTimeFromPicker('${id}')">${hourOpts}</select>
+      <select id="${id}Min" onchange="updateTimeFromPicker('${id}')">${minOpts}</select>
+      <button type="button" class="ampm-toggle ${ampm==='PM'?'pm':''}" id="${id}AmPm" onclick="toggleAmPm('${id}')">${ampm}</button>
+    </div>
+    <input type="hidden" id="${id}" value="${to24(h12,nearestM,ampm)}">
+  `;
+}
+function toggleAmPm(id){
+  const btn = document.getElementById(id+'AmPm');
+  const isPM = btn.classList.toggle('pm');
+  btn.textContent = isPM?'PM':'AM';
+  updateTimeFromPicker(id);
+}
+function updateTimeFromPicker(id){
+  const h12 = Number(document.getElementById(id+'Hour').value);
+  const m = Number(document.getElementById(id+'Min').value);
+  const ampm = document.getElementById(id+'AmPm').textContent;
+  document.getElementById(id).value = to24(h12,m,ampm);
+  updateCalcPreview(); checkPatternHint();
+}
+
+/* ---- Custom mini calendar (FY-bounded) for date selection ---- */
+function toggleMiniCal(id){
+  const wrap = document.getElementById(id+'CalWrap');
+  const willShow = wrap.classList.contains('hidden');
+  wrap.classList.toggle('hidden', !willShow);
+  if(willShow) renderMiniCal(id);
+}
+function renderMiniCal(id){
+  const wrap = document.getElementById(id+'CalWrap');
+  const cursor = wrap.dataset.cursor;
+  const fyStart = wrap.dataset.fystart, fyEnd = wrap.dataset.fyend;
+  const selected = document.getElementById(id).value;
+  const [y,m] = cursor.split('-').map(Number);
+  const monthStart = isoFromParts(y,m,1);
+  const daysInMonth = new Date(Date.UTC(y,m,0)).getUTCDate();
+  const startDow = (dowIndex(monthStart)+6)%7;
+  const today = getTodaySydney();
+  const atFirstMonth = monthStart<=fyStart.slice(0,7)+'-01' ? cursor<=fyStart.slice(0,7) : false;
+  let html = `<div class="mini-cal-head">
+    <button type="button" class="mini-cal-nav" ${cursor<=fyStart.slice(0,7)?'disabled':''} onclick="navMiniCal('${id}',-1)">‹</button>
+    <span>${MONTH_LONG[m-1]} ${y}</span>
+    <button type="button" class="mini-cal-nav" ${cursor>=fyEnd.slice(0,7)?'disabled':''} onclick="navMiniCal('${id}',1)">›</button>
+  </div><div class="mini-cal-grid">`;
+  ['M','T','W','T','F','S','S'].forEach(d=>html+=`<div class="mini-cal-dow">${d}</div>`);
+  for(let i=0;i<startDow;i++) html+=`<button class="mini-cal-day blank"></button>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const iso = isoFromParts(y,m,d);
+    if(isoCompare(iso,fyStart)<0 || isoCompare(iso,fyEnd)>0) continue;
+    let cls='mini-cal-day';
+    if(iso===selected) cls+=' sel';
+    if(iso===today) cls+=' tod';
+    html+=`<button type="button" class="${cls}" onclick="selectMiniCalDate('${id}','${iso}')">${d}</button>`;
+  }
+  wrap.innerHTML = html;
+}
+function navMiniCal(id, dir){
+  const wrap = document.getElementById(id+'CalWrap');
+  let [y,m] = wrap.dataset.cursor.split('-').map(Number);
+  m+=dir; if(m<1){m=12;y--;} if(m>12){m=1;y++;}
+  wrap.dataset.cursor = `${y}-${String(m).padStart(2,'0')}`;
+  renderMiniCal(id);
+}
+function selectMiniCalDate(id, iso){
+  document.getElementById(id).value = iso;
+  document.getElementById(id+'BtnLabel').textContent = `${DOW_SHORT[dowIndex(iso)]}, ${formatAUShort(iso)} ${iso.slice(0,4)}`;
+  document.getElementById(id+'CalWrap').classList.add('hidden');
+  updateCalcPreview(); checkPatternHint();
 }
 function checkPatternHint(){
   const hintEl = document.getElementById('patternHint');
@@ -1536,6 +1999,7 @@ async function saveShiftModal(existingId){
       d = addDays(d,7);
     }
   }
+  const seriesId = (repeating && dates.length>1) ? uid('series') : null;
   const rows=[];
   for(const d of dates){
     if(isHoliday(d)) continue;
@@ -1545,6 +2009,7 @@ async function saveShiftModal(existingId){
     const row = {
       id, owner_id:STATE.uid, date:d, employer_id:empId, start_time:start, end_time:end,
       break_mode:'auto', break_minutes_manual:null, notes, pay_date:null, rate_override:null, locked_calc:locked,
+      series_id: seriesId,
     };
     rows.push(row);
     const shiftObj = rowToShift(row);
@@ -1561,6 +2026,17 @@ async function deleteShiftModal(id){
   closeModal(); render();
   await deleteShiftRow(id);
   toast('Shift deleted');
+}
+async function cancelSeries(seriesId, fromDate){
+  if(!confirm('Cancel this and every future shift in this recurring series? Past shifts already worked are kept.')) return;
+  const toRemove = STATE.shifts.filter(s=>s.seriesId===seriesId && isoCompare(s.date,fromDate)>=0);
+  const ids = toRemove.map(s=>s.id);
+  STATE.shifts = STATE.shifts.filter(s=>!ids.includes(s.id));
+  closeModal(); render();
+  setSync('saving','Saving…');
+  const {error} = await sb.from('shifts').delete().in('id', ids);
+  setSync(error?'error':'saved', error?'⚠️ Unable to save':'Saved ✓');
+  toast(`${ids.length} shift${ids.length>1?'s':''} cancelled`);
 }
 function toast(msg){
   const t=document.getElementById('toast');
