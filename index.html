@@ -252,6 +252,21 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
 .budget-bar-fill{height:100%;border-radius:999px;}
 .budget-remaining-band{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-radius:14px;margin-top:6px;font-size:13.5px;font-weight:700;}
 
+/* ---- Fancy live-update notification ---- */
+#fancyNotifyRoot{position:fixed;top:0;left:0;right:0;display:flex;justify-content:center;z-index:300;pointer-events:none;padding-top:max(14px, env(safe-area-inset-top));}
+.fancy-notify{
+  pointer-events:auto;display:flex;align-items:center;gap:12px;max-width:360px;width:calc(100% - 32px);
+  background:linear-gradient(135deg,var(--card),var(--card-2));border:1px solid var(--accent);border-radius:16px;
+  padding:14px 16px;box-shadow:0 12px 32px rgba(0,0,0,0.35);
+  transform:translateY(-120%); opacity:0; transition:transform 0.4s cubic-bezier(.2,.9,.3,1.3), opacity 0.3s ease;
+}
+.fancy-notify.show{transform:translateY(0); opacity:1;}
+.fancy-notify-icon{width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;animation:fancyPop 0.5s ease;}
+@keyframes fancyPop{0%{transform:scale(0.4);}60%{transform:scale(1.15);}100%{transform:scale(1);}}
+.fancy-notify-text{flex:1;font-size:13px;line-height:1.35;}
+.fancy-notify-text strong{display:block;font-size:13.5px;margin-bottom:1px;}
+.fancy-notify-close{background:none;border:none;color:var(--text-faint);font-size:16px;padding:2px;flex-shrink:0;}
+
 .week-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .week-nav-btn{background:var(--card-2);border:1px solid var(--line);color:var(--text);border-radius:8px;width:34px;height:34px;font-size:15px;}
 .week-total{font-family:'Fraunces',serif;font-weight:700;font-size:22px;color:var(--green);}
@@ -344,6 +359,7 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
 </div>
 
 <div id="modalRoot"></div>
+<div id="fancyNotifyRoot"></div>
 <div id="toast"></div>
 
 <script>
@@ -546,6 +562,45 @@ function salaryCreditForWeek(employer, weekStart){
   if(!hasShift) return 0;
   return versionForDate(employer.salaryVersions, weekStart)?.amount||0;
 }
+
+/* =========================================================================
+   PAYDAY TRACKING
+   ========================================================================= */
+function nextPaydayForEmployer(emp, fromISO){
+  const pc = emp.payCycle;
+  if(!pc || !pc.enabled || !pc.payDay) return null;
+  const freqDays = pc.frequency==='fortnightly' ? 14 : 7;
+  const targetDow = DOW_SHORT.indexOf(pc.payDay);
+  if(pc.frequency==='fortnightly' && pc.anchorDate){
+    let d = pc.anchorDate;
+    while(isoCompare(d, fromISO) < 0) d = addDays(d, freqDays);
+    return d;
+  }
+  let d = fromISO;
+  while(dowIndex(d) !== targetDow) d = addDays(d, 1);
+  if(isoCompare(d, fromISO) < 0) d = addDays(d, freqDays);
+  return d;
+}
+function payPeriodEarnings(emp, paydayISO, freqDays){
+  const periodStart = addDays(paydayISO, -freqDays);
+  const periodEnd = addDays(paydayISO, -1);
+  if(emp.payMode==='salary'){
+    return weeksWithShiftsForEmployer(emp.id, periodStart, periodEnd).reduce((sum,ws)=>sum+salaryCreditForWeek(emp,ws),0);
+  }
+  return STATE.shifts.filter(s=>s.employerId===emp.id && isoCompare(s.date,periodStart)>=0 && isoCompare(s.date,periodEnd)<=0)
+    .reduce((sum,s)=>sum+(s.locked?.totalPay||0),0);
+}
+function upcomingPaydays(){
+  const today = getTodaySydney();
+  return STATE.employers.filter(e=>!e.archived && e.payCycle?.enabled)
+    .map(emp=>{
+      const freqDays = emp.payCycle.frequency==='fortnightly' ? 14 : 7;
+      const payday = nextPaydayForEmployer(emp, today);
+      if(!payday) return null;
+      const amount = payPeriodEarnings(emp, payday, freqDays);
+      return { emp, payday, amount, isToday: payday===today };
+    }).filter(Boolean).sort((a,b)=>isoCompare(a.payday,b.payday));
+}
 const FY27_START='2026-07-01';
 function mkRate(label,days,timeFrom,timeTo,amount){return {id:uid('rate'),label,days,timeFrom,timeTo,versions:[{amount,effectiveFrom:FY27_START}]};}
 function mkBonus(label,type,amount){return {id:uid('bonus'),label,type,versions:[{amount,effectiveFrom:FY27_START}]};}
@@ -666,12 +721,14 @@ async function afterLogin(){
     STATE.ownerId = STATE.uid;
     await loadAdminData();
     subscribeRealtimeAdmin();
+    setupNotifyChannel(STATE.uid, false);
   } else {
     // find which owner this viewer is linked to
     const {data:links} = await sb.from('viewer_links').select('owner_id').eq('viewer_id', STATE.uid).limit(1);
     if(!links || !links.length){ setSync('error','No linked account'); return; }
     STATE.ownerId = links[0].owner_id;
     await loadViewerData();
+    setupNotifyChannel(STATE.ownerId, true);
   }
   setSync('saved','Synced');
   render();
@@ -726,7 +783,7 @@ async function loadViewerData(){
   }));
 }
 function rowToEmployer(row){
-  return { id:row.id, name:row.name, rates:row.rates, bonuses:row.bonuses, breakRule:row.break_rule, archived:!!row.archived, icon:row.icon||'💼', color:row.color||'#7C9CFF', payMode:row.pay_mode||'hourly', salaryVersions:row.salary_versions||[] };
+  return { id:row.id, name:row.name, rates:row.rates, bonuses:row.bonuses, breakRule:row.break_rule, archived:!!row.archived, icon:row.icon||'💼', color:row.color||'#7C9CFF', payMode:row.pay_mode||'hourly', salaryVersions:row.salary_versions||[], payCycle:row.pay_cycle||{} };
 }
 function rowToShift(row){
   return {
@@ -820,6 +877,7 @@ async function deleteShiftRow(id){
   if(!navigator.onLine){ offlineQueue.push({type:'delete', table:'shifts', id}); persistQueue(); setSync('error','Waiting to sync'); return; }
   const {error} = await sb.from('shifts').delete().eq('id', id);
   setSync(error?'error':'saved', error?'⚠️ Unable to save':'Saved ✓');
+  if(!error) notifyViewers('🗑️', 'Shift removed', 'A shift was deleted from the diary');
 }
 
 /* =========================================================================
@@ -849,6 +907,43 @@ function render(){
     }
     fab2.classList.toggle('hidden', STATE.activeTab!=='diary');
   }
+}
+
+/* =========================================================================
+   REAL-TIME LIVE-UPDATE NOTIFICATIONS (broadcast, no data exposure)
+   ========================================================================= */
+let notifyChannel = null;
+function setupNotifyChannel(channelKey, isReceiver){
+  if(notifyChannel) sb.removeChannel(notifyChannel);
+  notifyChannel = sb.channel('wq-notify-'+channelKey);
+  if(isReceiver){
+    notifyChannel.on('broadcast', {event:'shift_change'}, (msg)=> showFancyNotification(msg.payload));
+  }
+  notifyChannel.subscribe();
+}
+function notifyViewers(icon, title, message){
+  if(!notifyChannel || STATE.role!=='admin') return;
+  notifyChannel.send({type:'broadcast', event:'shift_change', payload:{icon, title, message}});
+}
+let _fancyTimeout=null;
+function showFancyNotification({icon, title, message}){
+  const root = document.getElementById('fancyNotifyRoot');
+  root.innerHTML = `<div class="fancy-notify" id="fancyNotify">
+    <div class="fancy-notify-icon">${icon||'🔔'}</div>
+    <div class="fancy-notify-text"><strong>${escapeHtml(title||'Update')}</strong>${escapeHtml(message||'')}</div>
+    <button class="fancy-notify-close" onclick="dismissFancyNotification()">×</button>
+  </div>`;
+  requestAnimationFrame(()=>document.getElementById('fancyNotify')?.classList.add('show'));
+  clearTimeout(_fancyTimeout);
+  _fancyTimeout = setTimeout(dismissFancyNotification, 4500);
+  // Refresh the viewer's shared shift data so what they see next matches the update
+  if(STATE.role==='viewer') loadViewerData().then(()=>{ if(STATE.activeTab!=='settings') render(); });
+}
+function dismissFancyNotification(){
+  const el = document.getElementById('fancyNotify');
+  if(!el) return;
+  el.classList.remove('show');
+  setTimeout(()=>{ document.getElementById('fancyNotifyRoot').innerHTML=''; }, 350);
 }
 
 /* =========================================================================
@@ -1167,7 +1262,21 @@ function renderTimeline(){
     const monthKey = w.end.slice(0,7);
     (byMonth[monthKey] = byMonth[monthKey]||[]).push(w);
   }
-  let html = `<h2 style="margin-bottom:6px;">${fy.key} timeline</h2><p class="muted small" style="margin-bottom:10px;">${fy.start} to ${fy.end}</p>`;
+  const paydays = upcomingPaydays();
+  let html = '';
+  if(paydays.length){
+    html += `<h2 style="margin-bottom:10px;">Upcoming paydays</h2>`;
+    paydays.forEach(p=>{
+      const daysAway = (dateFromISO(p.payday)-dateFromISO(getTodaySydney()))/86400000;
+      const label = p.isToday ? 'Today' : daysAway===1 ? 'Tomorrow' : `${DOW_LONG[dowIndex(p.payday)]} ${formatAUShort(p.payday)}`;
+      html += `<div class="tl-week" style="${p.isToday?'background:var(--green-dim);border-radius:10px;padding-left:8px;':''}">
+        <span class="rng">${p.emp.icon||''} ${escapeHtml(p.emp.name)} · ${label}</span>
+        <span class="amt" style="color:${p.isToday?'var(--green)':'var(--text)'};">$${p.amount.toFixed(2)}</span>
+      </div>`;
+    });
+    html += `<p class="muted small" style="margin:10px 0 20px;">Set a payday per job in Pay Rates → Edit job. Amounts reflect shifts already logged for that pay period.</p>`;
+  }
+  html += `<h2 style="margin-bottom:6px;">${fy.key} timeline</h2><p class="muted small" style="margin-bottom:10px;">${fy.start} to ${fy.end}</p>`;
   for(const key of Object.keys(byMonth).sort()){
     const [y,m] = key.split('-').map(Number);
     html += `<div class="tl-month"><h3>${MONTH_LONG[m-1]} ${y}</h3>`;
@@ -1582,6 +1691,7 @@ function renderAdminDiary(){
     const credit = salaryCreditForWeek(e, week.start);
     return credit>0 ? `${e.icon||''} ${e.name} salary $${credit.toFixed(2)} included` : null;
   }).filter(Boolean).join(' · ');
+  const todaysPaydays = upcomingPaydays().filter(p=>p.isToday);
   let html = `
     <div class="card card-pad" style="margin-bottom:16px;background:linear-gradient(135deg,var(--card),var(--card-2));">
       <div class="row" style="justify-content:space-between;">
@@ -1589,6 +1699,10 @@ function renderAdminDiary(){
         <div style="text-align:right;"><div class="eyebrow">This week</div><div class="display" style="font-size:24px;color:var(--green);">$${total.toFixed(2)}</div></div>
       </div>
     </div>
+    ${todaysPaydays.length ? `<div class="card card-pad" style="margin-bottom:16px;background:var(--green-dim);border-color:var(--green);">
+      <div class="eyebrow" style="color:var(--green);">💰 Payday today</div>
+      ${todaysPaydays.map(p=>`<div class="row" style="justify-content:space-between;margin-top:4px;"><span>${p.emp.icon||''} ${escapeHtml(p.emp.name)}</span><span class="num" style="font-weight:700;color:var(--green);">$${p.amount.toFixed(2)}</span></div>`).join('')}
+    </div>` : ''}
     <div class="week-head">
       <button class="week-nav-btn" onclick="navWeek(-1)">‹</button>
       <div style="text-align:center;">
@@ -1804,7 +1918,7 @@ async function saveBonusVersion(empId, bonusId){
 }
 async function saveEmployer(emp){
   setSync('saving','Saving…');
-  const row = { id:emp.id, owner_id:STATE.uid, name:emp.name, rates:emp.rates, bonuses:emp.bonuses, break_rule:emp.breakRule, archived:!!emp.archived, icon:emp.icon||'💼', color:emp.color||'#7C9CFF', pay_mode:emp.payMode||'hourly', salary_versions:emp.salaryVersions||[] };
+  const row = { id:emp.id, owner_id:STATE.uid, name:emp.name, rates:emp.rates, bonuses:emp.bonuses, break_rule:emp.breakRule, archived:!!emp.archived, icon:emp.icon||'💼', color:emp.color||'#7C9CFF', pay_mode:emp.payMode||'hourly', salary_versions:emp.salaryVersions||[], pay_cycle:emp.payCycle||{} };
   if(!navigator.onLine){ offlineQueue.push({type:'upsert', table:'employers', row}); persistQueue(); setSync('error','Waiting to sync'); return; }
   const {error} = await sb.from('employers').upsert(row);
   setSync(error?'error':'saved', error?'⚠️ Unable to save':'Saved ✓');
@@ -2006,8 +2120,45 @@ function openEditJobModal(empId){
       ${(emp.bonuses||[]).length ? emp.bonuses.map(b=>`<div class="rate-row"><span class="muted">${escapeHtml(b.label)}</span><button class="btn btn-sm btn-danger" onclick="deleteBonus('${empId}','${b.id}')">Remove</button></div>`).join('') : `<p class="muted small">No bonuses on this job.</p>`}
     `}
     <hr style="border:none;border-top:1px solid var(--line-soft);margin:18px 0;">
+    <div class="row" style="justify-content:space-between;margin-bottom:8px;"><strong style="font-size:14px;">Payday</strong></div>
+    <div class="field" style="display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" id="pcEnabled" style="width:auto;" ${emp.payCycle?.enabled?'checked':''} onchange="document.getElementById('pcFields').classList.toggle('hidden',!this.checked)">
+      <label style="margin:0;text-transform:none;font-size:14px;font-weight:500;color:var(--text);">Track a payday for this job</label>
+    </div>
+    <div id="pcFields" class="${emp.payCycle?.enabled?'':'hidden'}">
+      <div class="field-row">
+        <div class="field"><label>Frequency</label>
+          <select id="pcFrequency" onchange="document.getElementById('pcAnchorWrap').classList.toggle('hidden',this.value!=='fortnightly')">
+            <option value="weekly" ${emp.payCycle?.frequency==='weekly'?'selected':''}>Weekly</option>
+            <option value="fortnightly" ${emp.payCycle?.frequency==='fortnightly'?'selected':''}>Fortnightly</option>
+          </select>
+        </div>
+        <div class="field"><label>Pay day</label>
+          <select id="pcPayDay">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<option value="${d}" ${emp.payCycle?.payDay===d?'selected':''}>${d}</option>`).join('')}</select>
+        </div>
+      </div>
+      <div class="field ${emp.payCycle?.frequency==='fortnightly'?'':'hidden'}" id="pcAnchorWrap">
+        <label>A recent known payday (sets the fortnight pattern)</label>
+        <input type="date" id="pcAnchor" value="${emp.payCycle?.anchorDate||getTodaySydney()}">
+      </div>
+      <button class="btn" onclick="savePayCycle('${empId}')">Save payday</button>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--line-soft);margin:18px 0;">
     ${deleteSection}
   `);
+}
+async function savePayCycle(empId){
+  const emp = getEmployer(empId);
+  const enabled = document.getElementById('pcEnabled').checked;
+  emp.payCycle = {
+    enabled,
+    frequency: document.getElementById('pcFrequency').value,
+    payDay: document.getElementById('pcPayDay').value,
+    anchorDate: document.getElementById('pcAnchor')?.value || getTodaySydney(),
+  };
+  await saveEmployer(emp);
+  render();
+  toast(enabled?'Payday tracking on':'Payday tracking off');
 }
 async function saveSalaryVersion(empId){
   const emp = getEmployer(empId);
@@ -2406,6 +2557,10 @@ async function saveShiftModal(existingId){
   closeModal(); render();
   for(const row of rows) await writeShift(row);
   toast(existingId?'Shift updated': rows.length>1?`${rows.length} shifts added`:'Shift added');
+  const dateLabel = `${DOW_LONG[dowIndex(date)]} ${formatAUShort(date)}`;
+  if(existingId) notifyViewers(emp?.icon||'📅', 'Shift updated', `${emp?emp.name:'A shift'} on ${dateLabel}`);
+  else if(rows.length>1) notifyViewers(emp?.icon||'📅', 'Shifts added', `${rows.length} recurring shifts for ${emp?emp.name:'a job'}`);
+  else notifyViewers(emp?.icon||'📅', 'New shift added', `${emp?emp.name:'A shift'} on ${dateLabel}`);
 }
 async function deleteShiftModal(id){
   if(!confirm('Delete this shift?')) return;
@@ -2424,6 +2579,7 @@ async function cancelSeries(seriesId, fromDate){
   const {error} = await sb.from('shifts').delete().in('id', ids);
   setSync(error?'error':'saved', error?'⚠️ Unable to save':'Saved ✓');
   toast(`${ids.length} shift${ids.length>1?'s':''} cancelled`);
+  if(!error) notifyViewers('🗑️', 'Shifts cancelled', `${ids.length} upcoming shift${ids.length>1?'s were':' was'} cancelled`);
 }
 function toast(msg){
   const t=document.getElementById('toast');
