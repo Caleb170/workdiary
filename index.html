@@ -81,6 +81,32 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
 .login-error{color:var(--rust);font-size:13px;margin-top:14px;min-height:18px;}
 .login-loading{color:var(--text-dim);font-size:13px;margin-top:14px;}
 
+/* ---- Landing / demo ---- */
+#landing-screen, #email-screen, #profile-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.landing-wrap{display:flex;flex-direction:column;align-items:center;text-align:center;max-width:440px;width:100%;}
+.landing-brand{font-family:'Fraunces',serif;font-weight:700;font-size:38px;letter-spacing:-0.01em;}
+.landing-tag{color:var(--text-dim);font-size:15px;margin:8px 0 28px;max-width:340px;}
+.back-btn{position:absolute;top:max(18px,env(safe-area-inset-top));left:18px;background:none;border:none;color:var(--text-dim);font-size:14px;font-weight:600;}
+.link-btn{background:none;border:none;color:var(--accent);font-size:13.5px;font-weight:600;margin-top:16px;}
+
+.demo-carousel{width:100%;max-width:320px;height:260px;position:relative;margin-bottom:28px;border-radius:20px;overflow:hidden;background:var(--card);border:1px solid var(--line-soft);box-shadow:0 16px 40px rgba(0,0,0,0.25);}
+.demo-slide{position:absolute;inset:0;padding:20px;opacity:0;transition:opacity 0.6s ease;display:flex;flex-direction:column;}
+.demo-slide.active{opacity:1;}
+.demo-dots{position:absolute;bottom:12px;left:0;right:0;display:flex;justify-content:center;gap:6px;}
+.demo-dot{width:6px;height:6px;border-radius:50%;background:var(--line);}
+.demo-dot.active{background:var(--accent);width:16px;border-radius:3px;transition:all 0.3s;}
+
+/* ---- Profile picker (Netflix-style) ---- */
+.profile-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:20px;margin:24px 0 8px;}
+.profile-tile{display:flex;flex-direction:column;align-items:center;gap:10px;background:none;border:none;color:var(--text);width:110px;}
+.profile-avatar{width:88px;height:88px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;border:2px solid transparent;transition:border-color 0.15s, transform 0.15s;}
+.profile-tile:active .profile-avatar{transform:scale(0.94);}
+.profile-tile:hover .profile-avatar, .profile-tile:focus .profile-avatar{border-color:var(--accent);}
+.profile-name{font-size:13.5px;font-weight:600;}
+.profile-role{font-size:10.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.05em;}
+.profile-tile.add .profile-avatar{background:var(--card-2);border:2px dashed var(--line);font-size:28px;color:var(--text-faint);}
+.profile-tile.invite .profile-avatar{background:var(--amber-dim);color:var(--amber);}
+
 /* ---- App shell ---- */
 #app-screen{max-width:640px;margin:0 auto;padding:0 16px 100px;}
 .topbar{
@@ -317,18 +343,48 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
 </head>
 <body>
 
-<div id="login-screen">
-  <div class="login-title">WorkQuest</div>
-  <div class="login-sub">Your work diary</div>
-  <div class="pin-boxes" id="pinBoxes">
-    <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
-    <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
-    <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
-    <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+<div id="landing-screen">
+  <div class="landing-wrap">
+    <div class="landing-brand">WorkQuest</div>
+    <p class="landing-tag">Your shifts, pay, and tax — tracked automatically, synced everywhere.</p>
+    <div class="demo-carousel" id="demoCarousel"></div>
+    <button class="login-btn" style="max-width:320px;" onclick="showScreen('email')">Get started — it's free</button>
   </div>
-  <button class="login-btn" id="loginBtn" disabled onclick="attemptLogin()">Continue</button>
-  <div class="login-loading hidden" id="loginLoading">Signing in…</div>
-  <div class="login-error" id="loginError"></div>
+</div>
+
+<div id="email-screen" class="hidden">
+  <div class="landing-wrap">
+    <button class="back-btn" onclick="showScreen('landing')">‹ Back</button>
+    <div class="login-title" style="font-size:26px;">Sign in</div>
+    <div class="login-sub" id="emailSub">Enter your email — no password needed</div>
+    <div id="emailStep">
+      <div class="field" style="width:100%;max-width:320px;"><input type="email" id="emailInput" placeholder="you@example.com" autocomplete="email"></div>
+      <button class="login-btn" style="max-width:320px;" onclick="sendOtp()" id="sendOtpBtn">Send me a code</button>
+    </div>
+    <div id="otpStep" class="hidden">
+      <div class="pin-boxes" id="otpBoxes" style="max-width:320px;flex-wrap:wrap;justify-content:center;">
+        <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+        <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+        <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+        <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+        <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+        <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+      </div>
+      <button class="login-btn" style="max-width:320px;" id="verifyOtpBtn" disabled onclick="verifyOtp()">Verify & continue</button>
+      <button class="link-btn" onclick="showScreen('email');document.getElementById('emailStep').classList.remove('hidden');document.getElementById('otpStep').classList.add('hidden');">Use a different email</button>
+    </div>
+    <div class="login-loading hidden" id="emailLoading">Working…</div>
+    <div class="login-error" id="emailError"></div>
+  </div>
+</div>
+
+<div id="profile-screen" class="hidden">
+  <div class="landing-wrap" style="max-width:520px;">
+    <div class="login-title" style="font-size:26px;">Who's this?</div>
+    <div class="login-sub">Select a profile to continue</div>
+    <div class="profile-grid" id="profileGrid"></div>
+    <button class="link-btn" onclick="fullSignOut()">Sign out</button>
+  </div>
 </div>
 
 <div id="app-screen" class="hidden">
@@ -372,13 +428,6 @@ document.documentElement.setAttribute('data-theme', localStorage.getItem('wq_the
 const SUPABASE_URL = 'https://amppadqaygmfqtcsiesn.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_O03dMgtLJEdG5RnmGPt2ng_dh2uQj8r';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// Deterministic PIN -> credential mapping. See setup notes: create these two
-// auth users in the Supabase dashboard with these exact passwords.
-function credsForCode(code){
-  return { email: `code-${code}@workquest.internal`, password: `WQ-${code}-Wq9x2LmP!` };
-}
-const ROLE_FOR_CODE = { '1703':'admin', '1804':'viewer' };
 
 /* =========================================================================
    DATE / FY ENGINE (ported from original app, unchanged logic)
@@ -566,9 +615,22 @@ function salaryCreditForWeek(employer, weekStart){
 /* =========================================================================
    PAYDAY TRACKING
    ========================================================================= */
+function monthlyDom(y, m, dom){
+  const daysInM = new Date(Date.UTC(y,m,0)).getUTCDate();
+  if(dom==='last') return isoFromParts(y,m,daysInM);
+  return isoFromParts(y,m,Math.min(Number(dom),daysInM));
+}
 function nextPaydayForEmployer(emp, fromISO){
   const pc = emp.payCycle;
-  if(!pc || !pc.enabled || !pc.payDay) return null;
+  if(!pc || !pc.enabled) return null;
+  if(pc.frequency==='monthly'){
+    if(!pc.payDayOfMonth) return null;
+    let [y,m] = fromISO.split('-').map(Number);
+    let candidate = monthlyDom(y,m,pc.payDayOfMonth);
+    if(isoCompare(candidate, fromISO) < 0){ m+=1; if(m>12){m=1;y++;} candidate = monthlyDom(y,m,pc.payDayOfMonth); }
+    return candidate;
+  }
+  if(!pc.payDay) return null;
   const freqDays = pc.frequency==='fortnightly' ? 14 : 7;
   const targetDow = DOW_SHORT.indexOf(pc.payDay);
   if(pc.frequency==='fortnightly' && pc.anchorDate){
@@ -581,9 +643,19 @@ function nextPaydayForEmployer(emp, fromISO){
   if(isoCompare(d, fromISO) < 0) d = addDays(d, freqDays);
   return d;
 }
-function payPeriodEarnings(emp, paydayISO, freqDays){
-  const periodStart = addDays(paydayISO, -freqDays);
-  const periodEnd = addDays(paydayISO, -1);
+function payPeriodBounds(emp, paydayISO){
+  const freq = emp.payCycle.frequency;
+  if(freq==='monthly'){
+    const [y,m] = paydayISO.split('-').map(Number);
+    let py=y, pm=m-1; if(pm<1){pm=12;py--;}
+    const daysInPm = new Date(Date.UTC(py,pm,0)).getUTCDate();
+    return { periodStart: isoFromParts(py,pm,1), periodEnd: isoFromParts(py,pm,daysInPm) };
+  }
+  const freqDays = freq==='fortnightly' ? 14 : 7;
+  return { periodStart: addDays(paydayISO,-freqDays), periodEnd: addDays(paydayISO,-1) };
+}
+function payPeriodEarnings(emp, paydayISO){
+  const {periodStart, periodEnd} = payPeriodBounds(emp, paydayISO);
   if(emp.payMode==='salary'){
     return weeksWithShiftsForEmployer(emp.id, periodStart, periodEnd).reduce((sum,ws)=>sum+salaryCreditForWeek(emp,ws),0);
   }
@@ -594,79 +666,19 @@ function upcomingPaydays(){
   const today = getTodaySydney();
   return STATE.employers.filter(e=>!e.archived && e.payCycle?.enabled)
     .map(emp=>{
-      const freqDays = emp.payCycle.frequency==='fortnightly' ? 14 : 7;
       const payday = nextPaydayForEmployer(emp, today);
       if(!payday) return null;
-      const amount = payPeriodEarnings(emp, payday, freqDays);
+      const amount = payPeriodEarnings(emp, payday);
       return { emp, payday, amount, isToday: payday===today };
     }).filter(Boolean).sort((a,b)=>isoCompare(a.payday,b.payday));
 }
-const FY27_START='2026-07-01';
-function mkRate(label,days,timeFrom,timeTo,amount){return {id:uid('rate'),label,days,timeFrom,timeTo,versions:[{amount,effectiveFrom:FY27_START}]};}
-function mkBonus(label,type,amount){return {id:uid('bonus'),label,type,versions:[{amount,effectiveFrom:FY27_START}]};}
-function defaultEmployers(){
-  return [
-    { id:'emp_coles', name:'Coles', icon:'🛒', color:'#E4572E',
-      rates:[ mkRate('Mon–Fri before 6pm',['Mon','Tue','Wed','Thu','Fri'],null,'18:00',18.12),
-              mkRate('Mon–Fri after 6pm',['Mon','Tue','Wed','Thu','Fri'],'18:00',null,21.75),
-              mkRate('Saturday',['Sat'],null,null,21.75),
-              mkRate('Sunday before 9am',['Sun'],null,'09:00',32.62),
-              mkRate('Sunday from 9am',['Sun'],'09:00',null,25.37),
-              mkRate('NSW public holiday',['PH'],null,null,32.62) ],
-      bonuses:[], breakRule:{enabled:true,triggerHours:5,breakMinutes:30} },
-    { id:'emp_maccas', name:"McDonald's", icon:'🍟', color:'#FFC72C',
-      rates:[ mkRate('Mon–Fri',['Mon','Tue','Wed','Thu','Fri'],null,null,13.91),
-              mkRate('Sat–Sun',['Sat','Sun'],null,null,17.39),
-              mkRate('NSW public holiday',['PH'],null,null,31.30) ],
-      bonuses:[ mkBonus('Crew Coach bonus','per_hour',0.50), mkBonus('Shift bonus','per_shift',1.25) ],
-      breakRule:{enabled:true,triggerHours:5,breakMinutes:30} },
-    { id:'emp_gym', name:'Gym', icon:'🏋️', color:'#34D399',
-      rates:[ mkRate('Mon–Fri',['Mon','Tue','Wed','Thu','Fri'],null,null,17.70) ],
-      bonuses:[], breakRule:{enabled:false,triggerHours:5,breakMinutes:30} },
-  ];
-}
-const SEED_SHIFTS=[
-  {date:'2026-07-16',employerId:'emp_gym',start:'16:00',end:'19:30'},
-  {date:'2026-07-17',employerId:'emp_coles',start:'09:00',end:'16:00'},
-  {date:'2026-07-18',employerId:'emp_coles',start:'17:15',end:'21:00'},
-  {date:'2026-07-20',employerId:'emp_gym',start:'16:00',end:'19:30'},
-  {date:'2026-07-21',employerId:'emp_gym',start:'16:00',end:'19:30'},
-  {date:'2026-07-22',employerId:'emp_gym',start:'16:00',end:'19:30'},
-  {date:'2026-07-23',employerId:'emp_gym',start:'16:00',end:'19:30'},
-  {date:'2026-07-25',employerId:'emp_maccas',start:'06:00',end:'14:00'},
-  {date:'2026-07-25',employerId:'emp_coles',start:'19:00',end:'22:00'},
-  {date:'2026-07-26',employerId:'emp_coles',start:'09:00',end:'14:00'},
-  {date:'2026-07-27',employerId:'emp_gym',start:'16:00',end:'19:30'},
-  {date:'2026-07-28',employerId:'emp_coles',start:'16:00',end:'19:00'},
-  {date:'2026-07-29',employerId:'emp_coles',start:'19:00',end:'22:00'},
-  {date:'2026-07-30',employerId:'emp_gym',start:'16:00',end:'19:30'},
-  {date:'2026-07-31',employerId:'emp_coles',start:'16:00',end:'19:45'},
-  {date:'2026-08-01',employerId:'emp_maccas',start:'06:00',end:'14:00'},
-  {date:'2026-08-02',employerId:'emp_coles',start:'07:00',end:'10:45'},
-  {date:'2026-08-06',employerId:'emp_gym',start:'16:00',end:'19:30'},
-  {date:'2026-08-10',employerId:'emp_gym',start:'16:00',end:'19:30'},
-  {date:'2026-08-13',employerId:'emp_gym',start:'16:00',end:'19:30'},
-  {date:'2026-08-15',employerId:'emp_coles',start:'18:30',end:'22:00'},
-  {date:'2026-08-16',employerId:'emp_coles',start:'08:00',end:'13:00'},
-  {date:'2026-08-17',employerId:'emp_gym',start:'16:00',end:'19:30'},
-  {date:'2026-08-18',employerId:'emp_coles',start:'18:30',end:'22:00'},
-  {date:'2026-08-19',employerId:'emp_coles',start:'18:30',end:'22:00'},
-  {date:'2026-08-20',employerId:'emp_gym',start:'16:00',end:'19:30'},
-  {date:'2026-08-22',employerId:'emp_maccas',start:'06:00',end:'10:30'},
-  {date:'2026-08-22',employerId:'emp_coles',start:'16:00',end:'21:00'},
-  {date:'2026-08-23',employerId:'emp_coles',start:'07:00',end:'15:00'},
-  {date:'2026-08-24',employerId:'emp_gym',start:'16:00',end:'19:30'},
-  {date:'2026-08-26',employerId:'emp_coles',start:'18:30',end:'22:00'},
-  {date:'2026-08-27',employerId:'emp_gym',start:'16:00',end:'19:30'},
-  {date:'2026-08-29',employerId:'emp_maccas',start:'06:00',end:'14:00'},
-  {date:'2026-08-29',employerId:'emp_coles',start:'19:00',end:'22:00'},
-];
-
+function mkRate(label,days,timeFrom,timeTo,amount){return {id:uid('rate'),label,days,timeFrom,timeTo,versions:[{amount,effectiveFrom:getTodaySydney()}]};}
+function mkBonus(label,type,amount){return {id:uid('bonus'),label,type,versions:[{amount,effectiveFrom:getTodaySydney()}]};}
 /* =========================================================================
    STATE
    ========================================================================= */
 let STATE={
-  role:null, uid:null, ownerId:null,     // ownerId = whose data we're viewing (self for admin, linked owner for viewer)
+  role:null, uid:null, ownerId:null, accountId:null, authUid:null, email:null,
   employers:[], shifts:[], plannedShifts:[],
   holidays:[], budget:{mode:'recommended', categories:[]},
   weekStart: weekForDate(getTodaySydney()).start,
@@ -682,92 +694,217 @@ function dayTotal(iso){ return shiftsOnDate(iso).reduce((sum,s)=>sum+(s.locked?.
 /* =========================================================================
    AUTH
    ========================================================================= */
-async function attemptLogin(){
-  const code = [...document.querySelectorAll('#pinBoxes input')].map(i=>i.value).join('');
-  if(code.length!==4) return;
-  const role = ROLE_FOR_CODE[code];
-  setLoginBusy(true);
-  const {email,password} = credsForCode(code);
-  const {data,error} = await sb.auth.signInWithPassword({email,password});
-  setLoginBusy(false);
-  if(error || !role){
-    showLoginError('Incorrect code');
-    return;
-  }
-  STATE.role = role;
-  STATE.uid = data.user.id;
-  await afterLogin();
-}
-function setLoginBusy(b){
-  document.getElementById('loginLoading').classList.toggle('hidden', !b);
-  document.getElementById('loginBtn').disabled = b;
-}
-function showLoginError(msg){
-  document.getElementById('loginError').textContent = msg;
-  document.querySelectorAll('#pinBoxes input').forEach(i=>i.value='');
-  document.querySelectorAll('#pinBoxes input')[0].focus();
-}
-async function afterLogin(){
-  document.getElementById('login-screen').classList.add('hidden');
+async function enterApp(){
+  ['landing-screen','email-screen','profile-screen'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('app-screen').classList.remove('hidden');
   document.getElementById('roleBadge').textContent = STATE.role==='admin' ? 'Admin' : 'Viewer';
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('hidden'));
   if(STATE.role==='viewer'){
     ['settings','timeline','tax','budget'].forEach(t=>document.querySelector(`[data-tab="${t}"]`).classList.add('hidden'));
   }
   initTheme();
   renderFyPill();
   setSync('saving','Loading…');
+  STATE.ownerId = STATE.accountId;
   if(STATE.role==='admin'){
-    STATE.ownerId = STATE.uid;
     await loadAdminData();
     subscribeRealtimeAdmin();
-    setupNotifyChannel(STATE.uid, false);
+    setupNotifyChannel(STATE.accountId, false);
   } else {
-    // find which owner this viewer is linked to
-    const {data:links} = await sb.from('viewer_links').select('owner_id').eq('viewer_id', STATE.uid).limit(1);
-    if(!links || !links.length){ setSync('error','No linked account'); return; }
-    STATE.ownerId = links[0].owner_id;
     await loadViewerData();
-    setupNotifyChannel(STATE.ownerId, true);
+    setupNotifyChannel(STATE.accountId, true);
   }
   setSync('saved','Synced');
   render();
   if(STATE.role==='admin') startTickerWatcher();
 }
+function resetAppState(){
+  clearInterval(tickerBannerInterval);
+  clearInterval(tickerModalInterval);
+  clearInterval(_bannerTickInterval);
+  if(realtimeChannel){ sb.removeChannel(realtimeChannel); realtimeChannel=null; }
+  if(notifyChannel){ sb.removeChannel(notifyChannel); notifyChannel=null; notifyChannelReady=false; }
+  document.getElementById('app-screen').classList.add('hidden');
+  const banner = document.getElementById('onShiftBanner');
+  if(banner){ banner.classList.add('hidden'); banner.innerHTML=''; }
+}
 function logout(){
+  // Keep the email session alive, just return to the profile picker —
+  // matches the Netflix "switch profile" pattern.
+  resetAppState();
+  showScreen('profile');
+  loadProfiles();
+}
+function fullSignOut(){
   sb.auth.signOut();
   location.reload();
+}
+
+/* =========================================================================
+   NEW FRONT DOOR: landing page, email OTP login, Netflix-style profiles
+   ========================================================================= */
+function showScreen(name){
+  const map = {landing:'landing-screen', email:'email-screen', profile:'profile-screen'};
+  Object.values(map).forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById(map[name]).classList.remove('hidden');
+}
+function initDemoCarousel(){
+  const el = document.getElementById('demoCarousel');
+  if(!el) return;
+  const slides = [
+    `<div class="eyebrow" style="text-align:left;">DIARY</div>
+     <div class="day-card" style="margin-top:10px;text-align:left;">
+       <div class="day-top"><span class="day-dow">Saturday</span><span class="day-status st-worked">2 shifts</span></div>
+       <div class="shift-row"><div><div class="shift-emp">🛒 Coles</div><div class="shift-time">6:00 AM → 2:00 PM · 7.50 hrs</div></div><div class="shift-amt money">$135.43</div></div>
+     </div>`,
+    `<div class="eyebrow" style="text-align:left;">CALENDAR</div>
+     <div class="cal-grid" style="margin-top:10px;">${['M','T','W','T','F','S','S'].map(d=>`<div class="cal-dow">${d}</div>`).join('')}${Array.from({length:28},(_,i)=>`<div class="cal-cell ${[4,11,18,25].includes(i)?'worked':''}"><span class="d">${i+1}</span>${[4,11,18,25].includes(i)?'<span class="amt">$135</span>':''}</div>`).join('')}</div>`,
+    `<div class="eyebrow" style="text-align:left;">TAX</div>
+     <div class="tax-hero" style="margin-top:10px;padding:16px;text-align:left;">
+       <div class="eyebrow">FY27 gross earned</div><div class="big-num money" style="font-size:26px;">$8,260.07</div>
+       <div class="muted small">Marginal rate 0% · under the tax-free threshold</div>
+     </div>`,
+  ];
+  el.innerHTML = slides.map((s,i)=>`<div class="demo-slide ${i===0?'active':''}">${s}</div>`).join('')
+    + `<div class="demo-dots">${slides.map((_,i)=>`<div class="demo-dot ${i===0?'active':''}"></div>`).join('')}</div>`;
+  let idx=0;
+  setInterval(()=>{
+    idx=(idx+1)%slides.length;
+    el.querySelectorAll('.demo-slide').forEach((s,i)=>s.classList.toggle('active', i===idx));
+    el.querySelectorAll('.demo-dot').forEach((d,i)=>d.classList.toggle('active', i===idx));
+  }, 3500);
+}
+async function sendOtp(){
+  const email = document.getElementById('emailInput').value.trim();
+  if(!email || !email.includes('@')){ showEmailError('Enter a valid email'); return; }
+  setEmailBusy(true);
+  const {error} = await sb.auth.signInWithOtp({ email, options:{ shouldCreateUser: true } });
+  setEmailBusy(false);
+  if(error){ showEmailError(error.message); return; }
+  document.getElementById('emailStep').classList.add('hidden');
+  document.getElementById('otpStep').classList.remove('hidden');
+  document.getElementById('emailSub').textContent = `We sent a 6-digit code to ${email}`;
+  document.querySelectorAll('#otpBoxes input')[0].focus();
+}
+async function verifyOtp(){
+  const email = document.getElementById('emailInput').value.trim();
+  const token = [...document.querySelectorAll('#otpBoxes input')].map(i=>i.value).join('');
+  if(token.length!==6) return;
+  setEmailBusy(true);
+  const {error} = await sb.auth.verifyOtp({ email, token, type:'email' });
+  setEmailBusy(false);
+  if(error){ showEmailError('Incorrect or expired code'); return; }
+  await loadProfiles();
+  showScreen('profile');
+}
+function setEmailBusy(b){
+  document.getElementById('emailLoading').classList.toggle('hidden', !b);
+  const sb1=document.getElementById('sendOtpBtn'); if(sb1) sb1.disabled=b;
+  const vb=document.getElementById('verifyOtpBtn'); if(vb) vb.disabled=b;
+}
+function showEmailError(msg){ document.getElementById('emailError').textContent = msg; }
+
+async function loadProfiles(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(!session){ showScreen('landing'); return; }
+  STATE.email = session.user.email;
+  STATE.authUid = session.user.id;
+  const {data:memberships} = await sb.from('account_members').select('*').eq('user_id', session.user.id);
+  const {data:invites} = await sb.from('invites').select('*').ilike('email', session.user.email);
+  renderProfileGrid(memberships||[], invites||[]);
+}
+function renderProfileGrid(memberships, invites){
+  const grid = document.getElementById('profileGrid');
+  let html = memberships.map(m=>`
+    <button class="profile-tile" onclick="selectProfile('${m.account_id}','${m.role}','${escapeHtml(m.display_name).replace(/'/g,"\\'")}')">
+      <div class="profile-avatar" style="background:${m.role==='admin'?'var(--accent)':'var(--card-2)'};color:${m.role==='admin'?'var(--on-accent)':'var(--text)'};">${(m.display_name||'?').charAt(0).toUpperCase()}</div>
+      <div class="profile-name">${escapeHtml(m.display_name)}</div>
+      <div class="profile-role">${m.role}</div>
+    </button>`).join('');
+  html += invites.map(inv=>`
+    <button class="profile-tile invite" onclick="claimInvite('${inv.id}','${inv.account_id}','${inv.role}','${escapeHtml(inv.display_name).replace(/'/g,"\\'")}')">
+      <div class="profile-avatar">✉️</div>
+      <div class="profile-name">${escapeHtml(inv.display_name)}</div>
+      <div class="profile-role">Invite · ${inv.role}</div>
+    </button>`).join('');
+  html += `<button class="profile-tile add" onclick="openCreateAccountPrompt()">
+      <div class="profile-avatar">+</div>
+      <div class="profile-name">New</div>
+      <div class="profile-role">Create</div>
+    </button>`;
+  grid.innerHTML = html;
+}
+async function selectProfile(accountId, role, displayName){
+  STATE.role = role; STATE.accountId = accountId; STATE.uid = STATE.authUid; STATE.ownerId = accountId;
+  await enterApp();
+}
+async function claimInvite(inviteId, accountId, role, displayName){
+  await sb.from('account_members').insert({account_id:accountId, user_id:STATE.authUid, role, display_name:displayName});
+  await sb.from('invites').delete().eq('id', inviteId);
+  await selectProfile(accountId, role, displayName);
+}
+function openCreateAccountPrompt(){
+  openModal(`
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h3>Create your WorkQuest</h3>
+    <div class="field"><label>Your name</label><input type="text" id="newAcctName" placeholder="e.g. Caleb"></div>
+    <button class="btn btn-primary btn-block" onclick="createAccount()">Create</button>
+  `);
+}
+async function createAccount(){
+  const name = document.getElementById('newAcctName').value.trim() || 'Me';
+  const {data:acct, error} = await sb.from('accounts').insert({display_name:'WorkQuest', created_by:STATE.authUid}).select().single();
+  if(error){ toast('Could not create account'); return; }
+  await sb.from('account_members').insert({account_id:acct.id, user_id:STATE.authUid, role:'admin', display_name:name});
+  closeModal();
+  await selectProfile(acct.id, 'admin', name);
+}
+function wireDigitBoxes(containerId, btnId, onComplete){
+  const boxes=[...document.querySelectorAll('#'+containerId+' input')];
+  boxes.forEach((box,i)=>{
+    box.addEventListener('input',()=>{
+      box.value = box.value.replace(/[^0-9]/g,'');
+      if(box.value && i<boxes.length-1) boxes[i+1].focus();
+      const btn = document.getElementById(btnId);
+      if(btn) btn.disabled = boxes.some(b=>!b.value);
+    });
+    box.addEventListener('keydown',(e)=>{
+      if(e.key==='Backspace' && !box.value && i>0) boxes[i-1].focus();
+      const btn = document.getElementById(btnId);
+      if(e.key==='Enter' && btn && !btn.disabled) onComplete();
+    });
+  });
 }
 
 /* =========================================================================
    DATA LOADING
    ========================================================================= */
 async function loadAdminData(){
-  let {data:employers} = await sb.from('employers').select('*').order('created_at');
-  if(!employers || !employers.length){
-    // First run: seed defaults + historical shifts
-    await seedAccount();
-    ({data:employers} = await sb.from('employers').select('*').order('created_at'));
-  }
+  const {data:employers} = await sb.from('employers').select('*').eq('account_id', STATE.accountId).order('created_at');
   STATE.employers = (employers||[]).map(rowToEmployer);
-  const {data:shifts} = await sb.from('shifts').select('*').order('date');
+  const {data:shifts} = await sb.from('shifts').select('*').eq('account_id', STATE.accountId).order('date');
   STATE.shifts = (shifts||[]).map(rowToShift);
-  const {data:planned} = await sb.from('planned_shifts').select('*').order('date');
+  const {data:planned} = await sb.from('planned_shifts').select('*').eq('account_id', STATE.accountId).order('date');
   STATE.plannedShifts = (planned||[]).map(rowToPlanned);
   let {data:settingsRows} = await sb.from('settings').select('*').eq('owner_id', STATE.uid).limit(1);
   if(!settingsRows || !settingsRows.length){
-    await sb.from('settings').insert({owner_id:STATE.uid, data:{holidays:[], budget:{mode:'recommended', categories:[]}}});
-    settingsRows = [{owner_id:STATE.uid, data:{holidays:[], budget:{mode:'recommended', categories:[]}}}];
+    const newSettingsRow = {owner_id:STATE.uid, account_id:STATE.accountId, data:{holidays:[], budget:{mode:'recommended', categories:[]}}};
+    await sb.from('settings').insert(newSettingsRow);
+    settingsRows = [newSettingsRow];
   }
   STATE.holidays = settingsRows[0].data.holidays || [];
   STATE.budget = settingsRows[0].data.budget || {mode:'recommended', categories:[]};
+  const {data:members} = await sb.from('account_members').select('*').eq('account_id', STATE.accountId).eq('role','viewer');
+  STATE.viewers = members||[];
+  const {data:invites} = await sb.from('invites').select('*').eq('account_id', STATE.accountId);
+  STATE.pendingInvites = invites||[];
 }
 function rowToPlanned(row){
   return { id:row.id, date:row.date, employerId:row.employer_id, start:row.start_time, end:row.end_time, notes:row.notes };
 }
 async function saveSettings(){
   setSync('saving','Saving…');
-  const row = {owner_id:STATE.uid, data:{holidays:STATE.holidays, budget:STATE.budget}};
+  const row = {owner_id:STATE.uid, account_id:STATE.accountId, data:{holidays:STATE.holidays, budget:STATE.budget}};
   const {error} = await sb.from('settings').upsert(row);
   setSync(error?'error':'saved', error?'⚠️ Unable to save':'Saved ✓');
 }
@@ -775,10 +912,10 @@ function isHoliday(iso){
   return STATE.holidays.some(h=>isoCompare(iso,h.start)>=0 && isoCompare(iso,h.end)<=0);
 }
 async function loadViewerData(){
-  const {data,error} = await sb.rpc('get_shared_shifts', {p_owner_id: STATE.ownerId});
+  const {data, error} = await sb.rpc('get_account_shifts', {p_account_id: STATE.accountId});
   if(error){ toast('Could not load shared shifts'); STATE.shifts=[]; return; }
   STATE.shifts = (data||[]).map(r=>({
-    id: r.date+r.employer+r.start_time, date:r.date, employerName:r.employer,
+    id: r.date+r.employer+(r.start_time||''), date:r.date, employerName:r.employer,
     start:r.start_time, end:r.end_time, hours:r.hours, status:r.status, source:r.source,
   }));
 }
@@ -793,26 +930,6 @@ function rowToShift(row){
     overtimeMultiplier:row.overtime_multiplier||null,
   };
 }
-async function seedAccount(){
-  const employers = defaultEmployers();
-  const empRows = employers.map(e=>({
-    id:e.id, owner_id:STATE.uid, name:e.name, rates:e.rates, bonuses:e.bonuses, break_rule:e.breakRule,
-    icon:e.icon, color:e.color, archived:false,
-  }));
-  await sb.from('employers').insert(empRows);
-  const shiftRows = SEED_SHIFTS.map(s=>{
-    const emp = employers.find(e=>e.id===s.employerId);
-    const shiftDraft = {date:s.date,employerId:s.employerId,start:s.start,end:s.end,breakMode:'auto',breakMinutesManual:null,rateOverride:null};
-    const locked = calculateShiftPay(shiftDraft, emp);
-    return {
-      id:uid('shift'), owner_id:STATE.uid, date:s.date, employer_id:s.employerId,
-      start_time:s.start, end_time:s.end, break_mode:'auto', break_minutes_manual:null,
-      notes:'', pay_date:null, rate_override:null, locked_calc:locked,
-    };
-  });
-  await sb.from('shifts').insert(shiftRows);
-}
-
 /* =========================================================================
    REALTIME + SYNC STATUS
    ========================================================================= */
@@ -913,17 +1030,46 @@ function render(){
    REAL-TIME LIVE-UPDATE NOTIFICATIONS (broadcast, no data exposure)
    ========================================================================= */
 let notifyChannel = null;
+let notifyChannelReady = false;
+let notifyPendingQueue = [];
+let _notifyChannelKey = null, _notifyIsReceiver = false;
 function setupNotifyChannel(channelKey, isReceiver){
-  if(notifyChannel) sb.removeChannel(notifyChannel);
-  notifyChannel = sb.channel('wq-notify-'+channelKey);
+  _notifyChannelKey = channelKey; _notifyIsReceiver = isReceiver;
+  notifyChannelReady = false;
+  if(notifyChannel){ sb.removeChannel(notifyChannel); }
+  notifyChannel = sb.channel('wq-notify-'+channelKey, { config: { broadcast: { self:false, ack:true } } });
   if(isReceiver){
     notifyChannel.on('broadcast', {event:'shift_change'}, (msg)=> showFancyNotification(msg.payload));
   }
-  notifyChannel.subscribe();
+  notifyChannel.subscribe((status)=>{
+    if(status==='SUBSCRIBED'){
+      notifyChannelReady = true;
+      if(!isReceiver && notifyPendingQueue.length){
+        notifyPendingQueue.forEach(p=>notifyChannel.send({type:'broadcast', event:'shift_change', payload:p}));
+        notifyPendingQueue = [];
+      }
+    } else if(status==='CLOSED' || status==='CHANNEL_ERROR' || status==='TIMED_OUT'){
+      notifyChannelReady = false;
+    }
+  });
 }
+// Mobile browsers (especially iOS Safari / installed PWAs) suspend the websocket
+// when the tab/app is backgrounded and don't always reconnect on their own —
+// this is the most likely reason the viewer stopped receiving pops. Re-establish
+// the channel whenever the app becomes visible/foregrounded again.
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible' && _notifyChannelKey && (!notifyChannelReady)){
+    setupNotifyChannel(_notifyChannelKey, _notifyIsReceiver);
+  }
+});
+window.addEventListener('focus', ()=>{
+  if(_notifyChannelKey && !notifyChannelReady) setupNotifyChannel(_notifyChannelKey, _notifyIsReceiver);
+});
 function notifyViewers(icon, title, message){
-  if(!notifyChannel || STATE.role!=='admin') return;
-  notifyChannel.send({type:'broadcast', event:'shift_change', payload:{icon, title, message}});
+  if(STATE.role!=='admin' || !notifyChannel) return;
+  const payload = {icon, title, message};
+  if(!notifyChannelReady){ notifyPendingQueue.push(payload); return; }
+  notifyChannel.send({type:'broadcast', event:'shift_change', payload});
 }
 let _fancyTimeout=null;
 function showFancyNotification({icon, title, message}){
@@ -1840,6 +1986,25 @@ function renderSettings(){
       </div>`;
     }
   }
+  if(STATE.accountId){
+    html += `<h2 style="margin:26px 0 4px;">Viewers</h2><p class="muted small" style="margin-bottom:12px;">People you've given a limited, read-only view of your diary. What each one sees is enforced by the database, not just hidden in this app.</p>`;
+    (STATE.viewers||[]).forEach(v=>{
+      const p = v.permissions||{};
+      html += `<div class="card card-pad" style="margin-bottom:10px;">
+        <div class="row" style="justify-content:space-between;margin-bottom:8px;"><strong>${escapeHtml(v.display_name)}</strong><button class="btn btn-sm btn-danger" onclick="removeViewer('${v.id}')">Remove</button></div>
+        <div class="row wrap" style="gap:14px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;text-transform:none;font-weight:500;"><input type="checkbox" style="width:auto;" ${p.showEmployer!==false?'checked':''} onchange="updateViewerPerm('${v.id}','showEmployer',this.checked)">Employer name</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;text-transform:none;font-weight:500;"><input type="checkbox" style="width:auto;" ${p.showTimes!==false?'checked':''} onchange="updateViewerPerm('${v.id}','showTimes',this.checked)">Shift times</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;text-transform:none;font-weight:500;"><input type="checkbox" style="width:auto;" ${p.showHours!==false?'checked':''} onchange="updateViewerPerm('${v.id}','showHours',this.checked)">Hours</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;text-transform:none;font-weight:500;"><input type="checkbox" style="width:auto;" ${p.showPlanned!==false?'checked':''} onchange="updateViewerPerm('${v.id}','showPlanned',this.checked)">Planned shifts</label>
+        </div>
+      </div>`;
+    });
+    (STATE.pendingInvites||[]).forEach(inv=>{
+      html += `<div class="rate-row"><span class="muted">✉️ ${escapeHtml(inv.email)} — invite pending</span><button class="btn btn-sm btn-danger" onclick="cancelInvite('${inv.id}')">Cancel</button></div>`;
+    });
+    html += `<button class="btn btn-block" onclick="openInviteViewerModal()">+ Invite a viewer by email</button>`;
+  }
   html += `<h2 style="margin:26px 0 12px;">Export</h2>
     <div class="card card-pad" style="margin-bottom:20px;">
       <p class="muted small" style="margin-bottom:12px;">Download a full summary of the selected financial year — gross income, tax estimate, and a per-employer breakdown — as a PDF for your records or tax return.</p>
@@ -1916,9 +2081,55 @@ async function saveBonusVersion(empId, bonusId){
   closeModal(); render();
   toast(`New amount scheduled from ${fmtDateShort(effectiveFrom)}`);
 }
+/* =========================================================================
+   VIEWER MANAGEMENT (account-based logins)
+   ========================================================================= */
+async function updateViewerPerm(memberId, key, value){
+  const v = STATE.viewers.find(x=>x.id===memberId);
+  v.permissions = {...v.permissions, [key]:value};
+  setSync('saving','Saving…');
+  const {error} = await sb.from('account_members').update({permissions:v.permissions}).eq('id', memberId);
+  setSync(error?'error':'saved', error?'⚠️ Unable to save':'Saved ✓');
+}
+async function removeViewer(memberId){
+  if(!confirm('Remove this viewer? They will lose access immediately.')) return;
+  setSync('saving','Saving…');
+  const {error} = await sb.from('account_members').delete().eq('id', memberId);
+  if(!error) STATE.viewers = STATE.viewers.filter(v=>v.id!==memberId);
+  setSync(error?'error':'saved', error?'⚠️ Unable to save':'Saved ✓');
+  render();
+}
+function openInviteViewerModal(){
+  openModal(`
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h3>Invite a viewer</h3>
+    <div class="field"><label>Their email</label><input type="email" id="invEmail" placeholder="name@example.com"></div>
+    <div class="field"><label>Their name</label><input type="text" id="invName" placeholder="e.g. Mum"></div>
+    <p class="muted small">They'll sign in with their own email (no password) and see a limited, read-only view — you can adjust exactly what once they've joined.</p>
+    <button class="btn btn-primary btn-block" onclick="sendInvite()">Send invite</button>
+  `);
+}
+async function sendInvite(){
+  const email = document.getElementById('invEmail').value.trim();
+  const name = document.getElementById('invName').value.trim() || 'Viewer';
+  if(!email || !email.includes('@')){ toast('Enter a valid email'); return; }
+  const {error} = await sb.from('invites').insert({account_id:STATE.accountId, email, role:'viewer', display_name:name});
+  if(error){ toast('Could not send invite'); return; }
+  STATE.pendingInvites = STATE.pendingInvites||[];
+  STATE.pendingInvites.push({id:uid('inv'), email, display_name:name});
+  closeModal(); render();
+  toast(`Invite sent to ${email}`);
+}
+async function cancelInvite(inviteId){
+  await sb.from('invites').delete().eq('id', inviteId);
+  STATE.pendingInvites = STATE.pendingInvites.filter(i=>i.id!==inviteId);
+  render();
+  toast('Invite cancelled');
+}
+
 async function saveEmployer(emp){
   setSync('saving','Saving…');
-  const row = { id:emp.id, owner_id:STATE.uid, name:emp.name, rates:emp.rates, bonuses:emp.bonuses, break_rule:emp.breakRule, archived:!!emp.archived, icon:emp.icon||'💼', color:emp.color||'#7C9CFF', pay_mode:emp.payMode||'hourly', salary_versions:emp.salaryVersions||[], pay_cycle:emp.payCycle||{} };
+  const row = { id:emp.id, owner_id:STATE.uid, account_id:STATE.accountId, name:emp.name, rates:emp.rates, bonuses:emp.bonuses, break_rule:emp.breakRule, archived:!!emp.archived, icon:emp.icon||'💼', color:emp.color||'#7C9CFF', pay_mode:emp.payMode||'hourly', salary_versions:emp.salaryVersions||[], pay_cycle:emp.payCycle||{} };
   if(!navigator.onLine){ offlineQueue.push({type:'upsert', table:'employers', row}); persistQueue(); setSync('error','Waiting to sync'); return; }
   const {error} = await sb.from('employers').upsert(row);
   setSync(error?'error':'saved', error?'⚠️ Unable to save':'Saved ✓');
@@ -2544,7 +2755,7 @@ async function saveShiftModal(existingId){
     const locked=calculateShiftPay(draft,emp);
     const id = (d===date && existingId) ? existingId : uid('shift');
     const row = {
-      id, owner_id:STATE.uid, date:d, employer_id:empId, start_time:start, end_time:end,
+      id, owner_id:STATE.uid, account_id:STATE.accountId, date:d, employer_id:empId, start_time:start, end_time:end,
       break_mode:'auto', break_minutes_manual:null, notes, pay_date:null,
       rate_override:adj.rateOverride, overtime_multiplier:adj.overtimeMultiplier, locked_calc:locked,
       series_id: seriesId,
@@ -2588,37 +2799,17 @@ function toast(msg){
 }
 
 /* =========================================================================
-   PIN INPUT UX
-   ========================================================================= */
-(function initPinBoxes(){
-  const boxes=[...document.querySelectorAll('#pinBoxes input')];
-  boxes.forEach((box,i)=>{
-    box.addEventListener('input',()=>{
-      box.value = box.value.replace(/[^0-9]/g,'');
-      if(box.value && i<boxes.length-1) boxes[i+1].focus();
-      document.getElementById('loginBtn').disabled = boxes.some(b=>!b.value);
-    });
-    box.addEventListener('keydown',(e)=>{
-      if(e.key==='Backspace' && !box.value && i>0) boxes[i-1].focus();
-      if(e.key==='Enter' && !document.getElementById('loginBtn').disabled) attemptLogin();
-    });
-  });
-  boxes[0].focus();
-})();
-
-/* =========================================================================
    INIT — restore session if one exists
    ========================================================================= */
 (async function init(){
+  initDemoCarousel();
+  wireDigitBoxes('otpBoxes','verifyOtpBtn', verifyOtp);
   const {data:{session}} = await sb.auth.getSession();
   if(session){
-    const code = session.user.email.match(/^code-(\d+)@/)?.[1];
-    const role = ROLE_FOR_CODE[code];
-    if(role){
-      STATE.role=role; STATE.uid=session.user.id;
-      await afterLogin();
-      return;
-    }
+    await loadProfiles();
+    showScreen('profile');
+  } else {
+    showScreen('landing');
   }
 })();
 </script>
