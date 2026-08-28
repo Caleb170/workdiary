@@ -107,22 +107,24 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
 .profile-tile.add .profile-avatar{background:var(--card-2);border:2px dashed var(--line);font-size:28px;color:var(--text-faint);}
 .profile-tile.invite .profile-avatar{background:var(--amber-dim);color:var(--amber);}
 
-/* OTP boxes need to be narrower than the 4-digit PIN boxes to fit 6 on one line */
+/* OTP boxes and 6-digit PIN boxes need to be narrower than the old 4-digit sizing to fit on one line */
 #otpBoxes{gap:6px;}
 #otpBoxes input{width:42px;height:54px;font-size:19px;}
+.pin-boxes.pin6{gap:6px;}
+.pin-boxes.pin6 input{width:42px;height:54px;font-size:19px;}
 
 .lockout-box{background:var(--rust-dim);color:var(--rust);border-radius:12px;padding:12px 16px;font-size:13px;font-weight:600;margin-top:14px;max-width:320px;}
 
 /* ---- Phone-frame demo ---- */
 .phone-frame{
-  width:230px;height:470px;background:#0B0D12;border-radius:38px;padding:12px;
+  width:230px;height:470px;background:#0B0D12;border-radius:38px;padding:12px;box-sizing:border-box;
   box-shadow:0 24px 60px rgba(0,0,0,0.35),0 0 0 2px rgba(255,255,255,0.06) inset;
   margin-bottom:28px;position:relative;
 }
 .phone-notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:80px;height:22px;background:#0B0D12;border-radius:0 0 14px 14px;z-index:5;}
-.phone-screen{width:100%;height:100%;background:var(--bg);border-radius:28px;overflow:hidden;position:relative;}
+.phone-screen{width:100%;height:100%;background:var(--bg);border-radius:28px;overflow:hidden;position:relative;box-sizing:border-box;}
 .phone-track{display:flex;height:100%;transition:transform 0.7s cubic-bezier(.65,0,.35,1);}
-.phone-slide{width:230px;height:100%;flex-shrink:0;padding:30px 16px 16px;box-sizing:border-box;overflow:hidden;}
+.phone-slide{height:100%;flex-shrink:0;padding:30px 16px 16px;box-sizing:border-box;overflow:hidden;}
 .phone-slide-label{font-size:9px;font-weight:800;letter-spacing:0.08em;color:var(--accent);text-transform:uppercase;margin-bottom:8px;}
 .phone-tabbar{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:space-around;padding:8px 4px 10px;background:rgba(var(--bg-rgb),0.9);border-top:1px solid var(--line-soft);}
 .phone-tabbar span{font-size:14px;opacity:0.35;}
@@ -424,7 +426,9 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
     <div class="profile-avatar" id="pinAvatar" style="margin-bottom:14px;font-size:30px;"></div>
     <div class="login-title" style="font-size:22px;" id="pinScreenName"></div>
     <div class="login-sub">Enter your PIN</div>
-    <div class="pin-boxes pin4" id="pinEntryBoxes">
+    <div class="pin-boxes pin6" id="pinEntryBoxes">
+      <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+      <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
       <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
       <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
       <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
@@ -438,16 +442,21 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
 
 <div id="pin-setup-screen" class="hidden">
   <div class="landing-wrap">
-    <div class="login-title" style="font-size:22px;">Set a PIN for <span id="setupName"></span></div>
-    <div class="login-sub">A quick 4-digit code to unlock this profile next time</div>
-    <div class="pin-boxes pin4" id="setupPinBoxes">
+    <div class="login-title" style="font-size:22px;" id="setupTitle">Set up your profile</div>
+    <div class="login-sub">A quick 6-digit code to unlock this profile next time</div>
+    <div class="field hidden" id="setupNameWrap" style="width:100%;max-width:320px;"><input type="text" id="setupNameInput" placeholder="Your name"></div>
+    <div class="pin-boxes pin6" id="setupPinBoxes">
+      <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+      <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
       <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
       <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
       <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
       <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
     </div>
     <div class="login-sub" style="margin-top:6px;">Confirm PIN</div>
-    <div class="pin-boxes pin4" id="setupPinConfirmBoxes">
+    <div class="pin-boxes pin6" id="setupPinConfirmBoxes">
+      <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+      <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
       <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
       <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
       <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
@@ -762,6 +771,7 @@ function mkBonus(label,type,amount){return {id:uid('bonus'),label,type,versions:
    ========================================================================= */
 let STATE={
   role:null, uid:null, ownerId:null, accountId:null, authUid:null, email:null,
+  localViewerMode:false, localViewer:null,
   employers:[], shifts:[], plannedShifts:[],
   holidays:[], budget:{mode:'recommended', categories:[]},
   weekStart: weekForDate(getTodaySydney()).start,
@@ -793,6 +803,9 @@ async function enterApp(){
     await loadAdminData();
     subscribeRealtimeAdmin();
     setupNotifyChannel(STATE.accountId, false);
+  } else if(STATE.localViewerMode){
+    await loadLocalViewerData();
+    setupNotifyChannel(STATE.accountId, true);
   } else {
     await loadViewerData();
     setupNotifyChannel(STATE.accountId, true);
@@ -860,12 +873,14 @@ function initDemoCarousel(){
      </div>`,
   ];
   track.innerHTML = slides.map(s=>`<div class="phone-slide">${s}</div>`).join('');
+  track.style.width = (slides.length*100)+'%';
+  track.querySelectorAll('.phone-slide').forEach(s=>{ s.style.width = (100/slides.length)+'%'; });
   tabbar.innerHTML = tabIcons.map((ic,i)=>`<span class="${i===0?'active':''}">${ic}</span>`).join('');
   dots.innerHTML = slides.map((_,i)=>`<div class="demo-dot ${i===0?'active':''}"></div>`).join('');
   let idx=0;
   setInterval(()=>{
     idx=(idx+1)%slides.length;
-    track.style.transform = `translateX(-${idx*230}px)`;
+    track.style.transform = `translateX(-${idx*(100/slides.length)}%)`;
     tabbar.querySelectorAll('span').forEach((s,i)=>s.classList.toggle('active', i===idx));
     dots.querySelectorAll('.demo-dot').forEach((d,i)=>d.classList.toggle('active', i===idx));
   }, 2600);
@@ -908,69 +923,110 @@ async function loadProfiles(){
   const {data:memberships} = await sb.from('account_members').select('id,account_id,role,display_name,permissions,security_q1,security_q2,created_at').eq('user_id', session.user.id);
   const {data:invites} = await sb.from('invites').select('*').ilike('email', session.user.email);
   STATE.memberships = memberships||[];
+  STATE.pendingInviteTiles = invites||[];
+
+  // Brand new email, never set up an admin profile yet — go straight into
+  // guided setup rather than showing an empty picker with a "create" button.
+  if(!STATE.memberships.length && !STATE.pendingInviteTiles.length){
+    const {data:acct, error} = await sb.from('accounts').insert({display_name:'WorkQuest', created_by:STATE.authUid}).select().single();
+    if(error){ toast('Could not set up your account'); return; }
+    const {data:newMember} = await sb.from('account_members')
+      .insert({account_id:acct.id, user_id:STATE.authUid, role:'admin', display_name:'Admin'})
+      .select('id,account_id,role,display_name,security_q1,security_q2').single();
+    openPinGate({...newMember, kind:'member'}, true);
+    return;
+  }
 
   // Remember-last-profile: if we recognise a previously used profile and it
   // still exists, jump straight to its PIN prompt instead of the full grid —
   // this is what stops "closing the app" from feeling like data got wiped.
   const last = JSON.parse(localStorage.getItem('wq_last_profile')||'null');
   if(last){
-    const stillValid = STATE.memberships.find(m=>m.id===last.memberId);
-    if(stillValid){
-      openPinGate(stillValid);
+    if(last.kind==='member'){
+      const stillValid = STATE.memberships.find(m=>m.id===last.memberId);
+      if(stillValid){ openPinGate({...stillValid, kind:'member'}); return; }
+    } else if(last.kind==='local'){
+      openPinGate({account_id:last.accountId, display_name:last.displayName||'Viewer', role:'viewer', kind:'local'});
       return;
     }
   }
-  renderProfileGrid(STATE.memberships, invites||[]);
+  await renderProfileGrid();
   showScreen('profile');
 }
-function renderProfileGrid(memberships, invites){
+async function renderProfileGrid(){
   const grid = document.getElementById('profileGrid');
-  let html = memberships.map(m=>`
+  grid.innerHTML = `<p class="muted small">Loading…</p>`;
+  let html = STATE.memberships.map(m=>`
     <button class="profile-tile" onclick='openPinGateById("${m.id}")'>
       <div class="profile-avatar" style="background:${m.role==='admin'?'var(--accent)':'var(--card-2)'};color:${m.role==='admin'?'var(--on-accent)':'var(--text)'};">${(m.display_name||'?').charAt(0).toUpperCase()}</div>
       <div class="profile-name">${escapeHtml(m.display_name)}</div>
       <div class="profile-role">${m.role}</div>
     </button>`).join('');
-  html += invites.map(inv=>`
+
+  // Local (same-login) viewer profile, if the admin has set one up
+  const adminMember = STATE.memberships.find(m=>m.role==='admin');
+  if(adminMember){
+    const {data:local} = await sb.from('local_profiles').select('account_id,display_name').eq('account_id', adminMember.account_id).limit(1);
+    if(local && local.length){
+      const lp = local[0];
+      html += `<button class="profile-tile" onclick='openPinGateByLocal("${lp.account_id}","${escapeHtml(lp.display_name).replace(/'/g,"\\'")}")'>
+        <div class="profile-avatar" style="background:var(--card-2);">${(lp.display_name||'?').charAt(0).toUpperCase()}</div>
+        <div class="profile-name">${escapeHtml(lp.display_name)}</div>
+        <div class="profile-role">viewer</div>
+      </button>`;
+    }
+  }
+  html += STATE.pendingInviteTiles.map(inv=>`
     <button class="profile-tile invite" onclick="claimInvite('${inv.id}','${inv.account_id}','${inv.role}','${escapeHtml(inv.display_name).replace(/'/g,"\\'")}')">
       <div class="profile-avatar">✉️</div>
       <div class="profile-name">${escapeHtml(inv.display_name)}</div>
       <div class="profile-role">Invite · ${inv.role}</div>
     </button>`).join('');
-  html += `<button class="profile-tile add" onclick="openCreateAccountPrompt()">
-      <div class="profile-avatar">+</div>
-      <div class="profile-name">New</div>
-      <div class="profile-role">Create</div>
-    </button>`;
   grid.innerHTML = html;
 }
 function openPinGateById(memberId){
   const m = STATE.memberships.find(x=>x.id===memberId);
-  if(m) openPinGate(m);
+  if(m) openPinGate({...m, kind:'member'});
+}
+function openPinGateByLocal(accountId, displayName){
+  openPinGate({account_id:accountId, display_name:displayName, role:'viewer', kind:'local'});
 }
 let _pendingProfile = null;
-async function openPinGate(member){
-  _pendingProfile = member;
-  const {data} = await sb.rpc('get_profile_security_questions', {p_member_id: member.id});
-  if(data && data.has_pin){
-    document.getElementById('pinScreenName').textContent = member.display_name;
-    document.getElementById('pinAvatar').textContent = (member.display_name||'?').charAt(0).toUpperCase();
-    document.getElementById('pinAvatar').style.background = member.role==='admin' ? 'var(--accent)' : 'var(--card-2)';
-    document.getElementById('pinAvatar').style.color = member.role==='admin' ? 'var(--on-accent)' : 'var(--text)';
-    document.getElementById('pinAvatar').style.borderRadius = '50%';
-    document.getElementById('pinAvatar').style.width = '64px';
-    document.getElementById('pinAvatar').style.height = '64px';
-    document.getElementById('pinAvatar').style.display = 'flex';
-    document.getElementById('pinAvatar').style.alignItems = 'center';
-    document.getElementById('pinAvatar').style.justifyContent = 'center';
-    document.getElementById('pinAvatar').style.fontWeight = '700';
+async function openPinGate(profile, isFirstTimeAdmin){
+  _pendingProfile = profile;
+  let hasPin = false;
+  if(!isFirstTimeAdmin){
+    if(profile.kind==='member'){
+      const {data} = await sb.rpc('get_profile_security_questions', {p_member_id: profile.id});
+      hasPin = !!(data && data.has_pin);
+      if(data){ profile.security_q1 = data.q1; profile.security_q2 = data.q2; }
+    } else {
+      const {data:local} = await sb.from('local_profiles').select('pin_hash,security_q1,security_q2').eq('account_id', profile.account_id).limit(1);
+      hasPin = !!(local && local.length && local[0].pin_hash);
+      if(local && local.length){ profile.security_q1 = local[0].security_q1; profile.security_q2 = local[0].security_q2; }
+    }
+  }
+  if(hasPin){
+    document.getElementById('pinScreenName').textContent = profile.display_name;
+    const av = document.getElementById('pinAvatar');
+    av.textContent = (profile.display_name||'?').charAt(0).toUpperCase();
+    av.style.background = profile.role==='admin' ? 'var(--accent)' : 'var(--card-2)';
+    av.style.color = profile.role==='admin' ? 'var(--on-accent)' : 'var(--text)';
+    av.style.borderRadius = '50%'; av.style.width='64px'; av.style.height='64px';
+    av.style.display='flex'; av.style.alignItems='center'; av.style.justifyContent='center'; av.style.fontWeight='700';
     document.querySelectorAll('#pinEntryBoxes input').forEach(i=>i.value='');
     document.getElementById('pinError').textContent = '';
     document.getElementById('pinLockoutBox').classList.add('hidden');
     showScreen('pin');
     document.querySelectorAll('#pinEntryBoxes input')[0].focus();
   } else {
-    document.getElementById('setupName').textContent = member.display_name;
+    document.getElementById('setupTitle').textContent = isFirstTimeAdmin ? 'Set up your Admin profile' : `Set up PIN for ${profile.display_name}`;
+    const nameWrap = document.getElementById('setupNameWrap');
+    if(isFirstTimeAdmin){ nameWrap.classList.remove('hidden'); document.getElementById('setupNameInput').value=''; }
+    else nameWrap.classList.add('hidden');
+    ['setupPinBoxes','setupPinConfirmBoxes'].forEach(id=>document.querySelectorAll('#'+id+' input').forEach(i=>i.value=''));
+    ['setupQ1','setupA1','setupQ2','setupA2'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('setupError').textContent = '';
     showScreen('pin-setup');
   }
 }
@@ -981,8 +1037,10 @@ function backToProfiles(){
 }
 async function submitPinEntry(){
   const pin = [...document.querySelectorAll('#pinEntryBoxes input')].map(i=>i.value).join('');
-  if(pin.length!==4 || !_pendingProfile) return;
-  const {data, error} = await sb.rpc('verify_profile_pin', {p_member_id:_pendingProfile.id, p_pin:pin});
+  if(pin.length!==6 || !_pendingProfile) return;
+  const rpc = _pendingProfile.kind==='local' ? 'verify_local_profile_pin' : 'verify_profile_pin';
+  const args = _pendingProfile.kind==='local' ? {p_account_id:_pendingProfile.account_id, p_pin:pin} : {p_member_id:_pendingProfile.id, p_pin:pin};
+  const {data, error} = await sb.rpc(rpc, args);
   if(error){ document.getElementById('pinError').textContent = 'Something went wrong'; return; }
   if(data.ok){
     await enterProfile(_pendingProfile);
@@ -1026,11 +1084,13 @@ function openForgotPinModal(){
       <div class="field"><label>${escapeHtml(_pendingProfile.security_q1||'Security question 1')}</label><input type="text" id="fp2a"></div>
       <div class="field"><label>${escapeHtml(_pendingProfile.security_q2||'Security question 2')}</label><input type="text" id="fp2b"></div>
       <div class="field"><label>New PIN</label>
-        <div class="pin-boxes pin4" id="resetPinBoxes" style="justify-content:flex-start;">
-          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" style="width:44px;height:52px;">
-          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" style="width:44px;height:52px;">
-          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" style="width:44px;height:52px;">
-          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" style="width:44px;height:52px;">
+        <div class="pin-boxes pin6" id="resetPinBoxes" style="justify-content:flex-start;">
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
         </div>
       </div>
       <button class="btn btn-primary" onclick="tryResetPin()">Reset PIN</button>
@@ -1040,7 +1100,9 @@ function openForgotPinModal(){
 }
 async function tryBypassLockout(){
   const answer = document.getElementById('fp1').value;
-  const {data} = await sb.rpc('bypass_pin_lockout', {p_member_id:_pendingProfile.id, p_answer:answer});
+  const rpc = _pendingProfile.kind==='local' ? 'bypass_local_profile_lockout' : 'bypass_pin_lockout';
+  const args = _pendingProfile.kind==='local' ? {p_account_id:_pendingProfile.account_id, p_answer:answer} : {p_member_id:_pendingProfile.id, p_answer:answer};
+  const {data} = await sb.rpc(rpc, args);
   if(data){
     closeModal();
     document.getElementById('pinLockoutBox').classList.add('hidden');
@@ -1055,8 +1117,12 @@ async function tryResetPin(){
   const a1 = document.getElementById('fp2a').value;
   const a2 = document.getElementById('fp2b').value;
   const newPin = [...document.querySelectorAll('#resetPinBoxes input')].map(i=>i.value).join('');
-  if(newPin.length!==4){ document.getElementById('forgotError').textContent='Enter a 4-digit PIN'; return; }
-  const {data} = await sb.rpc('reset_profile_pin', {p_member_id:_pendingProfile.id, p_answer1:a1, p_answer2:a2, p_new_pin:newPin});
+  if(newPin.length!==6){ document.getElementById('forgotError').textContent='Enter a 6-digit PIN'; return; }
+  const rpc = _pendingProfile.kind==='local' ? 'reset_local_profile_pin' : 'reset_profile_pin';
+  const args = _pendingProfile.kind==='local'
+    ? {p_account_id:_pendingProfile.account_id, p_answer1:a1, p_answer2:a2, p_new_pin:newPin}
+    : {p_member_id:_pendingProfile.id, p_answer1:a1, p_answer2:a2, p_new_pin:newPin};
+  const {data} = await sb.rpc(rpc, args);
   if(data){
     closeModal();
     toast('PIN reset — you can log in with it now');
@@ -1073,38 +1139,39 @@ async function finishPinSetup(){
   const q2 = document.getElementById('setupQ2').value.trim();
   const a2 = document.getElementById('setupA2').value.trim();
   const err = document.getElementById('setupError');
-  if(pin.length!==4){ err.textContent='Enter a 4-digit PIN'; return; }
+  if(pin.length!==6){ err.textContent='Enter a 6-digit PIN'; return; }
   if(pin!==confirm){ err.textContent="PINs don't match"; return; }
   if(!q1||!a1||!q2||!a2){ err.textContent='Fill in both security questions'; return; }
-  const {error} = await sb.rpc('set_profile_security', {p_member_id:_pendingProfile.id, p_pin:pin, p_q1:q1, p_a1:a1, p_q2:q2, p_a2:a2});
+  const nameWrap = document.getElementById('setupNameWrap');
+  if(!nameWrap.classList.contains('hidden')){
+    const newName = document.getElementById('setupNameInput').value.trim();
+    if(newName){
+      _pendingProfile.display_name = newName;
+      await sb.from('account_members').update({display_name:newName}).eq('id', _pendingProfile.id);
+    }
+  }
+  const rpc = _pendingProfile.kind==='local' ? 'set_local_profile_security' : 'set_profile_security';
+  const args = _pendingProfile.kind==='local'
+    ? {p_account_id:_pendingProfile.account_id, p_pin:pin, p_q1:q1, p_a1:a1, p_q2:q2, p_a2:a2}
+    : {p_member_id:_pendingProfile.id, p_pin:pin, p_q1:q1, p_a1:a1, p_q2:q2, p_a2:a2};
+  const {error} = await sb.rpc(rpc, args);
   if(error){ err.textContent='Could not save — try again'; return; }
   await enterProfile(_pendingProfile);
 }
-async function enterProfile(member){
-  STATE.role = member.role; STATE.accountId = member.account_id; STATE.uid = STATE.authUid; STATE.ownerId = member.account_id;
-  localStorage.setItem('wq_last_profile', JSON.stringify({memberId:member.id}));
+async function enterProfile(profile){
+  STATE.role = profile.role; STATE.accountId = profile.account_id; STATE.uid = STATE.authUid; STATE.ownerId = profile.account_id;
+  STATE.localViewerMode = profile.kind==='local';
+  if(profile.kind==='local'){
+    localStorage.setItem('wq_last_profile', JSON.stringify({kind:'local', accountId:profile.account_id, displayName:profile.display_name}));
+  } else {
+    localStorage.setItem('wq_last_profile', JSON.stringify({kind:'member', memberId:profile.id}));
+  }
   await enterApp();
 }
 async function claimInvite(inviteId, accountId, role, displayName){
   const {data:newMember} = await sb.from('account_members').insert({account_id:accountId, user_id:STATE.authUid, role, display_name:displayName}).select('id,account_id,role,display_name,security_q1,security_q2').single();
   await sb.from('invites').delete().eq('id', inviteId);
-  openPinGate(newMember);
-}
-function openCreateAccountPrompt(){
-  openModal(`
-    <button class="modal-close" onclick="closeModal()">×</button>
-    <h3>Create your WorkQuest</h3>
-    <div class="field"><label>Your name</label><input type="text" id="newAcctName" placeholder="e.g. Jordan"></div>
-    <button class="btn btn-primary btn-block" onclick="createAccount()">Create</button>
-  `);
-}
-async function createAccount(){
-  const name = document.getElementById('newAcctName').value.trim() || 'Me';
-  const {data:acct, error} = await sb.from('accounts').insert({display_name:'WorkQuest', created_by:STATE.authUid}).select().single();
-  if(error){ toast('Could not create account'); return; }
-  const {data:newMember} = await sb.from('account_members').insert({account_id:acct.id, user_id:STATE.authUid, role:'admin', display_name:name}).select('id,account_id,role,display_name,security_q1,security_q2').single();
-  closeModal();
-  openPinGate(newMember);
+  openPinGate({...newMember, kind:'member'});
 }
 function wireDigitBoxes(containerId, btnId, onComplete){
   const boxes=[...document.querySelectorAll('#'+containerId+' input')];
@@ -1144,6 +1211,8 @@ async function loadAdminData(){
   STATE.viewers = members||[];
   const {data:invites} = await sb.from('invites').select('*').eq('account_id', STATE.accountId);
   STATE.pendingInvites = invites||[];
+  const {data:localRows} = await sb.from('local_profiles').select('display_name,permissions,pin_hash').eq('account_id', STATE.accountId).limit(1);
+  STATE.localViewer = (localRows && localRows[0]) || null;
 }
 function rowToPlanned(row){
   return { id:row.id, date:row.date, employerId:row.employer_id, start:row.start_time, end:row.end_time, notes:row.notes };
@@ -1164,6 +1233,29 @@ async function loadViewerData(){
     id: r.date+r.employer+(r.start_time||''), date:r.date, employerName:r.employer,
     start:r.start_time, end:r.end_time, hours:r.hours, status:r.status, source:r.source,
   }));
+}
+async function loadLocalViewerData(){
+  // Same login as the admin, so this reads full data then redacts client-side
+  // per the local_profiles.permissions the admin set in Settings.
+  await loadAdminData();
+  const {data:local} = await sb.from('local_profiles').select('permissions').eq('account_id', STATE.accountId).limit(1);
+  const perms = (local && local[0] && local[0].permissions) || {};
+  const employers = STATE.employers, fullShifts = STATE.shifts, fullPlanned = STATE.plannedShifts;
+  const redact = (s, isPlanned)=>{
+    const emp = employers.find(e=>e.id===s.employerId);
+    return {
+      id: s.id, date: s.date,
+      employerName: perms.showEmployer!==false ? (emp?emp.name:'Hidden') : 'Hidden',
+      start: perms.showTimes!==false ? s.start : null,
+      end: perms.showTimes!==false ? s.end : null,
+      hours: perms.showHours!==false ? (isPlanned ? (timeToMinutes(s.end)-timeToMinutes(s.start))/60 : s.locked.paidHours) : null,
+      status: isPlanned?'planned':'worked', source: isPlanned?'planned':'completed',
+    };
+  };
+  let combined = fullShifts.map(s=>redact(s,false));
+  if(perms.showPlanned!==false) combined = combined.concat(fullPlanned.map(s=>redact(s,true)));
+  STATE.shifts = combined;
+  STATE.employers = [];
 }
 function rowToEmployer(row){
   return { id:row.id, name:row.name, rates:row.rates, bonuses:row.bonuses, breakRule:row.break_rule, archived:!!row.archived, icon:row.icon||'💼', color:row.color||'#7C9CFF', payMode:row.pay_mode||'hourly', salaryVersions:row.salary_versions||[], payCycle:row.pay_cycle||{} };
@@ -1329,7 +1421,10 @@ function showFancyNotification({icon, title, message}){
   clearTimeout(_fancyTimeout);
   _fancyTimeout = setTimeout(dismissFancyNotification, 4500);
   // Refresh the viewer's shared shift data so what they see next matches the update
-  if(STATE.role==='viewer') loadViewerData().then(()=>{ if(STATE.activeTab!=='settings') render(); });
+  if(STATE.role==='viewer'){
+    const reload = STATE.localViewerMode ? loadLocalViewerData : loadViewerData;
+    reload().then(()=>{ if(STATE.activeTab!=='settings') render(); });
+  }
 }
 function dismissFancyNotification(){
   const el = document.getElementById('fancyNotify');
@@ -2233,7 +2328,24 @@ function renderSettings(){
     }
   }
   if(STATE.accountId){
-    html += `<h2 style="margin:26px 0 4px;">Viewers</h2><p class="muted small" style="margin-bottom:12px;">People you've given a limited, read-only view of your diary. What each one sees is enforced by the database, not just hidden in this app.</p>`;
+    html += `<h2 style="margin:26px 0 4px;">Viewer profile</h2><p class="muted small" style="margin-bottom:12px;">One extra profile that shares this login, gated by its own PIN — shows on the profile picker alongside Admin.</p>`;
+    if(STATE.localViewer){
+      const p = STATE.localViewer.permissions||{};
+      html += `<div class="card card-pad" style="margin-bottom:12px;">
+        <div class="row" style="justify-content:space-between;margin-bottom:8px;"><strong>${escapeHtml(STATE.localViewer.display_name)}</strong><button class="btn btn-sm btn-danger" onclick="removeLocalViewer()">Remove</button></div>
+        <div class="row wrap" style="gap:14px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;text-transform:none;font-weight:500;"><input type="checkbox" style="width:auto;" ${p.showEmployer!==false?'checked':''} onchange="updateLocalViewerPerm('showEmployer',this.checked)">Employer name</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;text-transform:none;font-weight:500;"><input type="checkbox" style="width:auto;" ${p.showTimes!==false?'checked':''} onchange="updateLocalViewerPerm('showTimes',this.checked)">Shift times</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;text-transform:none;font-weight:500;"><input type="checkbox" style="width:auto;" ${p.showHours!==false?'checked':''} onchange="updateLocalViewerPerm('showHours',this.checked)">Hours</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;text-transform:none;font-weight:500;"><input type="checkbox" style="width:auto;" ${p.showPlanned!==false?'checked':''} onchange="updateLocalViewerPerm('showPlanned',this.checked)">Planned shifts</label>
+        </div>
+      </div>`;
+    } else {
+      html += `<button class="btn btn-block" onclick="openSetupLocalViewerModal()">+ Set up a Viewer profile</button>`;
+    }
+  }
+  if(STATE.accountId){
+    html += `<h2 style="margin:26px 0 4px;">Invite someone by email</h2><p class="muted small" style="margin-bottom:12px;">For a genuinely separate person with their own login (rather than sharing yours) — this one's server-enforced, not just hidden in the app.</p>`;
     (STATE.viewers||[]).forEach(v=>{
       const p = v.permissions||{};
       html += `<div class="card card-pad" style="margin-bottom:10px;">
@@ -2330,6 +2442,36 @@ async function saveBonusVersion(empId, bonusId){
 /* =========================================================================
    VIEWER MANAGEMENT (account-based logins)
    ========================================================================= */
+function openSetupLocalViewerModal(){
+  openModal(`
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h3>Set up a Viewer profile</h3>
+    <p class="muted small">Shares this login — they'll pick "Viewer" on the profile screen and enter their own PIN, no separate email needed.</p>
+    <div class="field"><label>Name</label><input type="text" id="lvName" placeholder="e.g. Viewer"></div>
+    <button class="btn btn-primary btn-block" onclick="createLocalViewer()">Continue to PIN setup</button>
+  `);
+}
+async function createLocalViewer(){
+  const name = document.getElementById('lvName').value.trim() || 'Viewer';
+  const {error} = await sb.from('local_profiles').upsert({account_id:STATE.accountId, display_name:name});
+  if(error){ toast('Could not create viewer profile'); return; }
+  closeModal();
+  openPinGate({account_id:STATE.accountId, display_name:name, role:'viewer', kind:'local'});
+}
+async function updateLocalViewerPerm(key, value){
+  STATE.localViewer.permissions = {...STATE.localViewer.permissions, [key]:value};
+  setSync('saving','Saving…');
+  const {error} = await sb.from('local_profiles').update({permissions:STATE.localViewer.permissions}).eq('account_id', STATE.accountId);
+  setSync(error?'error':'saved', error?'⚠️ Unable to save':'Saved ✓');
+}
+async function removeLocalViewer(){
+  if(!confirm('Remove the Viewer profile? This deletes its PIN and security questions too.')) return;
+  setSync('saving','Saving…');
+  const {error} = await sb.from('local_profiles').delete().eq('account_id', STATE.accountId);
+  if(!error) STATE.localViewer = null;
+  setSync(error?'error':'saved', error?'⚠️ Unable to save':'Saved ✓');
+  render();
+}
 async function updateViewerPerm(memberId, key, value){
   const v = STATE.viewers.find(x=>x.id===memberId);
   v.permissions = {...v.permissions, [key]:value};
