@@ -107,6 +107,30 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
 .profile-tile.add .profile-avatar{background:var(--card-2);border:2px dashed var(--line);font-size:28px;color:var(--text-faint);}
 .profile-tile.invite .profile-avatar{background:var(--amber-dim);color:var(--amber);}
 
+/* OTP boxes need to be narrower than the 4-digit PIN boxes to fit 6 on one line */
+#otpBoxes{gap:6px;}
+#otpBoxes input{width:42px;height:54px;font-size:19px;}
+
+.lockout-box{background:var(--rust-dim);color:var(--rust);border-radius:12px;padding:12px 16px;font-size:13px;font-weight:600;margin-top:14px;max-width:320px;}
+
+/* ---- Phone-frame demo ---- */
+.phone-frame{
+  width:230px;height:470px;background:#0B0D12;border-radius:38px;padding:12px;
+  box-shadow:0 24px 60px rgba(0,0,0,0.35),0 0 0 2px rgba(255,255,255,0.06) inset;
+  margin-bottom:28px;position:relative;
+}
+.phone-notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:80px;height:22px;background:#0B0D12;border-radius:0 0 14px 14px;z-index:5;}
+.phone-screen{width:100%;height:100%;background:var(--bg);border-radius:28px;overflow:hidden;position:relative;}
+.phone-track{display:flex;height:100%;transition:transform 0.7s cubic-bezier(.65,0,.35,1);}
+.phone-slide{width:230px;height:100%;flex-shrink:0;padding:30px 16px 16px;box-sizing:border-box;overflow:hidden;}
+.phone-slide-label{font-size:9px;font-weight:800;letter-spacing:0.08em;color:var(--accent);text-transform:uppercase;margin-bottom:8px;}
+.phone-tabbar{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:space-around;padding:8px 4px 10px;background:rgba(var(--bg-rgb),0.9);border-top:1px solid var(--line-soft);}
+.phone-tabbar span{font-size:14px;opacity:0.35;}
+.phone-tabbar span.active{opacity:1;}
+.phone-dots{display:flex;justify-content:center;gap:6px;margin-bottom:0;}
+.phone-dots .demo-dot{background:var(--line);}
+.phone-dots .demo-dot.active{background:var(--accent);}
+
 /* ---- App shell ---- */
 #app-screen{max-width:640px;margin:0 auto;padding:0 16px 100px;}
 .topbar{
@@ -347,7 +371,14 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
   <div class="landing-wrap">
     <div class="landing-brand">WorkQuest</div>
     <p class="landing-tag">Your shifts, pay, and tax — tracked automatically, synced everywhere.</p>
-    <div class="demo-carousel" id="demoCarousel"></div>
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="phone-track" id="phoneTrack"></div>
+        <div class="phone-tabbar" id="phoneTabbar"></div>
+      </div>
+    </div>
+    <div class="phone-dots" id="phoneDots" style="margin-bottom:24px;"></div>
     <button class="login-btn" style="max-width:320px;" onclick="showScreen('email')">Get started — it's free</button>
   </div>
 </div>
@@ -384,6 +415,51 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
     <div class="login-sub">Select a profile to continue</div>
     <div class="profile-grid" id="profileGrid"></div>
     <button class="link-btn" onclick="fullSignOut()">Sign out</button>
+  </div>
+</div>
+
+<div id="pin-screen" class="hidden">
+  <div class="landing-wrap">
+    <button class="back-btn" onclick="backToProfiles()">‹ Switch profile</button>
+    <div class="profile-avatar" id="pinAvatar" style="margin-bottom:14px;font-size:30px;"></div>
+    <div class="login-title" style="font-size:22px;" id="pinScreenName"></div>
+    <div class="login-sub">Enter your PIN</div>
+    <div class="pin-boxes pin4" id="pinEntryBoxes">
+      <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+      <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+      <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+      <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+    </div>
+    <div class="login-error" id="pinError"></div>
+    <div class="lockout-box hidden" id="pinLockoutBox"></div>
+    <button class="link-btn" onclick="openForgotPinModal()">Forgot PIN?</button>
+  </div>
+</div>
+
+<div id="pin-setup-screen" class="hidden">
+  <div class="landing-wrap">
+    <div class="login-title" style="font-size:22px;">Set a PIN for <span id="setupName"></span></div>
+    <div class="login-sub">A quick 4-digit code to unlock this profile next time</div>
+    <div class="pin-boxes pin4" id="setupPinBoxes">
+      <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+      <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+      <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+      <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+    </div>
+    <div class="login-sub" style="margin-top:6px;">Confirm PIN</div>
+    <div class="pin-boxes pin4" id="setupPinConfirmBoxes">
+      <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+      <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+      <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+      <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+    </div>
+    <p class="muted small" style="max-width:320px;margin:16px 0 4px;">Two security questions, in case you ever forget it. Write your own — answers aren't case sensitive.</p>
+    <div class="field" style="width:100%;max-width:320px;"><input type="text" id="setupQ1" placeholder="Security question 1"></div>
+    <div class="field" style="width:100%;max-width:320px;"><input type="text" id="setupA1" placeholder="Answer"></div>
+    <div class="field" style="width:100%;max-width:320px;"><input type="text" id="setupQ2" placeholder="Security question 2"></div>
+    <div class="field" style="width:100%;max-width:320px;"><input type="text" id="setupA2" placeholder="Answer"></div>
+    <button class="login-btn" style="max-width:320px;" onclick="finishPinSetup()">Save & continue</button>
+    <div class="login-error" id="setupError"></div>
   </div>
 </div>
 
@@ -427,7 +503,14 @@ document.documentElement.setAttribute('data-theme', localStorage.getItem('wq_the
    ========================================================================= */
 const SUPABASE_URL = 'https://amppadqaygmfqtcsiesn.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_O03dMgtLJEdG5RnmGPt2ng_dh2uQj8r';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    storage: window.localStorage,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  }
+});
 
 /* =========================================================================
    DATE / FY ENGINE (ported from original app, unchanged logic)
@@ -695,7 +778,7 @@ function dayTotal(iso){ return shiftsOnDate(iso).reduce((sum,s)=>sum+(s.locked?.
    AUTH
    ========================================================================= */
 async function enterApp(){
-  ['landing-screen','email-screen','profile-screen'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['landing-screen','email-screen','profile-screen','pin-screen','pin-setup-screen'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('app-screen').classList.remove('hidden');
   document.getElementById('roleBadge').textContent = STATE.role==='admin' ? 'Admin' : 'Viewer';
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('hidden'));
@@ -729,8 +812,10 @@ function resetAppState(){
   if(banner){ banner.classList.add('hidden'); banner.innerHTML=''; }
 }
 function logout(){
-  // Keep the email session alive, just return to the profile picker —
-  // matches the Netflix "switch profile" pattern.
+  // Keep the email session alive, just return to the full profile picker —
+  // matches the Netflix "switch profile" pattern. Clear the remembered
+  // profile so this always shows the grid, not just re-prompts the same one.
+  localStorage.removeItem('wq_last_profile');
   resetAppState();
   showScreen('profile');
   loadProfiles();
@@ -744,35 +829,46 @@ function fullSignOut(){
    NEW FRONT DOOR: landing page, email OTP login, Netflix-style profiles
    ========================================================================= */
 function showScreen(name){
-  const map = {landing:'landing-screen', email:'email-screen', profile:'profile-screen'};
+  const map = {landing:'landing-screen', email:'email-screen', profile:'profile-screen', pin:'pin-screen', 'pin-setup':'pin-setup-screen'};
   Object.values(map).forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById(map[name]).classList.remove('hidden');
 }
 function initDemoCarousel(){
-  const el = document.getElementById('demoCarousel');
-  if(!el) return;
+  const track = document.getElementById('phoneTrack');
+  const tabbar = document.getElementById('phoneTabbar');
+  const dots = document.getElementById('phoneDots');
+  if(!track) return;
+  const tabs = ['Diary','Cal','Time','Tax'];
+  const tabIcons = ['📔','📅','📈','🧾'];
   const slides = [
-    `<div class="eyebrow" style="text-align:left;">DIARY</div>
-     <div class="day-card" style="margin-top:10px;text-align:left;">
-       <div class="day-top"><span class="day-dow">Saturday</span><span class="day-status st-worked">2 shifts</span></div>
-       <div class="shift-row"><div><div class="shift-emp">🛒 Coles</div><div class="shift-time">6:00 AM → 2:00 PM · 7.50 hrs</div></div><div class="shift-amt money">$135.43</div></div>
-     </div>`,
-    `<div class="eyebrow" style="text-align:left;">CALENDAR</div>
-     <div class="cal-grid" style="margin-top:10px;">${['M','T','W','T','F','S','S'].map(d=>`<div class="cal-dow">${d}</div>`).join('')}${Array.from({length:28},(_,i)=>`<div class="cal-cell ${[4,11,18,25].includes(i)?'worked':''}"><span class="d">${i+1}</span>${[4,11,18,25].includes(i)?'<span class="amt">$135</span>':''}</div>`).join('')}</div>`,
-    `<div class="eyebrow" style="text-align:left;">TAX</div>
-     <div class="tax-hero" style="margin-top:10px;padding:16px;text-align:left;">
-       <div class="eyebrow">FY27 gross earned</div><div class="big-num money" style="font-size:26px;">$8,260.07</div>
-       <div class="muted small">Marginal rate 0% · under the tax-free threshold</div>
+    `<div class="phone-slide-label">Diary</div>
+     <div class="day-card" style="margin-bottom:8px;">
+       <div class="day-top"><span class="day-dow" style="font-size:13px;">Saturday</span><span class="day-status st-worked" style="font-size:10px;">2 shifts</span></div>
+       <div class="shift-row" style="padding:6px 0;"><div><div class="shift-emp" style="font-size:12px;">🛒 Coles</div><div class="shift-time" style="font-size:10.5px;">6:00 AM → 2:00 PM</div></div><div class="shift-amt money" style="font-size:12px;">$135.43</div></div>
+     </div>
+     <div class="day-card"><div class="day-top"><span class="day-dow" style="font-size:13px;">Sunday</span><span class="day-status st-none" style="font-size:10px;">No shift</span></div></div>`,
+    `<div class="phone-slide-label">Calendar</div>
+     <div class="cal-grid" style="gap:3px;">${['M','T','W','T','F','S','S'].map(d=>`<div class="cal-dow" style="font-size:8px;">${d}</div>`).join('')}${Array.from({length:28},(_,i)=>`<div class="cal-cell ${[4,11,18,25].includes(i)?'worked':''}" style="min-height:32px;padding:3px;"><span class="d" style="font-size:9px;">${i+1}</span>${[4,11,18,25].includes(i)?'<span class="amt" style="font-size:7.5px;">$135</span>':''}</div>`).join('')}</div>`,
+    `<div class="phone-slide-label">Timeline</div>
+     <div class="tl-week" style="padding:8px 2px;font-size:11px;"><span class="rng">Aug 17–23</span><span class="amt" style="font-size:11px;">$412.60</span></div>
+     <div class="tl-week" style="padding:8px 2px;font-size:11px;"><span class="rng">Aug 24–30</span><span class="amt" style="font-size:11px;">$400.71</span></div>
+     <div class="tl-week" style="padding:8px 2px;font-size:11px;background:var(--green-dim);border-radius:8px;"><span class="rng">💰 Payday today</span><span class="amt" style="font-size:11px;">$217.22</span></div>`,
+    `<div class="phone-slide-label">Tax</div>
+     <div class="tax-hero" style="padding:14px;text-align:left;margin-bottom:0;">
+       <div class="eyebrow" style="font-size:9px;">FY gross earned</div><div class="big-num money" style="font-size:22px;margin:2px 0;">$8,260.07</div>
+       <div class="muted small" style="font-size:10px;">Marginal rate 0% · tax-free</div>
      </div>`,
   ];
-  el.innerHTML = slides.map((s,i)=>`<div class="demo-slide ${i===0?'active':''}">${s}</div>`).join('')
-    + `<div class="demo-dots">${slides.map((_,i)=>`<div class="demo-dot ${i===0?'active':''}"></div>`).join('')}</div>`;
+  track.innerHTML = slides.map(s=>`<div class="phone-slide">${s}</div>`).join('');
+  tabbar.innerHTML = tabIcons.map((ic,i)=>`<span class="${i===0?'active':''}">${ic}</span>`).join('');
+  dots.innerHTML = slides.map((_,i)=>`<div class="demo-dot ${i===0?'active':''}"></div>`).join('');
   let idx=0;
   setInterval(()=>{
     idx=(idx+1)%slides.length;
-    el.querySelectorAll('.demo-slide').forEach((s,i)=>s.classList.toggle('active', i===idx));
-    el.querySelectorAll('.demo-dot').forEach((d,i)=>d.classList.toggle('active', i===idx));
-  }, 3500);
+    track.style.transform = `translateX(-${idx*230}px)`;
+    tabbar.querySelectorAll('span').forEach((s,i)=>s.classList.toggle('active', i===idx));
+    dots.querySelectorAll('.demo-dot').forEach((d,i)=>d.classList.toggle('active', i===idx));
+  }, 2600);
 }
 async function sendOtp(){
   const email = document.getElementById('emailInput').value.trim();
@@ -809,14 +905,28 @@ async function loadProfiles(){
   if(!session){ showScreen('landing'); return; }
   STATE.email = session.user.email;
   STATE.authUid = session.user.id;
-  const {data:memberships} = await sb.from('account_members').select('*').eq('user_id', session.user.id);
+  const {data:memberships} = await sb.from('account_members').select('id,account_id,role,display_name,permissions,security_q1,security_q2,created_at').eq('user_id', session.user.id);
   const {data:invites} = await sb.from('invites').select('*').ilike('email', session.user.email);
-  renderProfileGrid(memberships||[], invites||[]);
+  STATE.memberships = memberships||[];
+
+  // Remember-last-profile: if we recognise a previously used profile and it
+  // still exists, jump straight to its PIN prompt instead of the full grid —
+  // this is what stops "closing the app" from feeling like data got wiped.
+  const last = JSON.parse(localStorage.getItem('wq_last_profile')||'null');
+  if(last){
+    const stillValid = STATE.memberships.find(m=>m.id===last.memberId);
+    if(stillValid){
+      openPinGate(stillValid);
+      return;
+    }
+  }
+  renderProfileGrid(STATE.memberships, invites||[]);
+  showScreen('profile');
 }
 function renderProfileGrid(memberships, invites){
   const grid = document.getElementById('profileGrid');
   let html = memberships.map(m=>`
-    <button class="profile-tile" onclick="selectProfile('${m.account_id}','${m.role}','${escapeHtml(m.display_name).replace(/'/g,"\\'")}')">
+    <button class="profile-tile" onclick='openPinGateById("${m.id}")'>
       <div class="profile-avatar" style="background:${m.role==='admin'?'var(--accent)':'var(--card-2)'};color:${m.role==='admin'?'var(--on-accent)':'var(--text)'};">${(m.display_name||'?').charAt(0).toUpperCase()}</div>
       <div class="profile-name">${escapeHtml(m.display_name)}</div>
       <div class="profile-role">${m.role}</div>
@@ -834,20 +944,157 @@ function renderProfileGrid(memberships, invites){
     </button>`;
   grid.innerHTML = html;
 }
-async function selectProfile(accountId, role, displayName){
-  STATE.role = role; STATE.accountId = accountId; STATE.uid = STATE.authUid; STATE.ownerId = accountId;
+function openPinGateById(memberId){
+  const m = STATE.memberships.find(x=>x.id===memberId);
+  if(m) openPinGate(m);
+}
+let _pendingProfile = null;
+async function openPinGate(member){
+  _pendingProfile = member;
+  const {data} = await sb.rpc('get_profile_security_questions', {p_member_id: member.id});
+  if(data && data.has_pin){
+    document.getElementById('pinScreenName').textContent = member.display_name;
+    document.getElementById('pinAvatar').textContent = (member.display_name||'?').charAt(0).toUpperCase();
+    document.getElementById('pinAvatar').style.background = member.role==='admin' ? 'var(--accent)' : 'var(--card-2)';
+    document.getElementById('pinAvatar').style.color = member.role==='admin' ? 'var(--on-accent)' : 'var(--text)';
+    document.getElementById('pinAvatar').style.borderRadius = '50%';
+    document.getElementById('pinAvatar').style.width = '64px';
+    document.getElementById('pinAvatar').style.height = '64px';
+    document.getElementById('pinAvatar').style.display = 'flex';
+    document.getElementById('pinAvatar').style.alignItems = 'center';
+    document.getElementById('pinAvatar').style.justifyContent = 'center';
+    document.getElementById('pinAvatar').style.fontWeight = '700';
+    document.querySelectorAll('#pinEntryBoxes input').forEach(i=>i.value='');
+    document.getElementById('pinError').textContent = '';
+    document.getElementById('pinLockoutBox').classList.add('hidden');
+    showScreen('pin');
+    document.querySelectorAll('#pinEntryBoxes input')[0].focus();
+  } else {
+    document.getElementById('setupName').textContent = member.display_name;
+    showScreen('pin-setup');
+  }
+}
+function backToProfiles(){
+  localStorage.removeItem('wq_last_profile');
+  showScreen('profile');
+  loadProfiles();
+}
+async function submitPinEntry(){
+  const pin = [...document.querySelectorAll('#pinEntryBoxes input')].map(i=>i.value).join('');
+  if(pin.length!==4 || !_pendingProfile) return;
+  const {data, error} = await sb.rpc('verify_profile_pin', {p_member_id:_pendingProfile.id, p_pin:pin});
+  if(error){ document.getElementById('pinError').textContent = 'Something went wrong'; return; }
+  if(data.ok){
+    await enterProfile(_pendingProfile);
+  } else if(data.locked){
+    showPinLockout(data.seconds_left);
+  } else {
+    document.getElementById('pinError').textContent = 'Incorrect PIN';
+    document.querySelectorAll('#pinEntryBoxes input').forEach(i=>i.value='');
+    document.querySelectorAll('#pinEntryBoxes input')[0].focus();
+  }
+}
+let _lockoutInterval=null;
+function showPinLockout(seconds){
+  const box = document.getElementById('pinLockoutBox');
+  box.classList.remove('hidden');
+  document.getElementById('pinError').textContent = '';
+  clearInterval(_lockoutInterval);
+  let remaining = seconds;
+  const tick = ()=>{
+    const m = Math.floor(remaining/60), s = remaining%60;
+    box.textContent = `Too many attempts — try again in ${m>0?m+'m ':''}${s}s`;
+    if(remaining<=0){ clearInterval(_lockoutInterval); box.classList.add('hidden'); }
+    remaining--;
+  };
+  tick();
+  _lockoutInterval = setInterval(tick, 1000);
+}
+function openForgotPinModal(){
+  if(!_pendingProfile) return;
+  openModal(`
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h3>Forgot your PIN?</h3>
+    <p class="muted small">Answer one security question to skip a lockout, or both to reset your PIN completely.</p>
+    <div id="forgotStep1">
+      <div class="field"><label>${escapeHtml(_pendingProfile.security_q1||'Security question 1')}</label><input type="text" id="fp1"></div>
+      <button class="btn" onclick="tryBypassLockout()">Skip lockout with this answer</button>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--line-soft);margin:18px 0;">
+    <div>
+      <p class="muted small" style="margin-bottom:8px;">Or reset your PIN entirely (both answers required):</p>
+      <div class="field"><label>${escapeHtml(_pendingProfile.security_q1||'Security question 1')}</label><input type="text" id="fp2a"></div>
+      <div class="field"><label>${escapeHtml(_pendingProfile.security_q2||'Security question 2')}</label><input type="text" id="fp2b"></div>
+      <div class="field"><label>New PIN</label>
+        <div class="pin-boxes pin4" id="resetPinBoxes" style="justify-content:flex-start;">
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" style="width:44px;height:52px;">
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" style="width:44px;height:52px;">
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" style="width:44px;height:52px;">
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" style="width:44px;height:52px;">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="tryResetPin()">Reset PIN</button>
+    </div>
+    <div class="login-error" id="forgotError"></div>
+  `);
+}
+async function tryBypassLockout(){
+  const answer = document.getElementById('fp1').value;
+  const {data} = await sb.rpc('bypass_pin_lockout', {p_member_id:_pendingProfile.id, p_answer:answer});
+  if(data){
+    closeModal();
+    document.getElementById('pinLockoutBox').classList.add('hidden');
+    clearInterval(_lockoutInterval);
+    document.getElementById('pinError').textContent='';
+    toast('Lockout cleared — try your PIN again');
+  } else {
+    document.getElementById('forgotError').textContent = 'Answer not recognised';
+  }
+}
+async function tryResetPin(){
+  const a1 = document.getElementById('fp2a').value;
+  const a2 = document.getElementById('fp2b').value;
+  const newPin = [...document.querySelectorAll('#resetPinBoxes input')].map(i=>i.value).join('');
+  if(newPin.length!==4){ document.getElementById('forgotError').textContent='Enter a 4-digit PIN'; return; }
+  const {data} = await sb.rpc('reset_profile_pin', {p_member_id:_pendingProfile.id, p_answer1:a1, p_answer2:a2, p_new_pin:newPin});
+  if(data){
+    closeModal();
+    toast('PIN reset — you can log in with it now');
+    openPinGate(_pendingProfile);
+  } else {
+    document.getElementById('forgotError').textContent = 'Answers not recognised';
+  }
+}
+async function finishPinSetup(){
+  const pin = [...document.querySelectorAll('#setupPinBoxes input')].map(i=>i.value).join('');
+  const confirm = [...document.querySelectorAll('#setupPinConfirmBoxes input')].map(i=>i.value).join('');
+  const q1 = document.getElementById('setupQ1').value.trim();
+  const a1 = document.getElementById('setupA1').value.trim();
+  const q2 = document.getElementById('setupQ2').value.trim();
+  const a2 = document.getElementById('setupA2').value.trim();
+  const err = document.getElementById('setupError');
+  if(pin.length!==4){ err.textContent='Enter a 4-digit PIN'; return; }
+  if(pin!==confirm){ err.textContent="PINs don't match"; return; }
+  if(!q1||!a1||!q2||!a2){ err.textContent='Fill in both security questions'; return; }
+  const {error} = await sb.rpc('set_profile_security', {p_member_id:_pendingProfile.id, p_pin:pin, p_q1:q1, p_a1:a1, p_q2:q2, p_a2:a2});
+  if(error){ err.textContent='Could not save — try again'; return; }
+  await enterProfile(_pendingProfile);
+}
+async function enterProfile(member){
+  STATE.role = member.role; STATE.accountId = member.account_id; STATE.uid = STATE.authUid; STATE.ownerId = member.account_id;
+  localStorage.setItem('wq_last_profile', JSON.stringify({memberId:member.id}));
   await enterApp();
 }
 async function claimInvite(inviteId, accountId, role, displayName){
-  await sb.from('account_members').insert({account_id:accountId, user_id:STATE.authUid, role, display_name:displayName});
+  const {data:newMember} = await sb.from('account_members').insert({account_id:accountId, user_id:STATE.authUid, role, display_name:displayName}).select('id,account_id,role,display_name,security_q1,security_q2').single();
   await sb.from('invites').delete().eq('id', inviteId);
-  await selectProfile(accountId, role, displayName);
+  openPinGate(newMember);
 }
 function openCreateAccountPrompt(){
   openModal(`
     <button class="modal-close" onclick="closeModal()">×</button>
     <h3>Create your WorkQuest</h3>
-    <div class="field"><label>Your name</label><input type="text" id="newAcctName" placeholder="e.g. Caleb"></div>
+    <div class="field"><label>Your name</label><input type="text" id="newAcctName" placeholder="e.g. Jordan"></div>
     <button class="btn btn-primary btn-block" onclick="createAccount()">Create</button>
   `);
 }
@@ -855,9 +1102,9 @@ async function createAccount(){
   const name = document.getElementById('newAcctName').value.trim() || 'Me';
   const {data:acct, error} = await sb.from('accounts').insert({display_name:'WorkQuest', created_by:STATE.authUid}).select().single();
   if(error){ toast('Could not create account'); return; }
-  await sb.from('account_members').insert({account_id:acct.id, user_id:STATE.authUid, role:'admin', display_name:name});
+  const {data:newMember} = await sb.from('account_members').insert({account_id:acct.id, user_id:STATE.authUid, role:'admin', display_name:name}).select('id,account_id,role,display_name,security_q1,security_q2').single();
   closeModal();
-  await selectProfile(acct.id, 'admin', name);
+  openPinGate(newMember);
 }
 function wireDigitBoxes(containerId, btnId, onComplete){
   const boxes=[...document.querySelectorAll('#'+containerId+' input')];
@@ -865,13 +1112,12 @@ function wireDigitBoxes(containerId, btnId, onComplete){
     box.addEventListener('input',()=>{
       box.value = box.value.replace(/[^0-9]/g,'');
       if(box.value && i<boxes.length-1) boxes[i+1].focus();
-      const btn = document.getElementById(btnId);
-      if(btn) btn.disabled = boxes.some(b=>!b.value);
+      if(btnId){ const btn = document.getElementById(btnId); if(btn) btn.disabled = boxes.some(b=>!b.value); }
+      if(boxes.every(b=>b.value) && onComplete) onComplete();
     });
     box.addEventListener('keydown',(e)=>{
       if(e.key==='Backspace' && !box.value && i>0) boxes[i-1].focus();
-      const btn = document.getElementById(btnId);
-      if(e.key==='Enter' && btn && !btn.disabled) onComplete();
+      if(e.key==='Enter' && onComplete) onComplete();
     });
   });
 }
@@ -894,7 +1140,7 @@ async function loadAdminData(){
   }
   STATE.holidays = settingsRows[0].data.holidays || [];
   STATE.budget = settingsRows[0].data.budget || {mode:'recommended', categories:[]};
-  const {data:members} = await sb.from('account_members').select('*').eq('account_id', STATE.accountId).eq('role','viewer');
+  const {data:members} = await sb.from('account_members').select('id,account_id,role,display_name,permissions,created_at').eq('account_id', STATE.accountId).eq('role','viewer');
   STATE.viewers = members||[];
   const {data:invites} = await sb.from('invites').select('*').eq('account_id', STATE.accountId);
   STATE.pendingInvites = invites||[];
@@ -2804,10 +3050,12 @@ function toast(msg){
 (async function init(){
   initDemoCarousel();
   wireDigitBoxes('otpBoxes','verifyOtpBtn', verifyOtp);
+  wireDigitBoxes('pinEntryBoxes', null, submitPinEntry);
+  wireDigitBoxes('setupPinBoxes', null, null);
+  wireDigitBoxes('setupPinConfirmBoxes', null, null);
   const {data:{session}} = await sb.auth.getSession();
   if(session){
     await loadProfiles();
-    showScreen('profile');
   } else {
     showScreen('landing');
   }
