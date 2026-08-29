@@ -78,7 +78,7 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
   background:var(--accent);color:var(--on-accent);font-weight:700;font-size:15px;
 }
 .login-btn:disabled{opacity:0.4;}
-.login-error{color:var(--rust);font-size:13px;margin-top:14px;min-height:18px;}
+.login-error{color:var(--rust);font-size:13px;margin-top:14px;min-height:18px;max-width:320px;word-wrap:break-word;}
 .login-loading{color:var(--text-dim);font-size:13px;margin-top:14px;}
 
 /* ---- Landing / demo ---- */
@@ -985,7 +985,7 @@ async function submitMasterPin(){
   const pin = [...document.querySelectorAll('#masterPinBoxes input')].map(i=>i.value).join('');
   if(pin.length!==6) return;
   const {data, error} = await sb.rpc('verify_admin_pin', {p_pin6: pin});
-  if(error){ document.getElementById('masterPinError').textContent = 'Something went wrong'; return; }
+  if(error){ console.error(error); document.getElementById('masterPinError').textContent = 'Something went wrong: '+error.message; return; }
   if(data.ok){
     document.getElementById('masterPinError').textContent = '';
     await loadProfiles();
@@ -1025,7 +1025,7 @@ async function finishMasterSetup(){
   if(pin!==confirm){ err.textContent="PINs don't match"; return; }
   if(!q1||!a1||!q2||!a2){ err.textContent='Fill in both security questions'; return; }
   const {error} = await sb.rpc('setup_admin_pin', {p_pin6:pin, p_q1:q1, p_a1:a1, p_q2:q2, p_a2:a2});
-  if(error){ err.textContent='Could not save — try again'; return; }
+  if(error){ console.error(error); err.textContent='Could not save: '+error.message; return; }
   await loadProfiles();
 }
 function openMasterForgotModal(){
@@ -1161,7 +1161,7 @@ async function submitPinEntry(){
   const pin = [...document.querySelectorAll('#pinEntryBoxes input')].map(i=>i.value).join('');
   if(pin.length!==4 || !_pendingProfile) return;
   const {data, error} = await sb.rpc('verify_profile_pin', {p_profile_id:_pendingProfile.id, p_pin4:pin});
-  if(error){ document.getElementById('pinError').textContent = 'Something went wrong'; return; }
+  if(error){ console.error(error); document.getElementById('pinError').textContent = 'Something went wrong: '+error.message; return; }
   if(data.ok){
     await enterProfile(_pendingProfile.id, data.role, _pendingProfile.display_name, data.token||null);
   } else if(data.locked){
@@ -1210,7 +1210,7 @@ async function submitProfilePinReset(){
   const newPin = [...document.querySelectorAll('#profileResetPinBoxes input')].map(i=>i.value).join('');
   if(newPin.length!==4){ document.getElementById('profileResetError').textContent='Enter a 4-digit PIN'; return; }
   const {error} = await sb.rpc('set_profile_pin', {p_profile_id:_pendingProfile.id, p_pin4:newPin});
-  if(error){ document.getElementById('profileResetError').textContent = 'Could not reset — try again'; return; }
+  if(error){ console.error(error); document.getElementById('profileResetError').textContent = 'Could not reset: '+error.message; return; }
   closeModal();
   toast('PIN reset — enter it now to continue');
   document.querySelectorAll('#pinEntryBoxes input').forEach(i=>i.value='');
@@ -1225,9 +1225,9 @@ async function finishPinSetup(){
   if(pin!==confirm){ err.textContent="PINs don't match"; return; }
   const name = document.getElementById('setupNameInput').value.trim() || (_pendingProfile.role==='admin'?'Admin':'Viewer');
   const {data:profileId, error:createErr} = await sb.rpc('create_profile', {p_role:_pendingProfile.role, p_display_name:name});
-  if(createErr){ err.textContent='Could not create profile — try again'; return; }
+  if(createErr){ console.error(createErr); err.textContent='Could not create profile: '+createErr.message; return; }
   const {error:pinErr} = await sb.rpc('set_profile_pin', {p_profile_id:profileId, p_pin4:pin});
-  if(pinErr){ err.textContent='Could not save PIN — try again'; return; }
+  if(pinErr){ console.error(pinErr); err.textContent='Could not save PIN: '+pinErr.message; return; }
   if(_pendingProfile.role==='admin'){
     // First-ever setup for this account — there's nothing to go "back" to,
     // so this naturally completes onboarding straight into the app.
