@@ -2505,10 +2505,10 @@ function wireDigitBoxes(containerId, btnId, onComplete){
    DATA LOADING
    ========================================================================= */
 async function loadAdminData(){
-  // Do not let one non-critical table block the entire Admin application.
-  // The old implementation performed five requests serially, so a single
-  // stalled PostgREST/auth request could leave the UI looking permanently
-  // like it was syncing.
+  // An empty account is a valid account. In particular, an empty `shifts`
+  // result is NOT a loading state — Supabase returns data: [] and that means
+  // the shift sync is complete. Keep the core data load independent so one
+  // optional table cannot hold the whole app in "Syncing…".
   if(!STATE.uid) throw new Error('Admin session has no user id. Please sign in again.');
 
   const started=Date.now();
@@ -2517,18 +2517,46 @@ async function loadAdminData(){
     return res;
   });
 
-  const [empRes,shiftRes,plannedRes]=await Promise.all([
-    request(sb.from('employers').select('*').order('created_at'),'Employers sync'),
-    request(sb.from('shifts').select('*').order('date'),'Shifts sync'),
-    request(sb.from('planned_shifts').select('*').order('date'),'Planned shifts sync')
+  // These are the three core datasets needed to render Admin. Use allSettled
+  // so an optional/empty table is never mistaken for an unfinished sync.
+  // The shifts request is still required: a real shifts-query error should be
+  // reported rather than silently pretending there are no shifts.
+  const results = await Promise.allSettled([
+    request(sb.from('employers').select('*').eq('owner_id',STATE.uid).order('created_at'),'Employers sync'),
+    request(sb.from('shifts').select('*').eq('owner_id',STATE.uid).order('date'),'Shifts sync'),
+    request(sb.from('planned_shifts').select('*').eq('owner_id',STATE.uid).order('date'),'Planned shifts sync')
   ]);
-  STATE.employers=(empRes.data||[]).map(rowToEmployer);
-  STATE.shifts=(shiftRes.data||[]).map(rowToShift);
-  STATE.plannedShifts=(plannedRes.data||[]).map(rowToPlanned);
 
-  // Settings are useful but must never prevent the diary from opening.
-  // If the row is missing, use safe local defaults and let saveSettings()
-  // create it later.
+  const [empResult,shiftResult,plannedResult] = results;
+
+  if(shiftResult.status==='rejected'){
+    throw shiftResult.reason instanceof Error
+      ? shiftResult.reason
+      : new Error(`Shifts sync failed: ${shiftResult.reason||'Supabase request failed'}`);
+  }
+
+  // IMPORTANT: [] is a successful, fully-loaded result.
+  STATE.shifts=(shiftResult.value?.data||[]).map(rowToShift);
+
+  if(empResult.status==='fulfilled'){
+    STATE.employers=(empResult.value?.data||[]).map(rowToEmployer);
+  }else{
+    console.warn('WorkQuest employers sync skipped:',empResult.reason);
+    STATE.employers=STATE.employers||[];
+  }
+
+  if(plannedResult.status==='fulfilled'){
+    STATE.plannedShifts=(plannedResult.value?.data||[]).map(rowToPlanned);
+  }else{
+    console.warn('WorkQuest planned-shifts sync skipped:',plannedResult.reason);
+    STATE.plannedShifts=STATE.plannedShifts||[];
+  }
+
+  // The diary is now fully usable even when there are zero employers/shifts.
+  // Settings/profile metadata is deliberately loaded after the core sync and
+  // can never keep the top-bar status stuck on "Syncing…".
+  setSync('saved', STATE.shifts.length ? 'Synced' : 'Synced · No shifts yet');
+
   try{
     const settingsRes=await request(sb.from('settings').select('*').eq('owner_id',STATE.uid).limit(1),'Settings sync');
     const settingsRows=settingsRes.data||[];
@@ -2545,7 +2573,6 @@ async function loadAdminData(){
     STATE.budget=STATE.budget||{mode:'recommended',categories:[]};
   }
 
-  // Viewer profile metadata is non-critical for Admin mode.
   try{
     const viewerRes=await request(sb.from('profiles').select('id,display_name,permissions').eq('owner_id',STATE.uid).eq('role','viewer').limit(1),'Profile sync');
     STATE.localViewer=(viewerRes.data&&viewerRes.data[0])||null;
@@ -2554,7 +2581,7 @@ async function loadAdminData(){
     STATE.localViewer=null;
   }
 
-  console.info(`WorkQuest Admin sync completed in ${Date.now()-started}ms`);
+  console.info(`WorkQuest Admin core sync completed in ${Date.now()-started}ms (${STATE.shifts.length} shifts)`);
 }
 
 function rowToPlanned(row){
