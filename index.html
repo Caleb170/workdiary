@@ -3485,7 +3485,13 @@ function renderSettings(){
       </div>`;
     if(emp.payMode==='salary'){
       const cur = versionForDate(emp.salaryVersions||[], getTodaySydney());
-      html += `<div class="rate-row" onclick="openEditJobModal('${emp.id}')" style="cursor:pointer;"><span class="muted">Weekly salary</span><span class="num">$${(cur?.amount||0).toFixed(2)}/wk</span></div>`;
+      const salaryAmount=Number(cur?.amount||0);
+      const salaryFreq=emp.salaryFrequency||'weekly';
+      let salaryLabel='Weekly salary', salaryDisplay=`$${salaryAmount.toFixed(2)}/wk`;
+      if(salaryFreq==='fortnightly'){ salaryLabel='Fortnightly salary'; salaryDisplay=`$${salaryAmount.toFixed(2)}/fortnight`; }
+      else if(salaryFreq==='monthly'){ salaryLabel='Monthly salary'; salaryDisplay=`$${salaryAmount.toFixed(2)}/mo`; }
+      else if(salaryFreq==='yearly'){ salaryLabel='Annual salary'; salaryDisplay=`$${salaryAmount.toFixed(2)}/year · $${(salaryAmount/52).toFixed(2)}/wk`; }
+      html += `<div class="rate-row" onclick="openEditJobModal('${emp.id}')" style="cursor:pointer;"><span class="muted">${salaryLabel}</span><span class="num">${salaryDisplay}</span></div>`;
     } else {
     for(const r of emp.rates){
       const cur = versionForDate(r.versions, getTodaySydney());
@@ -4298,7 +4304,7 @@ function updateCalcPreview(){
   if(!emp||!date||!start||!end) return;
   const adj = readPayAdjustment();
   if(emp.payMode==='salary'){
-    document.getElementById('calcPreview').innerHTML = `<div class="calc-line"><span>Salaried job</span><span>No per-shift pay</span></div><p class="muted small" style="margin-top:4px;">Weekly salary is credited once for any week with a logged shift.</p>`;
+    document.getElementById('calcPreview').innerHTML = `<div class="calc-line"><span>Salaried job</span><span>No per-shift pay</span></div><p class="muted small" style="margin-top:4px;">Salary jobs do not earn per shift. ${STATE.employers.filter(e=>e.payMode==='salary').map(e=>{const v=versionForDate(e.salaryVersions,getTodaySydney());if(!v?.amount)return null;const a=Number(v.amount);if(e.salaryFrequency==='yearly')return `${e.name}: $${a.toFixed(2)}/year · $${(a/52).toFixed(2)}/wk equivalent`;if(e.salaryFrequency==='monthly')return `${e.name}: $${a.toFixed(2)}/month`;if(e.salaryFrequency==='fortnightly')return `${e.name}: $${a.toFixed(2)}/fortnight`;return `${e.name}: $${a.toFixed(2)}/week`;}).filter(Boolean).join(' · ')||'Salary is credited using the selected pay frequency.'}</p>`;
     return;
   }
   const calc=calculateShiftPay({date,start,end,breakMode:'auto',rateOverride:adj.rateOverride,overtimeMultiplier:adj.overtimeMultiplier}, emp);
