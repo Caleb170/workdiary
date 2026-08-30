@@ -1187,6 +1187,16 @@ input,select,textarea,button{max-width:100%}
 @media(prefers-reduced-motion:no-preference){.wq-tutorial-visual:before{animation:wqTourPulse 4s ease-in-out infinite}.wq-tutorial-icon{animation:wqTourFloat 3.6s ease-in-out infinite}@keyframes wqTourPulse{50%{transform:scale(1.04);opacity:.75}}@keyframes wqTourFloat{50%{transform:translateY(-4px)}}}
 </style>
 
+
+<style id="wq-fullscreen-polish">
+html, body { width:100%; min-width:100%; min-height:100%; margin:0; padding:0; }
+body { overflow-x:hidden; }
+#app-screen { width:100%; min-width:100%; min-height:100dvh; min-height:100svh; }
+#app-screen > * { min-width:0; }
+@media (min-width:769px){
+  #app-screen { min-height:100vh; }
+}
+</style>
 </head>
 <body>
 
@@ -4408,6 +4418,17 @@ function toast(msg){
   } else {
     showScreen('landing');
   }
+})();
+</script>
+
+<script id="wq-newline-cleanup">
+(function(){
+  function clean(){
+    document.body && Array.from(document.body.childNodes).forEach(function(n){
+      if(n.nodeType===3 && /^\s*\/n(?:\/n)*\s*$/.test(n.nodeValue||'')) n.remove();
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',clean,{once:true}); else clean();
 })();
 </script>
 </body>
