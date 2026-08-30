@@ -1873,7 +1873,12 @@ async function enterApp(){
   if(STATE.role==='admin'){
     try { startTickerWatcher(); } catch(err) { console.error('Ticker init failed:',err); }
   }
-  if(STATE.role==='admin' && localStorage.getItem('wq_pending_quick_tutorial')==='1') setTimeout(showQuickTutorial,220);
+  // Do not place a full-screen tutorial overlay over a freshly opened account.
+  // A new/empty account must remain immediately interactive; the tutorial can
+  // be launched later without blocking the app during startup.
+  const tutorialRoot=document.getElementById('wqTutorialRoot');
+  if(tutorialRoot){ tutorialRoot.classList.add('hidden'); tutorialRoot.innerHTML=''; }
+  localStorage.removeItem('wq_pending_quick_tutorial');
 
   // Background sync: deliberately DO NOT await this. A slow Supabase table,
   // realtime subscription, or network failure must never disable the Admin UI.
