@@ -1827,11 +1827,18 @@ async function enterApp(){
   STATE.activeTab = 'diary';
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab==='diary'));
   if(STATE.role==='viewer'){
-    ['settings','timeline','tax','budget'].forEach(t=>document.querySelector(`[data-tab="${t}"]`).classList.add('hidden'));
+    ['settings','timeline','tax','budget'].forEach(t=>{ const el=document.querySelector(`[data-tab="${t}"]`); if(el) el.classList.add('hidden'); });
   }
   initTheme();
   renderFyPill();
-  setSync('saving','Loading…');
+  // IMPORTANT: show the Admin UI immediately. Data sync must never block the
+  // app shell, because one slow/broken Supabase table should not make the
+  // entire application appear to load forever.
+  setSync('saving','Syncing…');
+  render();
+  if(STATE.role==='admin') startTickerWatcher();
+  if(STATE.role==='admin' && localStorage.getItem('wq_pending_quick_tutorial')==='1') setTimeout(showQuickTutorial,220);
+
   try{
     if(STATE.role==='admin'){
       await wqWithTimeout(loadAdminData(),20000,'WorkQuest data sync');
@@ -1843,12 +1850,14 @@ async function enterApp(){
     }
     setSync('saved','Synced');
     render();
+    const startupErr=document.getElementById('wqStartupError');
+    if(startupErr) startupErr.remove();
   }catch(err){
+    // Keep the app usable with local/empty state and clearly report the
+    // backend problem instead of trapping the user on a loading screen.
     wqShowStartupError(err);
     render();
   }
-  if(STATE.role==='admin') startTickerWatcher();
-  if(STATE.role==='admin' && localStorage.getItem('wq_pending_quick_tutorial')==='1') setTimeout(showQuickTutorial,220);
 }
 
 const WQ_TUTORIAL_STEPS=[{icon:'▤',title:'Your Diary',text:'Log shifts and keep each day organised at a glance.'},{icon:'▦',title:'Your Calendar',text:'See your work pattern across the month and spot worked, planned and holiday days.'},{icon:'⌁',title:'Timeline & earnings',text:'Follow your earnings history, including salary and payday information.'},{icon:'＋',title:'Add Shift & settings',text:'Use + Add shift for new work. Pay Rates manages jobs, pay frequency, salary, bonuses and preferences.'}];let _wqTutorialIndex=0;function showQuickTutorial(){if(localStorage.getItem('wq_quick_tutorial_done')==='1'){localStorage.removeItem('wq_pending_quick_tutorial');return;}_wqTutorialIndex=0;renderQuickTutorial()}function renderQuickTutorial(){const root=document.getElementById('wqTutorialRoot');if(!root)return;const x=WQ_TUTORIAL_STEPS[_wqTutorialIndex];root.innerHTML=`<div class="wq-tutorial-backdrop"><div class="wq-tutorial-card" role="dialog" aria-modal="true"><div class="wq-tutorial-top"><span class="wq-tutorial-eyebrow">QUICK TOUR</span><span class="wq-tutorial-count">${_wqTutorialIndex+1} / ${WQ_TUTORIAL_STEPS.length}</span></div><div class="wq-tutorial-progress">${WQ_TUTORIAL_STEPS.map((_,i)=>`<span class="${i<=_wqTutorialIndex?'active':''}"></span>`).join('')}</div><div class="wq-tutorial-visual"><div class="wq-tutorial-icon">${x.icon}</div><div class="wq-tutorial-orb"></div><div class="wq-tutorial-lines"><span></span><span></span><span></span></div></div><h3>${x.title}</h3><p>${x.text}</p><div class="wq-tutorial-actions"><button class="wq-tutorial-skip" onclick="skipQuickTutorial()">Skip</button><button class="btn btn-primary" onclick="nextQuickTutorial()">${_wqTutorialIndex===3?'Got it':'Next'} <span aria-hidden="true">→</span></button></div></div></div>`;root.classList.remove('hidden')}function nextQuickTutorial(){if(_wqTutorialIndex===3){finishQuickTutorial();return}_wqTutorialIndex++;renderQuickTutorial()}function skipQuickTutorial(){finishQuickTutorial()}function finishQuickTutorial(){localStorage.setItem('wq_quick_tutorial_done','1');localStorage.removeItem('wq_pending_quick_tutorial');const r=document.getElementById('wqTutorialRoot');if(r){r.classList.add('hidden');r.innerHTML=''}}
@@ -2200,22 +2209,34 @@ async function tryMasterReset(){
 
 /* ---- Step 3: profile picker (Admin / Viewer), each with its own 4-digit PIN ---- */
 async function loadProfiles(){
-  if(!STATE.authUid){
-    const {data:{user}} = await sb.auth.getUser();
-    if(!user){ showScreen('landing'); return; }
-    STATE.authUid = user.id; STATE.email = user.email;
+  try{
+    if(!STATE.authUid){
+      const userRes = await wqWithTimeout(sb.auth.getUser(),10000,'Profile authentication');
+      const user = userRes?.data?.user;
+      if(!user){ showScreen('landing'); return; }
+      STATE.authUid = user.id; STATE.email = user.email;
+    }
+    const res = await wqWithTimeout(
+      sb.from('profiles').select('id,role,display_name,icon,permissions').eq('owner_id', STATE.authUid),
+      12000, 'Profile sync'
+    );
+    if(res.error) throw res.error;
+    STATE.profiles = res.data || [];
+    const admin = STATE.profiles.find(p=>p.role==='admin');
+    if(!admin){
+      // First time past the master PIN — walk straight into Admin profile setup.
+      openPinGate({role:'admin', display_name:'Admin', isNew:true});
+      return;
+    }
+    renderProfileGrid();
+    showScreen('profile');
+  }catch(err){
+    console.error('WorkQuest profile sync failed:',err);
+    const msg=err?.message||String(err);
+    const el=document.getElementById('profileError');
+    if(el) el.textContent='Could not load profiles: '+msg;
+    else toast('Could not load profiles: '+msg);
   }
-  const {data:profiles} = await sb.from('profiles').select('id,role,display_name,icon,permissions').eq('owner_id', STATE.authUid);
-  STATE.profiles = profiles || [];
-  const admin = STATE.profiles.find(p=>p.role==='admin');
-  if(!admin){
-    // First time past the master PIN — walk straight into Admin profile
-    // setup instead of showing a picker with nothing selectable in it.
-    openPinGate({role:'admin', display_name:'Admin', isNew:true});
-    return;
-  }
-  renderProfileGrid();
-  showScreen('profile');
 }
 function renderProfileGrid(){
   const grid = document.getElementById('profileGrid');
