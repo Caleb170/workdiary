@@ -15,7 +15,7 @@ if('serviceWorker' in navigator){ window.addEventListener('load', ()=>navigator.
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
@@ -1521,6 +1521,8 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     storage: window.localStorage,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    flowType: 'pkce',
+    lockAcquireTimeout: 10000,
   }
 });
 
@@ -1537,19 +1539,35 @@ function wqWithTimeout(promise, ms=15000, label='Supabase request'){
 function wqShowStartupError(err){
   console.error('WorkQuest startup/sync error:', err);
   const msg=err?.message||String(err)||'Unable to connect to Supabase.';
-  const box=document.getElementById('syncText');
-  if(box) box.textContent='Sync error';
-  const dot=document.getElementById('syncDot');
-  if(dot) dot.className='sync-dot error';
+  setSync('error','Sync error');
   const existing=document.getElementById('wqStartupError');
   if(existing) existing.remove();
   const app=document.getElementById('app-screen');
   if(app && !app.classList.contains('hidden')){
     const b=document.createElement('div');
     b.id='wqStartupError';
-    b.style.cssText='margin:12px 0;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--text-dim);font-size:12px;line-height:1.45;';
-    b.innerHTML=`<strong style="color:var(--text)">Sync couldn't finish.</strong><br>${escapeHtml(msg)}<br><button class="btn btn-sm" style="margin-top:9px" onclick="location.reload()">Try again</button>`;
+    b.style.cssText='margin:12px 0;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--text-dim);font-size:12px;line-height:1.45;position:relative;z-index:60;';
+    b.innerHTML=`<strong style="color:var(--text)">Sync couldn't finish.</strong><br><span>${escapeHtml(msg)}</span><br><button class="btn btn-sm" style="margin-top:9px" onclick="retryAdminSync()">Retry sync</button>`;
     app.insertBefore(b, app.firstChild);
+  }
+}
+async function retryAdminSync(){
+  const box=document.getElementById('wqStartupError');
+  if(box) box.remove();
+  setSync('saving','Syncing…');
+  try{
+    if(STATE.role==='admin'){
+      await wqWithTimeout(loadAdminData(),30000,'WorkQuest Admin sync');
+      subscribeRealtimeAdmin();
+      setupNotifyChannel(STATE.uid,false);
+    }else{
+      await wqWithTimeout(loadViewerData(),30000,'WorkQuest Viewer sync');
+      setupNotifyChannel(STATE.uid,true);
+    }
+    setSync('saved','Synced');
+    render();
+  }catch(err){
+    wqShowStartupError(err);
   }
 }
 
@@ -1751,15 +1769,21 @@ function nextPaydayForEmployer(emp, fromISO){
     return candidate;
   }
   if(!pc.payDay) return null;
-  const freqDays = pc.frequency==='fortnightly' ? 14 : 7;
   const targetDow = DOW_SHORT.indexOf(pc.payDay);
+  // Malformed/legacy data (bad or missing payDay) used to leave targetDow at
+  // -1, which the old day-stepping while-loop below could never match —
+  // an infinite loop that froze the whole tab. Bail out instead.
+  if(targetDow === -1) return null;
+  const freqDays = pc.frequency==='fortnightly' ? 14 : 7;
   if(pc.frequency==='fortnightly' && pc.anchorDate){
     let d = pc.anchorDate;
-    while(isoCompare(d, fromISO) < 0) d = addDays(d, freqDays);
+    let guard = 0;
+    while(isoCompare(d, fromISO) < 0 && guard++ < 1000) d = addDays(d, freqDays);
     return d;
   }
-  let d = fromISO;
-  while(dowIndex(d) !== targetDow) d = addDays(d, 1);
+  // Direct arithmetic instead of a day-stepping loop — cannot hang regardless of input.
+  const diff = ((targetDow - dowIndex(fromISO)) % 7 + 7) % 7;
+  let d = diff===0 ? fromISO : addDays(fromISO, diff);
   if(isoCompare(d, fromISO) < 0) d = addDays(d, freqDays);
   return d;
 }
@@ -1787,10 +1811,12 @@ function upcomingPaydays(){
   const today = getTodaySydney();
   return STATE.employers.filter(e=>!e.archived && e.payCycle?.enabled)
     .map(emp=>{
-      const payday = nextPaydayForEmployer(emp, today);
-      if(!payday) return null;
-      const amount = payPeriodEarnings(emp, payday);
-      return { emp, payday, amount, isToday: payday===today };
+      try{
+        const payday = nextPaydayForEmployer(emp, today);
+        if(!payday) return null;
+        const amount = payPeriodEarnings(emp, payday);
+        return { emp, payday, amount, isToday: payday===today };
+      }catch(err){ console.error('upcomingPaydays failed for', emp && emp.name, err); return null; }
     }).filter(Boolean).sort((a,b)=>isoCompare(a.payday,b.payday));
 }
 function mkRate(label,days,timeFrom,timeTo,amount){return {id:uid('rate'),label,days,timeFrom,timeTo,versions:[{amount,effectiveFrom:getTodaySydney()}]};}
@@ -1852,8 +1878,8 @@ async function enterApp(){
   // Background sync: deliberately DO NOT await this. A slow Supabase table,
   // realtime subscription, or network failure must never disable the Admin UI.
   const syncTask = STATE.role==='admin'
-    ? wqWithTimeout(loadAdminData(),20000,'WorkQuest data sync').then(()=>{ subscribeRealtimeAdmin(); setupNotifyChannel(STATE.uid,false); })
-    : wqWithTimeout(loadViewerData(),20000,'Viewer data sync').then(()=>setupNotifyChannel(STATE.uid,true));
+    ? wqWithTimeout(loadAdminData(),30000,'WorkQuest Admin sync').then(()=>{ subscribeRealtimeAdmin(); setupNotifyChannel(STATE.uid,false); })
+    : wqWithTimeout(loadViewerData(),30000,'Viewer data sync').then(()=>setupNotifyChannel(STATE.uid,true));
 
   syncTask.then(()=>{
     setSync('saved','Synced');
@@ -2479,33 +2505,56 @@ function wireDigitBoxes(containerId, btnId, onComplete){
    DATA LOADING
    ========================================================================= */
 async function loadAdminData(){
-  const empRes = await wqWithTimeout(sb.from('employers').select('*').order('created_at'),12000,'Employers sync');
-  if(empRes.error) throw empRes.error;
-  STATE.employers = (empRes.data||[]).map(rowToEmployer);
+  // Do not let one non-critical table block the entire Admin application.
+  // The old implementation performed five requests serially, so a single
+  // stalled PostgREST/auth request could leave the UI looking permanently
+  // like it was syncing.
+  if(!STATE.uid) throw new Error('Admin session has no user id. Please sign in again.');
 
-  const shiftRes = await wqWithTimeout(sb.from('shifts').select('*').order('date'),12000,'Shifts sync');
-  if(shiftRes.error) throw shiftRes.error;
-  STATE.shifts = (shiftRes.data||[]).map(rowToShift);
+  const started=Date.now();
+  const request=(promise,label)=>wqWithTimeout(promise,12000,label).then(res=>{
+    if(res?.error) throw new Error(`${label}: ${res.error.message || res.error.details || 'Supabase request failed'}`);
+    return res;
+  });
 
-  const plannedRes = await wqWithTimeout(sb.from('planned_shifts').select('*').order('date'),12000,'Planned shifts sync');
-  if(plannedRes.error) throw plannedRes.error;
-  STATE.plannedShifts = (plannedRes.data||[]).map(rowToPlanned);
+  const [empRes,shiftRes,plannedRes]=await Promise.all([
+    request(sb.from('employers').select('*').order('created_at'),'Employers sync'),
+    request(sb.from('shifts').select('*').order('date'),'Shifts sync'),
+    request(sb.from('planned_shifts').select('*').order('date'),'Planned shifts sync')
+  ]);
+  STATE.employers=(empRes.data||[]).map(rowToEmployer);
+  STATE.shifts=(shiftRes.data||[]).map(rowToShift);
+  STATE.plannedShifts=(plannedRes.data||[]).map(rowToPlanned);
 
-  let settingsRes = await wqWithTimeout(sb.from('settings').select('*').eq('owner_id', STATE.uid).limit(1),12000,'Settings sync');
-  if(settingsRes.error) throw settingsRes.error;
-  let settingsRows=settingsRes.data;
-  if(!settingsRows || !settingsRows.length){
-    const newSettingsRow = {owner_id:STATE.uid, data:{holidays:[], budget:{mode:'recommended', categories:[]}}};
-    const insertRes=await wqWithTimeout(sb.from('settings').insert(newSettingsRow).select('*').single(),12000,'Settings setup');
-    if(insertRes.error) throw insertRes.error;
-    settingsRows=[insertRes.data||newSettingsRow];
+  // Settings are useful but must never prevent the diary from opening.
+  // If the row is missing, use safe local defaults and let saveSettings()
+  // create it later.
+  try{
+    const settingsRes=await request(sb.from('settings').select('*').eq('owner_id',STATE.uid).limit(1),'Settings sync');
+    const settingsRows=settingsRes.data||[];
+    if(settingsRows.length){
+      STATE.holidays=settingsRows[0].data?.holidays||[];
+      STATE.budget=settingsRows[0].data?.budget||{mode:'recommended',categories:[]};
+    }else{
+      STATE.holidays=[];
+      STATE.budget={mode:'recommended',categories:[]};
+    }
+  }catch(settingsErr){
+    console.warn('WorkQuest settings sync skipped:',settingsErr);
+    STATE.holidays=STATE.holidays||[];
+    STATE.budget=STATE.budget||{mode:'recommended',categories:[]};
   }
-  STATE.holidays = settingsRows[0].data?.holidays || [];
-  STATE.budget = settingsRows[0].data?.budget || {mode:'recommended', categories:[]};
 
-  const viewerRes=await wqWithTimeout(sb.from('profiles').select('id,display_name,permissions').eq('owner_id', STATE.uid).eq('role','viewer').limit(1),12000,'Profile sync');
-  if(viewerRes.error) throw viewerRes.error;
-  STATE.localViewer=(viewerRes.data&&viewerRes.data[0])||null;
+  // Viewer profile metadata is non-critical for Admin mode.
+  try{
+    const viewerRes=await request(sb.from('profiles').select('id,display_name,permissions').eq('owner_id',STATE.uid).eq('role','viewer').limit(1),'Profile sync');
+    STATE.localViewer=(viewerRes.data&&viewerRes.data[0])||null;
+  }catch(profileErr){
+    console.warn('WorkQuest viewer profile sync skipped:',profileErr);
+    STATE.localViewer=null;
+  }
+
+  console.info(`WorkQuest Admin sync completed in ${Date.now()-started}ms`);
 }
 
 function rowToPlanned(row){
