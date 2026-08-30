@@ -467,6 +467,19 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .viewer-note{background:var(--card-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:12.5px;color:var(--text-dim);margin-bottom:16px;}
 </style>
+<style>
+/* WorkQuest auth polish */
+#master-pin-screen .setup-shell, #master-setup-screen .setup-shell { padding:24px 16px 48px; }
+#master-pin-screen .setup-card, #master-setup-screen .setup-card { max-width:560px; border:1px solid rgba(255,255,255,.08); box-shadow:0 24px 70px rgba(0,0,0,.28); border-radius:28px; }
+.pin-boxes.pin6 { gap:9px !important; justify-content:center !important; }
+.pin-boxes.pin6 input { width:48px !important; height:58px !important; border-radius:14px !important; font-size:24px !important; font-weight:800 !important; }
+.setup-section { background:rgba(127,127,127,.06); border:1px solid rgba(127,127,127,.13); border-radius:20px; padding:20px !important; margin-top:16px; }
+.setup-section-title { font-size:16px !important; font-weight:800 !important; }
+.setup-label { font-size:12px !important; font-weight:700 !important; text-transform:uppercase; letter-spacing:.7px; opacity:.7; margin:18px 0 10px; }
+.setup-section input[type=text], .setup-section select { border-radius:12px !important; min-height:48px; }
+#masterPinError, #masterSetupError, #masterForgotError { min-height:20px; margin-top:12px; font-size:13px; font-weight:650; }
+@media(max-width:480px){ .pin-boxes.pin6 { gap:6px !important; } .pin-boxes.pin6 input { width:43px !important; height:54px !important; font-size:22px !important; } .setup-card { padding:22px !important; } }
+</style>
 </head>
 <body>
 
@@ -499,11 +512,10 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
   <div class="landing-wrap">
     <button class="back-btn" onclick="showScreen('landing')">‹ Back</button>
     <div class="login-title" style="font-size:26px;">Welcome back</div>
-    <div class="login-sub" id="emailSub">Enter your email, then use your 6-digit personal PIN.</div>
+    <div class="login-sub" id="emailSub">Enter your email to continue</div>
     <div id="emailStep">
       <div class="field" style="width:100%;max-width:320px;"><input type="email" id="emailInput" placeholder="you@example.com" autocomplete="email"></div>
-      <button class="login-btn" style="max-width:320px;" onclick="startPinLogin()" id="pinLoginBtn">Continue with PIN</button>
-      <button class="secondary-setup-btn" style="max-width:320px;margin-top:10px;" onclick="startSignup()">Create a new account</button>
+      <button class="login-btn" style="max-width:320px;" onclick="continueFromEmail()" id="continueBtn">Continue</button>
     </div>
     <div id="otpStep" class="hidden otp-verification">
       <div class="otp-icon">✦</div>
@@ -1027,6 +1039,7 @@ let offlineQueue = JSON.parse(localStorage.getItem('wq_offline_queue')||'[]');
 let realtimeChannel = null;
 let _pinActivationMode = false;
 let _pinRecoveryMode = false;
+let _newSignupMode = false;
 
 function getEmployer(id){ return STATE.employers.find(e=>e.id===id); }
 function shiftsOnDate(iso){ return STATE.shifts.filter(s=>s.date===iso).sort((a,b)=>a.start<b.start?-1:1); }
@@ -1141,25 +1154,35 @@ function initDemoCarousel(){
 function authPasswordForPin(email, pin){
   return `WQ:${String(email||'').trim().toLowerCase()}:${pin}`;
 }
-async function startPinLogin(){
+async function continueFromEmail(){
   const email = document.getElementById('emailInput').value.trim().toLowerCase();
   if(!email || !email.includes('@')){ showEmailError('Enter a valid email'); return; }
   STATE.email = email;
-  document.getElementById('masterPinError').textContent = '';
-  document.getElementById('masterPinLockoutBox').classList.add('hidden');
-  document.querySelectorAll('#masterPinBoxes input').forEach(i=>i.value='');
-  _pinActivationMode = false;
-  _pinRecoveryMode = false;
-  document.getElementById('masterPinTitle').textContent = 'Enter your PIN';
-  document.getElementById('masterPinSub').textContent = 'Your 6-digit WorkQuest PIN';
-  showScreen('master-pin');
-  document.querySelectorAll('#masterPinBoxes input')[0].focus();
-}
-function startSignup(){
-  const email = document.getElementById('emailInput').value.trim().toLowerCase();
-  if(!email || !email.includes('@')){ showEmailError('Enter a valid email'); return; }
-  STATE.email = email;
-  sendOtp();
+  showEmailError('');
+  setEmailBusy(true);
+  const {data, error} = await sb.rpc('check_account_status', {p_email: email});
+  setEmailBusy(false);
+  if(error){ console.error(error); showEmailError('Could not check that email: '+error.message); return; }
+
+  if(data && data.exists && data.setup_complete){
+    // Fully set-up account -> straight to PIN entry, never send a code.
+    _pinActivationMode = false;
+    _pinRecoveryMode = false;
+    _newSignupMode = false;
+    document.getElementById('masterPinError').textContent = '';
+    document.getElementById('masterPinLockoutBox').classList.add('hidden');
+    document.querySelectorAll('#masterPinBoxes input').forEach(i=>i.value='');
+    document.getElementById('masterPinTitle').textContent = 'Enter your PIN';
+    document.getElementById('masterPinSub').textContent = 'Your 6-digit WorkQuest PIN';
+    showScreen('master-pin');
+    document.querySelectorAll('#masterPinBoxes input')[0].focus();
+  } else {
+    // Brand new email, or an account that started setup but never finished
+    // (e.g. verified email but never created a PIN) -> (re)send the code.
+    _newSignupMode = true;
+    _pinRecoveryMode = false;
+    await sendOtp();
+  }
 }
 async function sendOtp(){
   const email = document.getElementById('emailInput').value.trim().toLowerCase();
@@ -1215,7 +1238,7 @@ function backToEmailLogin(){
   document.getElementById('emailStep').classList.remove('hidden');
   document.getElementById('otpStep').classList.add('hidden');
   document.getElementById('emailError').textContent='';
-  document.getElementById('emailSub').textContent='Enter your email, then use your 6-digit personal PIN.';
+  document.getElementById('emailSub').textContent='Enter your email to continue';
   document.getElementById('masterPinError').textContent='';
   showScreen('email');
 }
@@ -1224,6 +1247,7 @@ async function startPinRecovery(){
   if(!email){ backToEmailLogin(); return; }
   STATE.email=email;
   _pinRecoveryMode=true;
+  _newSignupMode=false;
   document.getElementById('emailStep').classList.add('hidden');
   document.getElementById('otpStep').classList.remove('hidden');
   document.getElementById('emailSub').textContent = `We need to verify ${email} before you can reset your PIN.`;
@@ -1243,6 +1267,16 @@ async function afterRecoveryEmailVerified(){
 
 /* ---- Step 2: 6-digit account-level master PIN (the "real" quick-access gate) ---- */
 async function afterEmailVerified(){
+  // A freshly verified signup must ALWAYS enter first time setup.
+  // Existing users never reach this function during normal PIN login.
+  if(_newSignupMode){
+    document.querySelectorAll('#masterSetupPinBoxes input, #masterSetupPinConfirmBoxes input').forEach(i=>i.value='');
+    ['masterSetupQ1','masterSetupA1','masterSetupQ2','masterSetupA2'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+    document.getElementById('masterSetupError').textContent = '';
+    showScreen('master-setup');
+    document.querySelectorAll('#masterSetupPinBoxes input')[0].focus();
+    return;
+  }
   const {data} = await sb.rpc('get_security_questions');
   if(data && data.has_security){
     document.querySelectorAll('#masterPinBoxes input').forEach(i=>i.value='');
@@ -1270,7 +1304,7 @@ async function submitMasterPin(){
       await loadProfiles();
       return;
     }
-    document.getElementById('masterPinError').textContent = 'Incorrect PIN. If this is your first time, use “Create a new account” or verify your email once to activate PIN login.';
+    document.getElementById('masterPinError').textContent = 'That PIN doesn’t match this account. Try again or use Forgot PIN.';
     document.querySelectorAll('#masterPinBoxes input').forEach(i=>i.value='');
     document.querySelectorAll('#masterPinBoxes input')[0].focus();
     return;
@@ -1325,6 +1359,7 @@ async function finishMasterSetup(){
   const {error:passErr}=await sb.auth.updateUser({password:authPasswordForPin(email,pin)});
   if(passErr){ console.error(passErr); err.textContent='PIN saved, but login setup failed: '+passErr.message; return; }
   _pinActivationMode=false;
+  _newSignupMode=false;
   openPinGate({role:'admin', display_name:'Admin', isNew:true});
 }
 function openMasterForgotModal(){
@@ -1555,7 +1590,7 @@ async function continueToLogin(){
   document.getElementById('emailStep').classList.remove('hidden');
   document.getElementById('otpStep').classList.add('hidden');
   document.getElementById('emailError').textContent='';
-  document.getElementById('emailSub').textContent='Enter your email, then use your 6-digit personal PIN.';
+  document.getElementById('emailSub').textContent='Enter your email to continue';
   showScreen('email');
 }
 function createViewerFromOnboarding(){
