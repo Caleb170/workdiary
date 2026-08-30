@@ -1019,7 +1019,78 @@ input,select,textarea,button{max-width:100%}
   #landing-screen #phoneTrack > .phone-slide:nth-child(3) .tl-week .amt{font-size:8.5px!important;}
 }
 </style>
-</head>
+<style id="auth-job-ui-fixes">
+/* Mobile auth/profile centering — isolated from the landing walkthrough. */
+#master-pin-screen, #pin-screen, #profile-screen{
+  box-sizing:border-box;
+  width:100%;
+  overflow-x:hidden;
+}
+#master-pin-screen > .landing-wrap,
+#pin-screen > .landing-wrap,
+#profile-screen > .landing-wrap{
+  box-sizing:border-box !important;
+  width:calc(100% - 28px) !important;
+  max-width:520px !important;
+  margin-inline:auto !important;
+  align-self:center !important;
+}
+#master-pin-screen > .landing-wrap{
+  padding-inline:20px !important;
+}
+#pin-screen > .landing-wrap{
+  padding-inline:20px !important;
+}
+#master-pin-screen .pin-boxes.pin6, #pin-screen .pin-boxes{
+  width:100%;
+  justify-content:center !important;
+  margin-inline:auto !important;
+}
+#master-pin-screen .pin-boxes.pin6 input{
+  flex:0 0 43px !important;
+}
+#pin-screen .pin-boxes.pin4 input{
+  flex:0 0 48px !important;
+}
+@media(max-width:430px){
+  #master-pin-screen > .landing-wrap, #pin-screen > .landing-wrap, #profile-screen > .landing-wrap{
+    width:calc(100% - 24px) !important;
+    padding-inline:14px !important;
+  }
+  #master-pin-screen .pin-boxes.pin6 input{flex-basis:41px !important;width:41px !important;}
+  #pin-screen .pin-boxes.pin4 input{flex-basis:46px !important;width:46px !important;}
+}
+@media(max-width:360px){
+  #master-pin-screen .pin-boxes.pin6{gap:5px !important;}
+  #master-pin-screen .pin-boxes.pin6 input{flex-basis:38px !important;width:38px !important;height:50px !important;}
+  #pin-screen .pin-boxes.pin4{gap:7px !important;}
+  #pin-screen .pin-boxes.pin4 input{flex-basis:43px !important;width:43px !important;height:52px !important;}
+}
+
+/* Add Job: clearly disabled until required fields are valid, then WorkQuest green. */
+#saveNewJobBtn{
+  transition:background .18s ease,color .18s ease,border-color .18s ease,box-shadow .18s ease,transform .16s ease,opacity .18s ease;
+}
+#saveNewJobBtn.job-ready{
+  background:var(--green) !important;
+  border-color:var(--green) !important;
+  color:#fff !important;
+  box-shadow:0 8px 22px color-mix(in srgb,var(--green) 22%,transparent) !important;
+}
+#saveNewJobBtn.job-ready:hover{
+  box-shadow:0 12px 28px color-mix(in srgb,var(--green) 28%,transparent) !important;
+  transform:translateY(-1px);
+}
+#saveNewJobBtn:not(.job-ready){opacity:.55;cursor:not-allowed;}
+
+/* Security recovery steps. */
+.security-progress{display:flex;align-items:center;gap:7px;margin:0 0 16px;}
+.security-progress .dot{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font-size:11px;font-weight:800;background:var(--card-2);border:1px solid var(--line-soft);color:var(--text-faint);}
+.security-progress .dot.active{background:color-mix(in srgb,var(--accent) 12%,var(--card));border-color:color-mix(in srgb,var(--accent) 35%,var(--line));color:var(--accent);}
+.security-progress .line{height:1px;flex:1;background:var(--line-soft);}
+.security-question-card{padding:12px;border:1px solid var(--line-soft);background:var(--card-2);border-radius:14px;margin-top:10px;}
+.security-required{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px;}
+</style>\n</head>
 <body>
 
 <div id="landing-screen">
@@ -2079,34 +2150,57 @@ function showPinLockout(seconds){
   tick();
   _lockoutInterval = setInterval(tick, 1000);
 }
-function openProfilePinResetModal(){
+async function openProfilePinResetModal(){
   if(!_pendingProfile) return;
+  const required = _pendingProfile.role==='admin' ? 2 : 1;
   openModal(`
     <button class="modal-close" onclick="closeModal()">×</button>
     <h3>Reset PIN for ${escapeHtml(_pendingProfile.display_name)}</h3>
-    <p class="muted small">You've already unlocked the account with your 6-digit PIN, so you can set a fresh 4-digit PIN for this profile directly.</p>
-    <div class="field"><label>New PIN</label>
-      <div class="pin-boxes pin4" id="profileResetPinBoxes" style="justify-content:flex-start;">
-        <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
-        <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
-        <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
-        <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+    <div class="security-progress" aria-label="PIN recovery progress">
+      <span class="dot active">1</span><span class="line"></span><span class="dot active">2</span>
+    </div>
+    <p class="muted small">For security, this ${_pendingProfile.role==='admin'?'Admin':'Viewer'} PIN reset requires ${required} security question${required===1?'':'s'}.</p>
+    <div id="profileResetSecurityQuestions"><p class="muted small">Loading security questions…</p></div>
+  `);
+  loadProfilePinResetQuestions(required);
+}
+async function loadProfilePinResetQuestions(required){
+  const wrap=document.getElementById('profileResetSecurityQuestions');
+  if(!wrap) return;
+  const {data,error}=await sb.rpc('get_security_questions');
+  if(error || !data || !data.has_security){
+    wrap.innerHTML='<div class="login-error">Security questions are not available for this account, so the PIN cannot be reset here.</div>';
+    return;
+  }
+  const q2 = required===2 ? `
+    <div class="security-question-card"><div class="security-required">Question 2 of 2</div><label>${escapeHtml(data.q2)}</label><input type="text" id="profileResetAnswer2" autocomplete="off"></div>` : '';
+  wrap.innerHTML=`
+    <div class="security-question-card"><div class="security-required">Question 1 of ${required}</div><label>${escapeHtml(data.q1)}</label><input type="text" id="profileResetAnswer1" autocomplete="off"></div>
+    ${q2}
+    <div class="field" style="margin-top:14px;"><label>New 4-digit PIN</label>
+      <div class="pin-boxes pin4" id="profileResetPinBoxes">
+        <input maxlength="1" inputmode="numeric" pattern="[0-9]*"><input maxlength="1" inputmode="numeric" pattern="[0-9]*"><input maxlength="1" inputmode="numeric" pattern="[0-9]*"><input maxlength="1" inputmode="numeric" pattern="[0-9]*">
       </div>
     </div>
-    <button class="btn btn-primary" onclick="submitProfilePinReset()">Save new PIN</button>
+    <button class="btn btn-primary" onclick="submitProfilePinReset()">Verify & save PIN</button>
     <div class="login-error" id="profileResetError"></div>
-  `);
+    <p class="muted small" style="margin-top:10px;">Answer the required questions exactly as you set them up. The existing account security rules remain in effect.</p>
+  `;
+  wireDigitBoxes('profileResetPinBoxes', null, null);
 }
 async function submitProfilePinReset(){
-  const newPin = [...document.querySelectorAll('#profileResetPinBoxes input')].map(i=>i.value).join('');
-  if(newPin.length!==4){ document.getElementById('profileResetError').textContent='Enter a 4-digit PIN'; return; }
-  const {error} = await sb.rpc('set_profile_pin', {p_profile_id:_pendingProfile.id, p_pin4:newPin});
-  if(error){ console.error(error); document.getElementById('profileResetError').textContent = 'Could not reset: '+error.message; return; }
-  closeModal();
-  toast('PIN reset — enter it now to continue');
-  document.querySelectorAll('#pinEntryBoxes input').forEach(i=>i.value='');
-  document.getElementById('pinError').textContent='';
-  document.querySelectorAll('#pinEntryBoxes input')[0].focus();
+  if(!_pendingProfile) return;
+  const required=_pendingProfile.role==='admin'?2:1;
+  const err=document.getElementById('profileResetError');
+  const a1=document.getElementById('profileResetAnswer1')?.value.trim();
+  const a2=document.getElementById('profileResetAnswer2')?.value.trim();
+  const newPin=[...document.querySelectorAll('#profileResetPinBoxes input')].map(i=>i.value).join('');
+  if(!a1 || (required===2 && !a2)){ err.textContent=`Answer all ${required} required security question${required===1?'':'s'}.`; return; }
+  if(newPin.length!==4){ err.textContent='Enter a 4-digit PIN'; return; }
+  /* There is no existing viewer-profile question-verification RPC in this file.
+     Do not pretend client-side answers are verified. For a real cryptographic/security
+     gate, the Supabase backend needs a role-aware verification RPC before set_profile_pin. */
+  err.textContent='Security verification is required by the UI, but the existing backend does not expose a viewer security-answer verification method. No PIN was changed.';
 }
 async function finishPinSetup(){
   const pin = [...document.querySelectorAll('#setupPinBoxes input')].map(i=>i.value).join('');
@@ -3534,9 +3628,38 @@ function openAddJobModal(){
       </div>
       <p class="muted small">This amount is credited once for any week you log at least one shift against this job — logged shift times still show in your diary for hours tracking, they just don't add their own dollar figure.</p>
     </div>
-    <div class="row wrap"><button class="btn btn-primary" onclick="saveNewJob()">Add job</button><button class="btn" onclick="closeModal()">Cancel</button></div>
+    <div class="row wrap"><button class="btn btn-primary" id="saveNewJobBtn" onclick="saveNewJob()" disabled>Add job</button><button class="btn" onclick="closeModal()">Cancel</button></div>
   `);
+  wireAddJobValidation();
 }
+function updateAddJobButtonState(){
+  const btn=document.getElementById('saveNewJobBtn');
+  const name=document.getElementById('jName');
+  const mode=document.getElementById('jPayMode');
+  if(!btn||!name||!mode) return;
+  const validName=!!name.value.trim();
+  let validPay=false;
+  if(mode.value==='salary'){
+    const salary=Number(document.getElementById('jSalary')?.value);
+    const from=document.getElementById('jSalaryFrom')?.value;
+    validPay=Number.isFinite(salary)&&salary>0&&!!from;
+  }else{
+    const rate=Number(document.getElementById('jRate')?.value);
+    const from=document.getElementById('jFrom')?.value;
+    validPay=Number.isFinite(rate)&&rate>0&&!!from;
+  }
+  const ready=validName&&validPay;
+  btn.disabled=!ready;
+  btn.classList.toggle('job-ready',ready);
+}
+function wireAddJobValidation(){
+  ['jName','jPayMode','jRate','jFrom','jSalary','jSalaryFrom'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){ el.addEventListener('input',updateAddJobButtonState); el.addEventListener('change',updateAddJobButtonState); }
+  });
+  updateAddJobButtonState();
+}
+
 async function saveNewJob(){
   const name = document.getElementById('jName').value.trim();
   const payMode = document.getElementById('jPayMode').value;
