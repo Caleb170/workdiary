@@ -1485,7 +1485,7 @@ document.documentElement.setAttribute('data-theme', localStorage.getItem('wq_the
 html{background:var(--bg);-webkit-text-size-adjust:100%;text-rendering:optimizeLegibility}
 body{margin:0;min-width:0;overscroll-behavior-x:none;-webkit-font-smoothing:antialiased}
 button,a,input,select,textarea{touch-action:manipulation}button{cursor:pointer}button:disabled{cursor:not-allowed}
-#app-screen{min-width:0}.topbar{position:sticky;top:0;z-index:40;padding-top:max(12px,env(safe-area-inset-top))}
+#app-screen{min-width:0;pointer-events:auto}.topbar{position:sticky;top:0;z-index:40;padding-top:max(12px,env(safe-area-inset-top))}.topbar button,.topbar .tab,#content button,#content input,#content select,#content textarea{pointer-events:auto}
 .topbar-row>div:last-child{min-width:0;display:flex;align-items:center;gap:6px}.topbar-row .brand{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topbar .sync-pill{min-width:0}.topbar .icon-btn,.topbar .theme-toggle{flex:0 0 40px}.tabs{scroll-snap-type:x proximity;overscroll-behavior-x:contain}.tab{scroll-snap-align:start;white-space:nowrap}
 #content{min-width:0}#content .card,#content .day-card,#content .tax-card,#content .budget-card,#content .timeline-card,#content .settings-card,#content .summary-card{min-width:0}.card-pad{overflow-wrap:anywhere}.num{font-variant-numeric:tabular-nums}
@@ -1820,8 +1820,15 @@ function dayTotal(iso){ return shiftsOnDate(iso).reduce((sum,s)=>sum+(s.locked?.
    AUTH
    ========================================================================= */
 async function enterApp(){
-  ['landing-screen','email-screen','master-pin-screen','master-setup-screen','profile-screen','pin-screen','pin-setup-screen','setup-complete-screen'].forEach(id=>document.getElementById(id).classList.add('hidden'));
-  document.getElementById('app-screen').classList.remove('hidden');
+  // Enter the shell first. Nothing in the Supabase sync path is allowed to
+  // control whether the Admin UI is interactive.
+  ['landing-screen','email-screen','master-pin-screen','master-setup-screen','profile-screen','pin-screen','pin-setup-screen','setup-complete-screen'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.classList.add('hidden');
+  });
+  const app=document.getElementById('app-screen');
+  if(!app) throw new Error('WorkQuest app shell is missing.');
+  app.classList.remove('hidden');
+  app.style.pointerEvents='auto';
   document.getElementById('roleBadge').textContent = STATE.role==='admin' ? 'Admin' : 'Viewer';
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('hidden'));
   STATE.activeTab = 'diary';
@@ -1829,35 +1836,33 @@ async function enterApp(){
   if(STATE.role==='viewer'){
     ['settings','timeline','tax','budget'].forEach(t=>{ const el=document.querySelector(`[data-tab="${t}"]`); if(el) el.classList.add('hidden'); });
   }
+
   initTheme();
   renderFyPill();
-  // IMPORTANT: show the Admin UI immediately. Data sync must never block the
-  // app shell, because one slow/broken Supabase table should not make the
-  // entire application appear to load forever.
   setSync('saving','Syncing…');
-  render();
-  if(STATE.role==='admin') startTickerWatcher();
+
+  // Render synchronously before touching the network. If a renderer has a
+  // data-dependent problem, keep the shell usable and expose the error.
+  try { render(); } catch(err) { console.error('Initial Admin render failed:',err); wqShowStartupError(err); }
+  if(STATE.role==='admin'){
+    try { startTickerWatcher(); } catch(err) { console.error('Ticker init failed:',err); }
+  }
   if(STATE.role==='admin' && localStorage.getItem('wq_pending_quick_tutorial')==='1') setTimeout(showQuickTutorial,220);
 
-  try{
-    if(STATE.role==='admin'){
-      await wqWithTimeout(loadAdminData(),20000,'WorkQuest data sync');
-      subscribeRealtimeAdmin();
-      setupNotifyChannel(STATE.uid, false);
-    } else {
-      await wqWithTimeout(loadViewerData(),20000,'Viewer data sync');
-      setupNotifyChannel(STATE.uid, true);
-    }
+  // Background sync: deliberately DO NOT await this. A slow Supabase table,
+  // realtime subscription, or network failure must never disable the Admin UI.
+  const syncTask = STATE.role==='admin'
+    ? wqWithTimeout(loadAdminData(),20000,'WorkQuest data sync').then(()=>{ subscribeRealtimeAdmin(); setupNotifyChannel(STATE.uid,false); })
+    : wqWithTimeout(loadViewerData(),20000,'Viewer data sync').then(()=>setupNotifyChannel(STATE.uid,true));
+
+  syncTask.then(()=>{
     setSync('saved','Synced');
-    render();
-    const startupErr=document.getElementById('wqStartupError');
-    if(startupErr) startupErr.remove();
-  }catch(err){
-    // Keep the app usable with local/empty state and clearly report the
-    // backend problem instead of trapping the user on a loading screen.
+    try { render(); } catch(err) { console.error('Post-sync render failed:',err); wqShowStartupError(err); }
+    document.getElementById('wqStartupError')?.remove();
+  }).catch(err=>{
     wqShowStartupError(err);
-    render();
-  }
+    try { render(); } catch(renderErr) { console.error('Fallback render failed:',renderErr); }
+  });
 }
 
 const WQ_TUTORIAL_STEPS=[{icon:'▤',title:'Your Diary',text:'Log shifts and keep each day organised at a glance.'},{icon:'▦',title:'Your Calendar',text:'See your work pattern across the month and spot worked, planned and holiday days.'},{icon:'⌁',title:'Timeline & earnings',text:'Follow your earnings history, including salary and payday information.'},{icon:'＋',title:'Add Shift & settings',text:'Use + Add shift for new work. Pay Rates manages jobs, pay frequency, salary, bonuses and preferences.'}];let _wqTutorialIndex=0;function showQuickTutorial(){if(localStorage.getItem('wq_quick_tutorial_done')==='1'){localStorage.removeItem('wq_pending_quick_tutorial');return;}_wqTutorialIndex=0;renderQuickTutorial()}function renderQuickTutorial(){const root=document.getElementById('wqTutorialRoot');if(!root)return;const x=WQ_TUTORIAL_STEPS[_wqTutorialIndex];root.innerHTML=`<div class="wq-tutorial-backdrop"><div class="wq-tutorial-card" role="dialog" aria-modal="true"><div class="wq-tutorial-top"><span class="wq-tutorial-eyebrow">QUICK TOUR</span><span class="wq-tutorial-count">${_wqTutorialIndex+1} / ${WQ_TUTORIAL_STEPS.length}</span></div><div class="wq-tutorial-progress">${WQ_TUTORIAL_STEPS.map((_,i)=>`<span class="${i<=_wqTutorialIndex?'active':''}"></span>`).join('')}</div><div class="wq-tutorial-visual"><div class="wq-tutorial-icon">${x.icon}</div><div class="wq-tutorial-orb"></div><div class="wq-tutorial-lines"><span></span><span></span><span></span></div></div><h3>${x.title}</h3><p>${x.text}</p><div class="wq-tutorial-actions"><button class="wq-tutorial-skip" onclick="skipQuickTutorial()">Skip</button><button class="btn btn-primary" onclick="nextQuickTutorial()">${_wqTutorialIndex===3?'Got it':'Next'} <span aria-hidden="true">→</span></button></div></div></div>`;root.classList.remove('hidden')}function nextQuickTutorial(){if(_wqTutorialIndex===3){finishQuickTutorial();return}_wqTutorialIndex++;renderQuickTutorial()}function skipQuickTutorial(){finishQuickTutorial()}function finishQuickTutorial(){localStorage.setItem('wq_quick_tutorial_done','1');localStorage.removeItem('wq_pending_quick_tutorial');const r=document.getElementById('wqTutorialRoot');if(r){r.classList.add('hidden');r.innerHTML=''}}
