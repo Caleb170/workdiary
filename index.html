@@ -12,6 +12,7 @@
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230B0D12'/%3E%3Ctext x='90' y='115' font-size='90' text-anchor='middle' fill='%237C9CFF' font-family='Georgia,serif' font-weight='700'%3EW%3C/text%3E%3C/svg%3E">
 <script>
 if('serviceWorker' in navigator){ window.addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
+
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -405,20 +406,34 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
 .budget-bar-fill{height:100%;border-radius:999px;}
 .budget-remaining-band{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-radius:14px;margin-top:6px;font-size:13.5px;font-weight:700;}
 
-/* ---- Fancy live-update notification ---- */
-#fancyNotifyRoot{position:fixed;top:0;left:0;right:0;display:flex;justify-content:center;z-index:300;pointer-events:none;padding-top:max(14px, env(safe-area-inset-top));}
-.fancy-notify{
-  pointer-events:auto;display:flex;align-items:center;gap:12px;max-width:360px;width:calc(100% - 32px);
-  background:linear-gradient(135deg,var(--card),var(--card-2));border:1px solid var(--accent);border-radius:16px;
-  padding:14px 16px;box-shadow:0 12px 32px rgba(0,0,0,0.35);
-  transform:translateY(-120%); opacity:0; transition:transform 0.4s cubic-bezier(.2,.9,.3,1.3), opacity 0.3s ease;
+/* ---- Premium shift update center ---- */
+#fancyNotifyRoot{position:fixed;inset:0;z-index:300;pointer-events:none;display:flex;align-items:flex-start;justify-content:center;padding:clamp(18px,4vw,42px) 16px 24px;background:transparent;}
+#fancyNotifyRoot:has(.fancy-notify.show){background:rgba(7,10,16,.42);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);pointer-events:auto;}
+.fancy-notify{pointer-events:auto;position:relative;width:min(520px,100%);overflow:hidden;background:linear-gradient(145deg,var(--card),var(--bg-2));border:1px solid color-mix(in srgb,var(--accent) 32%,var(--line));border-radius:24px;padding:18px;box-shadow:0 30px 90px rgba(0,0,0,.42),0 0 0 1px rgba(255,255,255,.035) inset;transform:translateY(-28px) scale(.97);opacity:0;transition:transform .42s cubic-bezier(.2,.85,.25,1),opacity .28s ease;}
+.fancy-notify.show{transform:translateY(0) scale(1);opacity:1;}
+.fancy-notify:before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 35%,transparent));}
+.fancy-notify-head{display:flex;align-items:center;gap:13px;}
+.fancy-notify-icon{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:var(--accent-dim);border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line));font-size:22px;flex:none;box-shadow:0 8px 24px rgba(0,0,0,.14);animation:fancyPop .48s cubic-bezier(.2,.9,.3,1);}
+.fancy-notify-title{min-width:0;flex:1;}
+.fancy-notify-kicker{font-size:10px;font-weight:850;letter-spacing:.12em;color:var(--accent);text-transform:uppercase;margin-bottom:3px;}
+.fancy-notify-title strong{display:block;font-size:17px;letter-spacing:-.02em;line-height:1.15;}
+.fancy-notify-close{width:34px;height:34px;border-radius:10px;border:1px solid var(--line-soft);background:var(--card-2);color:var(--text-dim);font-size:18px;display:grid;place-items:center;cursor:pointer;flex:none;}
+.fancy-notify-close:hover{color:var(--text);border-color:var(--line);background:var(--card);}
+.fancy-notify-message{margin:13px 0 14px;color:var(--text-dim);font-size:13px;line-height:1.45;}
+.fancy-notify-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:2px;}
+.fancy-detail{background:var(--bg);border:1px solid var(--line-soft);border-radius:13px;padding:10px 11px;min-width:0;}
+.fancy-detail-label{font-size:9px;font-weight:800;letter-spacing:.08em;color:var(--text-faint);text-transform:uppercase;margin-bottom:3px;}
+.fancy-detail-value{font-size:12.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.fancy-notify-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line-soft);font-size:11px;color:var(--text-faint);}
+.fancy-notify-action{border:0;background:none;color:var(--accent);font:inherit;font-weight:800;cursor:pointer;padding:4px 0;}
+@keyframes fancyPop{0%{transform:scale(.65) rotate(-5deg);opacity:.4}70%{transform:scale(1.08) rotate(1deg)}100%{transform:scale(1) rotate(0)}}
+@media(max-width:520px){
+  #fancyNotifyRoot{padding:12px 10px max(16px,env(safe-area-inset-bottom));align-items:flex-end;}
+  .fancy-notify{border-radius:22px;padding:16px;transform:translateY(22px) scale(.98);}
+  .fancy-notify.show{transform:translateY(0) scale(1);}
+  .fancy-notify-title strong{font-size:16px}.fancy-notify-details{gap:7px}.fancy-detail{padding:9px 10px}
 }
-.fancy-notify.show{transform:translateY(0); opacity:1;}
-.fancy-notify-icon{width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;animation:fancyPop 0.5s ease;}
-@keyframes fancyPop{0%{transform:scale(0.4);}60%{transform:scale(1.15);}100%{transform:scale(1);}}
-.fancy-notify-text{flex:1;font-size:13px;line-height:1.35;}
-.fancy-notify-text strong{display:block;font-size:13.5px;margin-bottom:1px;}
-.fancy-notify-close{background:none;border:none;color:var(--text-faint);font-size:16px;padding:2px;flex-shrink:0;}
+@media(prefers-reduced-motion:reduce){.fancy-notify,.fancy-notify-icon{transition:none;animation:none;}}
 
 .week-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .week-nav-btn{background:var(--card-2);border:1px solid var(--line);color:var(--text);border-radius:8px;width:34px;height:34px;font-size:15px;}
@@ -500,6 +515,23 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
 [data-theme="light"] #landing-screen{background:radial-gradient(ellipse at 50% 34%,rgba(91,111,224,.13),transparent 34%),radial-gradient(ellipse at 50% 75%,rgba(91,111,224,.06),transparent 40%),var(--bg);}
 [data-theme="light"] .hero-card{background:rgba(255,255,255,.82);box-shadow:0 22px 50px rgba(30,35,50,.14);border-color:rgba(30,35,50,.08);}
 
+
+/* ===== WorkQuest premium pickers v3 ===== */
+.job-icon-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px;margin-top:8px}
+.job-icon-option{position:relative;display:grid;place-items:center;min-width:0;aspect-ratio:1;border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,var(--card-2),var(--bg-2));color:var(--text);cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease}
+.job-icon-option:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent) 60%,var(--line));box-shadow:0 8px 20px rgba(0,0,0,.12)}
+.job-icon-option.active{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--card));box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent),0 8px 22px rgba(0,0,0,.14)}
+.job-icon-option .job-icon-check{position:absolute;right:5px;top:5px;width:16px;height:16px;border-radius:50%;display:none;place-items:center;background:var(--accent);color:#fff;font-size:10px;font-weight:800}
+.job-icon-option.active .job-icon-check{display:grid}
+.wq-icon{display:inline-grid;place-items:center;vertical-align:-.18em;flex:none}.wq-icon svg{width:1em;height:1em;display:block}.wq-icon-lg svg{width:22px;height:22px}.wq-icon-xl svg{width:28px;height:28px}
+.custom-date-wrap{position:relative}.custom-date-btn{width:100%;min-height:46px;padding:10px 13px;border:1px solid var(--line);border-radius:12px;background:var(--bg-2);color:var(--text);display:flex;align-items:center;justify-content:space-between;gap:10px;font:600 14px/1.2 inherit;cursor:pointer;transition:border-color .18s,box-shadow .18s,transform .18s}.custom-date-btn:hover{border-color:var(--accent)}.custom-date-btn:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}.custom-date-btn .date-main{display:flex;align-items:center;gap:9px;min-width:0}.custom-date-btn .date-main .date-icon{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 12%,var(--card));color:var(--accent)}.custom-date-btn .date-main span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.custom-date-pop{position:absolute;z-index:80;left:0;right:0;top:calc(100% + 8px);padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--card);box-shadow:0 20px 55px rgba(0,0,0,.2);animation:wqPop .16s ease-out}.custom-date-pop.hidden{display:none}.custom-date-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.custom-date-head strong{font-size:13px}.custom-date-head button{width:30px;height:30px;border:1px solid var(--line);border-radius:9px;background:var(--bg-2);color:var(--text);cursor:pointer}.custom-date-week,.custom-date-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.custom-date-week span{text-align:center;color:var(--text-faint);font-size:9px;font-weight:800;padding:3px}.custom-date-day{min-height:32px;border:0;border-radius:9px;background:transparent;color:var(--text);font-size:11px;font-weight:650;cursor:pointer}.custom-date-day:hover{background:var(--bg-2)}.custom-date-day.today{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent)}.custom-date-day.selected{background:var(--accent);color:#fff;box-shadow:0 5px 12px color-mix(in srgb,var(--accent) 25%,transparent)}.custom-date-day.disabled{opacity:.25;cursor:not-allowed}.custom-date-day.empty{pointer-events:none}
+.wq-time-picker{position:relative}.wq-time-display{width:100%;min-height:46px;padding:8px 11px;border:1px solid var(--line);border-radius:12px;background:var(--bg-2);color:var(--text);display:flex;align-items:center;justify-content:space-between;gap:8px;font:650 14px/1 inherit;cursor:pointer;transition:border-color .18s,box-shadow .18s}.wq-time-display:hover{border-color:var(--accent)}.wq-time-display:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}.wq-time-display .time-value{letter-spacing:.01em}.wq-time-display .time-chevron{color:var(--text-faint);font-size:11px}.wq-time-pop{position:absolute;z-index:82;left:0;right:0;top:calc(100% + 8px);padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--card);box-shadow:0 20px 55px rgba(0,0,0,.22);animation:wqPop .16s ease-out}.wq-time-pop.hidden{display:none}.wq-time-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}.wq-time-top strong{font-size:12px}.wq-time-ampm{display:flex;gap:4px}.wq-time-ampm button{border:1px solid var(--line);background:var(--bg-2);color:var(--text-dim);border-radius:8px;padding:6px 8px;font-size:10px;font-weight:800;cursor:pointer}.wq-time-ampm button.active{background:var(--accent);border-color:var(--accent);color:#fff}.wq-time-label{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-faint);font-weight:800;margin:7px 0 5px}.wq-time-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}.wq-time-grid button{border:1px solid var(--line);background:var(--bg-2);color:var(--text);border-radius:9px;min-height:31px;font-size:11px;font-weight:700;cursor:pointer}.wq-time-grid button:hover{border-color:var(--accent)}.wq-time-grid button.active{background:color-mix(in srgb,var(--accent) 14%,var(--card));border-color:var(--accent);color:var(--accent)}
+@keyframes wqPop{from{opacity:0;transform:translateY(-4px) scale(.985)}to{opacity:1;transform:none}}
+@media(max-width:560px){.job-icon-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.custom-date-pop,.wq-time-pop{position:fixed;left:10px;right:10px;top:50%;transform:translateY(-50%);max-height:min(76vh,520px);overflow:auto}.wq-time-grid{grid-template-columns:repeat(4,1fr)}.custom-date-day{min-height:38px}.modal{max-height:calc(100dvh - 24px);overflow-y:auto}}
+@media(max-width:360px){.job-icon-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* Premium custom select controls */
+.wq-select-wrap{position:relative}.wq-native-select{position:absolute!important;opacity:0!important;pointer-events:none!important;width:1px!important;height:1px!important}.wq-select-btn{width:100%;min-height:46px;padding:9px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg-2);color:var(--text);display:flex;align-items:center;justify-content:space-between;gap:10px;font:600 14px/1.2 inherit;cursor:pointer;text-align:left}.wq-select-btn:hover{border-color:var(--accent)}.wq-select-btn:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}.wq-select-value{display:flex;align-items:center;gap:9px;min-width:0}.wq-select-value span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wq-select-menu{position:absolute;z-index:84;left:0;right:0;top:calc(100% + 7px);padding:6px;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:0 20px 55px rgba(0,0,0,.2);max-height:260px;overflow:auto}.wq-select-menu.hidden{display:none}.wq-select-option{width:100%;display:flex;align-items:center;gap:9px;padding:10px;border:0;border-radius:10px;background:transparent;color:var(--text);text-align:left;cursor:pointer;font:600 13px/1.2 inherit}.wq-select-option:hover,.wq-select-option.active{background:var(--bg-2)}.wq-select-option.active{color:var(--accent)}.wq-select-option .opt-icon{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 10%,var(--card-2));color:var(--accent);flex:none}.wq-select-option .opt-meta{margin-left:auto;color:var(--text-faint);font-size:10px}
 </style>
 <style>
 /* WorkQuest auth polish */
@@ -883,6 +915,55 @@ input,select,textarea{min-height:46px;}
   #profile-screen .profile-tile:hover,#profile-screen .profile-tile:focus-visible{transform:none;}
 }
 
+
+/* --- Walkthrough phone visibility polish --- */
+#landing-screen .premium-phone .phone-screen{position:relative;background:#0d1118!important;overflow:hidden!important;}
+#landing-screen .premium-phone .phone-track{position:absolute;inset:0;display:flex!important;height:100%;z-index:2;will-change:transform;}
+#landing-screen .premium-phone .phone-slide{position:relative;display:block!important;flex:0 0 25%!important;width:25%!important;min-width:25%!important;height:100%;box-sizing:border-box;padding:38px 15px 48px!important;color:var(--text)!important;background:linear-gradient(180deg,#111722 0%,#0b0f15 100%);overflow:hidden;}
+#landing-screen .premium-phone .phone-slide:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 80% 10%,rgba(124,156,255,.12),transparent 32%);pointer-events:none;}
+#landing-screen .premium-phone .phone-slide > *{position:relative;z-index:1;}
+#landing-screen .premium-phone .phone-slide-label{font-size:8px!important;letter-spacing:.13em!important;margin-bottom:10px!important;color:#9db3ff!important;}
+#landing-screen .premium-phone .phone-tabbar{z-index:4;}
+#landing-screen .premium-phone .phone-statusbar{z-index:6;}
+#landing-screen .premium-phone .phone-home-indicator{z-index:7;}
+#landing-screen .premium-phone .day-card,#landing-screen .premium-phone .tax-hero{background:rgba(255,255,255,.055)!important;border:1px solid rgba(255,255,255,.09)!important;box-shadow:0 8px 20px rgba(0,0,0,.18)!important;}
+#landing-screen .premium-phone .cal-cell{background:rgba(255,255,255,.035)!important;border-color:rgba(255,255,255,.06)!important;}
+#landing-screen .premium-phone .tl-week{border:1px solid rgba(255,255,255,.07)!important;background:rgba(255,255,255,.045)!important;margin-bottom:7px!important;border-radius:10px!important;}
+#landing-screen .premium-phone .money{color:#8ee7b5!important;}
+#landing-screen .premium-phone .phone-dots{display:none!important;}
+
+
+/* Auth screens: keep the welcoming entry experience bright and legible even when the app theme is dark. */
+#email-screen, #master-pin-screen, #master-setup-screen, #pin-screen, #setup-complete-screen, #profile-screen, #profile-setup-screen, #security-screen {
+  --bg:#F6F5F1; --bg-2:#FFFFFF; --card:#FFFFFF; --card-2:#EFEDE6;
+  --line:#E3E0D6; --line-soft:#ECE9DF; --text:#1B1D22; --text-dim:#6B7180; --text-faint:#9CA1AD;
+  --accent:#5B6FE0; --on-accent:#FFFFFF; --green:#1D9A6C; --green-dim:#E3F5EC;
+  --amber:#B8792A; --amber-dim:#FBF0DE; --rust:#C24A3E; --rust-dim:#FBEAE7;
+  background:radial-gradient(700px 420px at 50% 18%, rgba(91,111,224,.11), transparent 70%), #F6F5F1 !important;
+  color:#1B1D22;
+}
+#email-screen .landing-wrap, #master-pin-screen .landing-wrap, #pin-screen .landing-wrap,
+#profile-screen .landing-wrap, #master-setup-screen .setup-card, #setup-complete-screen .setup-card,
+#profile-setup-screen .setup-card, #security-screen .setup-card {
+  background:rgba(255,255,255,.94);
+  border-color:#E3E0D6;
+  box-shadow:0 26px 70px rgba(31,38,60,.13);
+}
+#email-screen .login-sub, #master-pin-screen .login-sub, #pin-screen .login-sub,
+#email-screen .login-error, #master-pin-screen .login-error, #pin-screen .login-error { color:#6B7180; }
+#email-screen input, #master-pin-screen input, #pin-screen input, #profile-screen input,
+#master-setup-screen input, #setup-complete-screen input, #profile-setup-screen input, #security-screen input,
+#master-setup-screen select, #profile-setup-screen select, #security-screen select {
+  background:#FFFFFF; color:#1B1D22; border-color:#E3E0D6;
+}
+#email-screen .back-btn, #master-pin-screen .back-btn, #pin-screen .back-btn {
+  background:rgba(255,255,255,.88); color:#6B7180; border-color:#E3E0D6;
+}
+#email-screen .otp-code-wrap, #email-screen .otp-boxes input, #master-pin-screen .pin-boxes input, #pin-screen .pin-boxes input {
+  background:#FFFFFF; border-color:#E3E0D6; color:#1B1D22;
+}
+#email-screen .otp-code-label { color:#9CA1AD; }
+#email-screen .link-btn, #master-pin-screen .link-btn, #pin-screen .link-btn { color:#5B6FE0; }
 </style>
 </head>
 <body>
@@ -923,7 +1004,7 @@ input,select,textarea{min-height:46px;}
 <div id="email-screen" class="hidden">
   <div class="landing-wrap">
     <button class="back-btn" onclick="showScreen('landing')">‹ Back</button>
-    <div class="login-title" style="font-size:26px;">Welcome back</div>
+    <div class="login-title" id="emailTitle" style="font-size:26px;">Welcome back</div>
     <div class="login-sub" id="emailSub">Enter your email to continue</div>
     <div id="emailStep">
       <div class="field" style="width:100%;max-width:320px;"><input type="email" id="emailInput" placeholder="you@example.com" autocomplete="email"></div>
@@ -1461,6 +1542,8 @@ function dayTotal(iso){ return shiftsOnDate(iso).reduce((sum,s)=>sum+(s.locked?.
    AUTH
    ========================================================================= */
 async function enterApp(){
+  // Surface the latest queued shift update when a viewer actually enters the app.
+  setTimeout(consumePendingViewerNotifications, 700);
   ['landing-screen','email-screen','master-pin-screen','master-setup-screen','profile-screen','pin-screen','pin-setup-screen','setup-complete-screen'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('app-screen').classList.remove('hidden');
   document.getElementById('roleBadge').textContent = STATE.role==='admin' ? 'Admin' : 'Viewer';
@@ -1534,7 +1617,7 @@ function initDemoCarousel(){
     `<div class="phone-slide-label">Diary</div>
      <div class="day-card" style="margin-bottom:8px;">
        <div class="day-top"><span class="day-dow" style="font-size:13px;">Saturday</span><span class="day-status st-worked" style="font-size:10px;">2 shifts</span></div>
-       <div class="shift-row" style="padding:6px 0;"><div><div class="shift-emp" style="font-size:12px;">🛒 Coles</div><div class="shift-time" style="font-size:10.5px;">6:00 AM → 2:00 PM</div></div><div class="shift-amt money" style="font-size:12px;">$135.43</div></div>
+       <div class="shift-row" style="padding:6px 0;"><div><div class="shift-emp" style="font-size:12px;">${iconVisual('shopping-cart')} Coles</div><div class="shift-time" style="font-size:10.5px;">6:00 AM → 2:00 PM</div></div><div class="shift-amt money" style="font-size:12px;">$135.43</div></div>
      </div>
      <div class="day-card"><div class="day-top"><span class="day-dow" style="font-size:13px;">Sunday</span><span class="day-status st-none" style="font-size:10px;">No shift</span></div></div>`,
     `<div class="phone-slide-label">Calendar</div>
@@ -1551,7 +1634,8 @@ function initDemoCarousel(){
   ];
   track.innerHTML = slides.map(s=>`<div class="phone-slide">${s}</div>`).join('');
   track.style.width = (slides.length*100)+'%';
-  track.querySelectorAll('.phone-slide').forEach(s=>{ s.style.width = (100/slides.length)+'%'; });
+  track.style.transform = 'translate3d(0,0,0)';
+  track.querySelectorAll('.phone-slide').forEach(s=>{ s.style.width = (100/slides.length)+'%'; s.style.flex = '0 0 '+(100/slides.length)+'%'; });
   tabbar.innerHTML = tabIcons.map((ic,i)=>`<span class="${i===0?'active':''}">${ic}</span>`).join('');
   dots.innerHTML = slides.map((_,i)=>`<div class="demo-dot ${i===0?'active':''}"></div>`).join('');
   let idx=0;
@@ -1581,6 +1665,7 @@ async function continueFromEmail(){
   if(error){ console.error(error); showEmailError('Could not check that email: '+error.message); return; }
 
   if(data && data.exists && data.setup_complete){
+    document.getElementById('emailTitle').textContent = 'Welcome back';
     // Fully set-up account -> straight to PIN entry, never send a code.
     _pinActivationMode = false;
     _pinRecoveryMode = false;
@@ -1593,6 +1678,8 @@ async function continueFromEmail(){
     showScreen('master-pin');
     document.querySelectorAll('#masterPinBoxes input')[0].focus();
   } else {
+    document.getElementById('emailTitle').textContent = 'Welcome to WorkQuest';
+    document.getElementById('emailSub').textContent = 'Create your account to get started';
     // Brand new email, or an account that started setup but never finished
     // (e.g. verified email but never created a PIN) -> (re)send the code.
     _newSignupMode = true;
@@ -1655,6 +1742,7 @@ function backToEmailLogin(){
   document.getElementById('otpStep').classList.add('hidden');
   document.getElementById('emailError').textContent='';
   document.getElementById('emailSub').textContent='Enter your email to continue';
+  document.getElementById('emailTitle').textContent='Welcome to WorkQuest';
   document.getElementById('masterPinError').textContent='';
   showScreen('email');
 }
@@ -2007,6 +2095,7 @@ async function continueToLogin(){
   document.getElementById('otpStep').classList.add('hidden');
   document.getElementById('emailError').textContent='';
   document.getElementById('emailSub').textContent='Enter your email to continue';
+  document.getElementById('emailTitle').textContent='Welcome to WorkQuest';
   showScreen('email');
 }
 function createViewerFromOnboarding(){
@@ -2227,28 +2316,54 @@ document.addEventListener('visibilitychange', ()=>{
 window.addEventListener('focus', ()=>{
   if(_notifyChannelKey && !notifyChannelReady) setupNotifyChannel(_notifyChannelKey, _notifyIsReceiver);
 });
-function notifyViewers(icon, title, message){
+function notifyViewers(icon, title, message, details={}){
   if(STATE.role!=='admin' || !notifyChannel) return;
-  const payload = {icon, title, message};
+  const payload = {icon, title, message, details, createdAt:Date.now()};
+  // Keep a small local pending queue so a viewer opening the app shortly after
+  // an admin update can still see the update even if their websocket was asleep.
+  try{
+    const key='wq_pending_shift_notifications_'+STATE.uid;
+    const existing=JSON.parse(localStorage.getItem(key)||'[]').filter(x=>Date.now()-(x.createdAt||0)<86400000);
+    existing.push(payload);
+    localStorage.setItem(key,JSON.stringify(existing.slice(-8)));
+  }catch(e){}
   if(!notifyChannelReady){ notifyPendingQueue.push(payload); return; }
   notifyChannel.send({type:'broadcast', event:'shift_change', payload});
 }
 let _fancyTimeout=null;
-function showFancyNotification({icon, title, message}){
+function showFancyNotification(payload={}){
   const root = document.getElementById('fancyNotifyRoot');
-  root.innerHTML = `<div class="fancy-notify" id="fancyNotify">
-    <div class="fancy-notify-icon">${icon||'🔔'}</div>
-    <div class="fancy-notify-text"><strong>${escapeHtml(title||'Update')}</strong>${escapeHtml(message||'')}</div>
-    <button class="fancy-notify-close" onclick="dismissFancyNotification()">×</button>
+  const details=payload.details||{};
+  const detailEntries=[
+    ['Date',details.date],['Time',details.time],['Job',details.job],['Hours',details.hours],['Pay',details.pay]
+  ].filter(([,v])=>v!==undefined && v!==null && String(v).trim()!=='');
+  root.innerHTML = `<div class="fancy-notify" id="fancyNotify" role="dialog" aria-modal="true" aria-label="Work update">
+    <div class="fancy-notify-head">
+      <div class="fancy-notify-icon">${escapeHtml(payload.icon||'↗')}</div>
+      <div class="fancy-notify-title"><div class="fancy-notify-kicker">WorkQuest update</div><strong>${escapeHtml(payload.title||'Shift updated')}</strong></div>
+      <button class="fancy-notify-close" onclick="dismissFancyNotification()" aria-label="Dismiss notification">×</button>
+    </div>
+    <div class="fancy-notify-message">${escapeHtml(payload.message||'A shift has been updated.')}</div>
+    ${detailEntries.length?`<div class="fancy-notify-details">${detailEntries.map(([l,v])=>`<div class="fancy-detail"><div class="fancy-detail-label">${escapeHtml(l)}</div><div class="fancy-detail-value">${escapeHtml(String(v))}</div></div>`).join('')}</div>`:''}
+    <div class="fancy-notify-footer"><span>Just now · Changes are now reflected in your diary</span><button class="fancy-notify-action" onclick="dismissFancyNotification()">Got it</button></div>
   </div>`;
   requestAnimationFrame(()=>document.getElementById('fancyNotify')?.classList.add('show'));
   clearTimeout(_fancyTimeout);
-  _fancyTimeout = setTimeout(dismissFancyNotification, 4500);
-  // Refresh the viewer's shared shift data so what they see next matches the update
+  _fancyTimeout = setTimeout(dismissFancyNotification, 9000);
   if(STATE.role==='viewer'){
     loadViewerData().then(()=>{ if(STATE.activeTab!=='settings') render(); });
   }
 }
+function consumePendingViewerNotifications(){
+  if(STATE.role!=='viewer' || !STATE.uid) return;
+  try{
+    const key='wq_pending_shift_notifications_'+STATE.uid;
+    const items=JSON.parse(localStorage.getItem(key)||'[]').filter(x=>Date.now()-(x.createdAt||0)<86400000);
+    localStorage.removeItem(key);
+    if(items.length) setTimeout(()=>showFancyNotification(items[items.length-1]),420);
+  }catch(e){}
+}
+
 function dismissFancyNotification(){
   const el = document.getElementById('fancyNotify');
   if(!el) return;
@@ -2355,7 +2470,7 @@ function refreshOnShiftBanner(){
   banner.classList.remove('hidden');
   banner.innerHTML = `<div class="onshift-banner" style="border-color:${emp?.color||'var(--green)'};background:linear-gradient(90deg,${hexAlpha(emp?.color||'#34D399',0.16)},var(--card));" onclick="openTickerModal('${active.id}')">
     <span class="onshift-dot" style="background:${emp?.color||'var(--green)'};"></span>
-    <span class="label">${emp&&emp.icon?emp.icon+' ':''}On shift — ${escapeHtml(emp?emp.name:'')}</span>
+    <span class="label">${emp&&emp.icon?iconVisual(emp.icon):''}On shift — ${escapeHtml(emp?emp.name:'')}</span>
     <span class="amt" id="bannerAmt" style="color:${emp?.color||'var(--green)'};">…</span>
   </div>`;
   clearInterval(_bannerTickInterval);
@@ -2543,7 +2658,7 @@ function openDayModal(iso){
   let body = shifts.length ? shifts.map(s=>{
     if(STATE.role==='admin'){
       const emp=getEmployer(s.employerId);
-      return `<div class="shift-row" style="border-left:3px solid ${emp?emp.color||'var(--accent)':'var(--accent)'};padding-left:8px;"><div><div class="shift-emp">${emp?emp.icon||'':''} ${escapeHtml(emp?emp.name:'?')}</div><div class="shift-time">${s.start} → ${s.end} · ${s.locked.paidHours.toFixed(2)} hrs</div></div><div class="shift-amt money">$${s.locked.totalPay.toFixed(2)}</div></div>`;
+      return `<div class="shift-row" style="border-left:3px solid ${emp?emp.color||'var(--accent)':'var(--accent)'};padding-left:8px;"><div><div class="shift-emp">${emp?iconVisual(emp.icon):''} ${escapeHtml(emp?emp.name:'?')}</div><div class="shift-time">${s.start} → ${s.end} · ${s.locked.paidHours.toFixed(2)} hrs</div></div><div class="shift-amt money">$${s.locked.totalPay.toFixed(2)}</div></div>`;
     }
     return `<div class="shift-row"><div><div class="shift-emp">${escapeHtml(s.employerName)}</div><div class="shift-time">${s.start} → ${s.end} · ${Number(s.hours).toFixed(2)} hrs</div></div></div>`;
   }).join('') : `<div class="day-empty">No shifts recorded</div>`;
@@ -2580,7 +2695,7 @@ function renderTimeline(){
       const daysAway = (dateFromISO(p.payday)-dateFromISO(getTodaySydney()))/86400000;
       const label = p.isToday ? 'Today' : daysAway===1 ? 'Tomorrow' : `${DOW_LONG[dowIndex(p.payday)]} ${formatAUShort(p.payday)}`;
       html += `<div class="tl-week" style="${p.isToday?'background:var(--green-dim);border-radius:10px;padding-left:8px;':''}">
-        <span class="rng">${p.emp.icon||''} ${escapeHtml(p.emp.name)} · ${label}</span>
+        <span class="rng">${p.emp.icon?iconVisual(p.emp.icon):''} ${escapeHtml(p.emp.name)} · ${label}</span>
         <span class="amt" style="color:${p.isToday?'var(--green)':'var(--text)'};">$${p.amount.toFixed(2)}</span>
       </div>`;
     });
@@ -2999,7 +3114,7 @@ function renderAdminDiary(){
   const fyEarned = totalEarningsForRange(fy.start, today);
   const salaryNote = STATE.employers.filter(e=>e.payMode==='salary').map(e=>{
     const credit = salaryCreditForWeek(e, week.start);
-    return credit>0 ? `${e.icon||''} ${e.name} salary $${credit.toFixed(2)} included` : null;
+    return credit>0 ? `${e.icon?iconVisual(e.icon):''} ${e.name} salary $${credit.toFixed(2)} included` : null;
   }).filter(Boolean).join(' · ');
   const todaysPaydays = upcomingPaydays().filter(p=>p.isToday);
   let html = `
@@ -3011,7 +3126,7 @@ function renderAdminDiary(){
     </div>
     ${todaysPaydays.length ? `<div class="card card-pad" style="margin-bottom:16px;background:var(--green-dim);border-color:var(--green);">
       <div class="eyebrow" style="color:var(--green);">💰 Payday today</div>
-      ${todaysPaydays.map(p=>`<div class="row" style="justify-content:space-between;margin-top:4px;"><span>${p.emp.icon||''} ${escapeHtml(p.emp.name)}</span><span class="num" style="font-weight:700;color:var(--green);">$${p.amount.toFixed(2)}</span></div>`).join('')}
+      ${todaysPaydays.map(p=>`<div class="row" style="justify-content:space-between;margin-top:4px;"><span>${p.emp.icon?iconVisual(p.emp.icon):''} ${escapeHtml(p.emp.name)}</span><span class="num" style="font-weight:700;color:var(--green);">$${p.amount.toFixed(2)}</span></div>`).join('')}
     </div>` : ''}
     <div class="week-head">
       <button class="week-nav-btn" onclick="navWeek(-1)">‹</button>
@@ -3058,7 +3173,7 @@ function renderAdminDiary(){
         const emp = getEmployer(s.employerId);
         html += `<div class="shift-row" style="border-left:3px solid ${emp?emp.color||'var(--accent)':'var(--accent)'};padding-left:8px;">
           <div>
-            <div class="shift-emp">${emp&&emp.icon?emp.icon+' ':''}${escapeHtml(emp?emp.name:'?')}</div>
+            <div class="shift-emp">${emp&&emp.icon?iconVisual(emp.icon):''}${escapeHtml(emp?emp.name:'?')}</div>
             <div class="shift-time">${s.start} → ${s.end} · ${s.locked.paidHours.toFixed(2)} hrs</div>
           </div>
           <div class="shift-amt money" style="${(isFuture||notStartedYet)?'color:var(--amber);':''}">${emp&&emp.payMode==='salary'?'<span style="font-size:11px;font-weight:700;color:var(--accent);">Salaried</span>':'$'+s.locked.totalPay.toFixed(2)}</div>
@@ -3119,7 +3234,7 @@ function renderSettings(){
   for(const emp of activeEmps){
     html += `<div class="card card-pad emp-block" style="border-left:3px solid ${emp.color||'var(--accent)'};">
       <div class="row" style="justify-content:space-between;margin-bottom:6px;">
-        <h4>${emp.icon||'💼'} ${escapeHtml(emp.name)}</h4>
+        <h4>${iconVisual(emp.icon||'briefcase')} ${escapeHtml(emp.name)}</h4>
         <button class="btn btn-sm" onclick="openEditJobModal('${emp.id}')">Edit job</button>
       </div>`;
     if(emp.payMode==='salary'){
@@ -3146,7 +3261,7 @@ function renderSettings(){
     html += `<h2 style="margin:26px 0 4px;font-size:16px;color:var(--text-dim);">Archived jobs</h2>`;
     for(const emp of archivedEmps){
       html += `<div class="card card-pad emp-block" style="opacity:0.6;border-left:3px solid ${emp.color||'var(--text-faint)'};">
-        <div class="row" style="justify-content:space-between;"><h4>${emp.icon||'💼'} ${escapeHtml(emp.name)}</h4><button class="btn btn-sm" onclick="openEditJobModal('${emp.id}')">Manage</button></div>
+        <div class="row" style="justify-content:space-between;"><h4>${iconVisual(emp.icon||'briefcase')} ${escapeHtml(emp.name)}</h4><button class="btn btn-sm" onclick="openEditJobModal('${emp.id}')">Manage</button></div>
       </div>`;
     }
   }
@@ -3353,7 +3468,7 @@ function openAddJobModal(){
     <button class="modal-close" onclick="closeModal()">×</button>
     <h3>+ Add job</h3>
     <div class="field"><label>Job name</label><input type="text" id="jName" placeholder="e.g. Woolworths"></div>
-    <div class="field"><label>Icon</label>${swatchPickerHtml('icon', ICON_CHOICES, '💼', 'icon')}</div>
+    <div class="field"><label>Icon</label>${swatchPickerHtml('icon', ICON_CHOICES, 'briefcase', 'icon')}</div>
     <div class="field"><label>Colour</label>${swatchPickerHtml('color', COLOR_CHOICES, '#7C9CFF', 'color')}</div>
     <div class="field"><label>Pay type</label>
       <select id="jPayMode" onchange="document.getElementById('jHourlyFields').classList.toggle('hidden',this.value!=='hourly');document.getElementById('jSalaryFields').classList.toggle('hidden',this.value!=='salary');">
@@ -3436,7 +3551,7 @@ function openEditJobModal(empId){
     <button class="modal-close" onclick="closeModal()">×</button>
     <h3>Edit job</h3>
     <div class="field"><label>Job name</label><input type="text" id="jEditName" value="${escapeHtml(emp.name)}"></div>
-    <div class="field"><label>Icon</label>${swatchPickerHtml('icon', ICON_CHOICES, emp.icon, 'icon')}</div>
+    <div class="field"><label>Icon</label>${swatchPickerHtml('icon', ICON_CHOICES, iconToken(emp.icon), 'icon')}</div>
     <div class="field"><label>Colour</label>${swatchPickerHtml('color', COLOR_CHOICES, emp.color, 'color')}</div>
     <div class="row wrap"><button class="btn btn-primary" onclick="saveJobName('${empId}')">Save changes</button></div>
     <hr style="border:none;border-top:1px solid var(--line-soft);margin:18px 0;">
@@ -3648,7 +3763,7 @@ function openEditShiftModal(id){
   renderShiftModal(STATE.shifts.find(s=>s.id===id));
 }
 function renderShiftModal(existing){
-  const empOptions = STATE.employers.filter(e=>!e.archived || (existing&&existing.employerId===e.id)).map(e=>`<option value="${e.id}" ${existing&&existing.employerId===e.id?'selected':''}>${e.icon||''} ${escapeHtml(e.name)}</option>`).join('');
+  const empOptions = STATE.employers.filter(e=>!e.archived || (existing&&existing.employerId===e.id)).map(e=>`<option value="${e.id}" ${existing&&existing.employerId===e.id?'selected':''}>${e.icon?iconVisual(e.icon):''} ${escapeHtml(e.name)}</option>`).join('');
   const initDate = existing?existing.date:getTodaySydney();
   const fy = fyForDate(initDate);
   const initStart = existing?existing.start:'16:00';
@@ -3894,16 +4009,19 @@ async function saveShiftModal(existingId){
   for(const row of rows) await writeShift(row);
   toast(existingId?'Shift updated': rows.length>1?`${rows.length} shifts added`:'Shift added');
   const dateLabel = `${DOW_LONG[dowIndex(date)]} ${formatAUShort(date)}`;
-  if(existingId) notifyViewers(emp?.icon||'📅', 'Shift updated', `${emp?emp.name:'A shift'} on ${dateLabel}`);
-  else if(rows.length>1) notifyViewers(emp?.icon||'📅', 'Shifts added', `${rows.length} recurring shifts for ${emp?emp.name:'a job'}`);
-  else notifyViewers(emp?.icon||'📅', 'New shift added', `${emp?emp.name:'A shift'} on ${dateLabel}`);
+  const shiftDetails = {date:dateLabel, time:`${start} → ${end}`, job:emp?.name||'A shift', hours: rows[0]?.locked_calc?.paidHours!=null ? `${rows[0].locked_calc.paidHours.toFixed(2)} hrs` : '', pay: rows[0]?.locked_calc?.totalPay!=null ? `$${rows[0].locked_calc.totalPay.toFixed(2)}` : ''};
+  if(existingId) notifyViewers(emp?.icon||'📅', 'Shift updated', `${emp?emp.name:'A shift'} on ${dateLabel}`, shiftDetails);
+  else if(rows.length>1) notifyViewers(emp?.icon||'📅', 'Shifts added', `${rows.length} recurring shifts for ${emp?emp.name:'a job'}`, {...shiftDetails, date:`${rows.length} upcoming shifts`});
+  else notifyViewers(emp?.icon||'📅', 'New shift added', `${emp?emp.name:'A shift'} on ${dateLabel}`, shiftDetails);
 }
 async function deleteShiftModal(id){
   if(!confirm('Delete this shift?')) return;
   STATE.shifts = STATE.shifts.filter(s=>s.id!==id);
   closeModal(); render();
+  const removed=STATE.shifts.find(s=>s.id===id);
   await deleteShiftRow(id);
   toast('Shift deleted');
+  if(removed) notifyViewers('×', 'Shift removed', `${getEmployer(removed.employerId)?.name||'A shift'} on ${formatAUShort(removed.date)}`, {date:formatAUShort(removed.date), time:`${removed.start} → ${removed.end}`, job:getEmployer(removed.employerId)?.name||'A shift'});
 }
 async function cancelSeries(seriesId, fromDate){
   if(!confirm('Cancel this and every future shift in this recurring series? Past shifts already worked are kept.')) return;
@@ -3915,7 +4033,7 @@ async function cancelSeries(seriesId, fromDate){
   const {error} = await sb.from('shifts').delete().in('id', ids);
   setSync(error?'error':'saved', error?'⚠️ Unable to save':'Saved ✓');
   toast(`${ids.length} shift${ids.length>1?'s':''} cancelled`);
-  if(!error) notifyViewers('🗑️', 'Shifts cancelled', `${ids.length} upcoming shift${ids.length>1?'s were':' was'} cancelled`);
+  if(!error) notifyViewers('×', 'Shifts cancelled', `${ids.length} upcoming shift${ids.length>1?'s were':' was'} cancelled`, {date:fromDate, job:'Recurring shifts'});
 }
 function toast(msg){
   const t=document.getElementById('toast');
@@ -3943,6 +4061,91 @@ function toast(msg){
     showScreen('landing');
   }
 })();
+/* ===== WorkQuest custom visual controls: icons + date/time ===== */
+const JOB_ICON_CHOICES = [
+  ['briefcase','Briefcase'],['shopping-cart','Retail'],['utensils','Hospitality'],['dumbbell','Fitness'],['coffee','Cafe'],['burger','Food'],
+  ['box','Warehouse'],['truck','Delivery'],['sparkles','Cleaning'],['school','Education'],['stethoscope','Health'],['wrench','Trades'],
+  ['receipt','Office'],['graduation','Study'],['paw','Pets'],['store','Store'],['laptop','Tech'],['camera','Creative'],['music','Music'],['leaf','Outdoor'],
+  ['car','Automotive'],['hammer','Construction'],['chef','Kitchen'],['headphones','Support']
+];
+const JOB_ICON_PATHS={
+ briefcase:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18M10 12v2h4v-2"/>',
+ 'shopping-cart':'<circle cx="9" cy="19" r="1.6"/><circle cx="18" cy="19" r="1.6"/><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h8.5a2 2 0 0 0 1.9-1.4L21 8H7"/>',
+ utensils:'<path d="M7 3v8M4 3v5a3 3 0 0 0 6 0V3M7 11v10M17 3v18M17 3c3 2 3 6 0 8"/>', dumbbell:'<path d="M6 8v8M3 10v4M10 6v12M14 6v12M18 8v8M21 10v4M6 12h12"/>', coffee:'<path d="M5 8h13v7a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8ZM18 10h2a3 3 0 0 1 0 6h-2M8 4c0 1 1 1 1 2M12 4c0 1 1 1 1 2"/>', burger:'<path d="M4 10h16M5 14h14M6 7c1-3 11-3 12 0M5 18h14"/>',
+ box:'<path d="m4 7 8-4 8 4-8 4-8-4ZM4 7v10l8 4 8-4V7M12 11v10"/>', truck:'<path d="M3 6h11v10H3zM14 10h4l3 3v3h-7M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM18 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>',
+ sparkles:'<path d="m12 3 1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3ZM19 15l.7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7L19 15ZM5 14l.7 1.8L8 16.5l-2.3.7L5 19l-.7-1.8L2 16.5l2.3-.7L5 14Z"/>',
+ school:'<path d="m3 9 9-5 9 5-9 5-9-5ZM6 11v5c3 2 9 2 12 0v-5M12 14v7"/>', stethoscope:'<path d="M6 3v6a4 4 0 0 0 8 0V3M4 3h4M12 3h4M14 13a5 5 0 1 0 5 5v-2"/><circle cx="19" cy="16" r="2"/>', wrench:'<path d="M14 6a5 5 0 0 0-6 6l-5 5a2 2 0 1 0 3 3l5-5a5 5 0 0 0 6-6l-3 3-3-3 3-3Z"/>',
+ receipt:'<path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3ZM9 8h6M9 12h6M9 16h3"/>', graduation:'<path d="m3 9 9-5 9 5-9 5-9-5ZM7 12v5c3 2 7 2 10 0v-5M21 9v6"/>', paw:'<circle cx="7" cy="8" r="2"/><circle cx="17" cy="8" r="2"/><circle cx="4" cy="13" r="2"/><circle cx="20" cy="13" r="2"/><path d="M8 18c1-4 7-4 8 0 .5 2-1 3-4 3s-4-1-4-3Z"/>',
+ store:'<path d="M4 10h16v10H4zM3 10l2-6h14l2 6M8 10v3a2 2 0 0 0 4 0v-3a2 2 0 0 0 4 0v-3"/>', laptop:'<rect x="5" y="4" width="14" height="11" rx="1"/><path d="M3 19h18M8 19l1-2h6l1 2"/>', camera:'<path d="M4 7h4l1.5-2h5L16 7h4v12H4z"/><circle cx="12" cy="13" r="3.5"/>', music:'<path d="M9 18V6l10-2v12M9 18a3 3 0 1 1-3-3 3 3 0 0 1 3 3ZM19 16a3 3 0 1 1-3-3 3 3 0 0 1 3 3Z"/>', leaf:'<path d="M20 4C10 4 5 8 5 15c0 3 2 5 5 5 7 0 10-6 10-16ZM4 20c3-4 6-7 11-10"/>',
+ car:'<path d="M5 16h14l-1-6-2-3H8L6 10l-1 6ZM3 16h18M7 19h2M15 19h2"/><circle cx="7" cy="16" r="1.5"/><circle cx="17" cy="16" r="1.5"/>', hammer:'<path d="m14 4 6 6M12 6l3 3-8 8-3 0 0-3 8-8ZM14 14l6 6"/>', chef:'<path d="M7 10a4 4 0 1 1 8 0v7H7v-7ZM5 17h14v4H5zM9 6a2 2 0 1 1 4 0"/>', headphones:'<path d="M4 14v-2a8 8 0 0 1 16 0v2M4 14h3v5H4a2 2 0 0 1-2-2v-1a2 2 0 0 1 2-2ZM20 14h-3v5h3a2 2 0 0 0 2-2v-1a2 2 0 0 0-2-2Z"/>',
+};
+const ICON_TOKEN_MAP={'💼':'briefcase','🛒':'shopping-cart','🍟':'burger','🏋️':'dumbbell','☕':'coffee','🍔':'burger','📦':'box','🚚':'truck','🧹':'sparkles','🏫':'school','🍽️':'utensils','💊':'stethoscope','🛠️':'wrench','🧾':'receipt','🎓':'graduation','🐾':'paw'};
+function iconToken(v){return ICON_TOKEN_MAP[v]||v||'briefcase'}
+function iconVisual(v, cls=''){
+  const token=iconToken(v); const path=JOB_ICON_PATHS[token];
+  if(!path) return `<span class="wq-icon ${cls}">${escapeHtml(v||'')}</span>`;
+  return `<span class="wq-icon ${cls}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${path}</svg></span>`;
+}
+function swatchPickerHtml(name, choices, current, kind){
+  if(kind==='icon'){
+    const list = name==='icon' && choices===ICON_CHOICES ? JOB_ICON_CHOICES.map(x=>x[0]) : choices;
+    return `<div class="job-icon-grid" id="${name}Picker">${list.map(c=>`<button type="button" class="job-icon-option ${c===current||iconToken(c)===iconToken(current)?'active':''}" onclick="pick${name.charAt(0).toUpperCase()+name.slice(1)}('${String(c).replace(/'/g,"\\'")}')" data-val="${escapeHtml(c)}" aria-label="${escapeHtml((JOB_ICON_CHOICES.find(x=>x[0]===c)||['',c])[1]||c)}">${iconVisual(c,'wq-icon-lg')}<span class="job-icon-check">✓</span></button>`).join('')}</div>`;
+  }
+  return `<div class="row wrap" id="${name}Picker" style="gap:8px;">${choices.map(c=>`<button type="button" onclick="pick${name.charAt(0).toUpperCase()+name.slice(1)}('${c}')" data-val="${c}" style="width:32px;height:32px;border-radius:50%;border:2px solid ${c===current?'var(--text)':'transparent'};background:${c};"></button>`).join('')}</div>`;
+}
+function pickIcon(v){ _pendingIcon=v; document.querySelectorAll('#iconPicker .job-icon-option').forEach(b=>b.classList.toggle('active',b.dataset.val===v)); }
+function initCustomDatePickers(root=document){
+  root.querySelectorAll('input[type="date"]:not([data-wq-date])').forEach(input=>{
+    input.dataset.wqDate='1';
+    const value=input.value||getTodaySydney(); const wrap=document.createElement('div'); wrap.className='custom-date-wrap';
+    const btn=document.createElement('button'); btn.type='button'; btn.className='custom-date-btn';
+    const pop=document.createElement('div'); pop.className='custom-date-pop hidden';
+    input.type='hidden'; input.parentNode.insertBefore(wrap,input); wrap.appendChild(input); wrap.appendChild(btn); wrap.appendChild(pop);
+    function label(iso){ const dt=dateFromISO(iso); return `${DOW_SHORT[dowIndex(iso)]}, ${formatAUShort(iso)} ${dt.getUTCFullYear()}`; }
+    function render(monthIso){
+      const [y,m]=monthIso.split('-').map(Number); const first=new Date(Date.UTC(y,m-1,1,12)); const days=new Date(Date.UTC(y,m,0,12)).getUTCDate(); const start=(first.getUTCDay()+6)%7; const monthName=first.toLocaleDateString('en-AU',{month:'long',year:'numeric',timeZone:'UTC'});
+      const min=input.min||'' , max=input.max||''; let html=`<div class="custom-date-head"><button type="button" data-nav="prev">‹</button><strong>${monthName}</strong><button type="button" data-nav="next">›</button></div><div class="custom-date-week">${['M','T','W','T','F','S','S'].map(x=>`<span>${x}</span>`).join('')}</div><div class="custom-date-grid">`;
+      for(let i=0;i<start;i++) html+='<button class="custom-date-day empty" type="button"></button>';
+      for(let d=1;d<=days;d++){ const iso=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`; const disabled=(min&&iso<min)||(max&&iso>max); html+=`<button type="button" class="custom-date-day ${iso===input.value?'selected ':''}${iso===getTodaySydney()?'today ':''}${disabled?'disabled':''}" data-iso="${iso}" ${disabled?'disabled':''}>${d}</button>`; }
+      html+='</div>'; pop.innerHTML=html;
+      pop.querySelector('[data-nav="prev"]').onclick=e=>{e.stopPropagation();let mm=m-1,yy=y;if(mm<1){mm=12;yy--}render(`${yy}-${String(mm).padStart(2,'0')}`)};
+      pop.querySelector('[data-nav="next"]').onclick=e=>{e.stopPropagation();let mm=m+1,yy=y;if(mm>12){mm=1;yy++}render(`${yy}-${String(mm).padStart(2,'0')}`)};
+      pop.querySelectorAll('[data-iso]').forEach(day=>day.onclick=e=>{e.stopPropagation();input.value=day.dataset.iso;input.dispatchEvent(new Event('change',{bubbles:true}));btn.querySelector('.date-label').textContent=label(input.value);pop.classList.add('hidden')});
+    }
+    btn.innerHTML=`<span class="date-main">${iconVisual('receipt')}<span class="date-label">${label(value)}</span></span><span>⌄</span>`;
+    btn.onclick=e=>{e.stopPropagation();document.querySelectorAll('.custom-date-pop').forEach(x=>x!==pop&&x.classList.add('hidden'));document.querySelectorAll('.wq-time-pop').forEach(x=>x.classList.add('hidden'));pop.classList.toggle('hidden');if(!pop.classList.contains('hidden'))render((input.value||getTodaySydney()).slice(0,7));};
+    wrap.addEventListener('click',e=>e.stopPropagation());
+  });
+}
+function toggleTimePicker(id){ const pop=document.getElementById(id+'TimePop'); if(!pop)return;document.querySelectorAll('.wq-time-pop').forEach(x=>x!==pop&&x.classList.add('hidden'));document.querySelectorAll('.custom-date-pop').forEach(x=>x.classList.add('hidden'));pop.classList.toggle('hidden'); }
+function timePickerHtml(id, hm){
+  const {h12,m,ampm}=to12(hm); const nearestM=[0,15,30,45].reduce((a,b)=>Math.abs(b-m)<Math.abs(a-m)?b:a,0);
+  return `<div class="wq-time-picker"><input type="hidden" id="${id}Hour" value="${h12}"><input type="hidden" id="${id}Min" value="${nearestM}"><input type="hidden" id="${id}" value="${to24(h12,nearestM,ampm)}"><button type="button" class="wq-time-display" id="${id}Display" onclick="toggleTimePicker('${id}')"><span class="time-value">${String(h12).padStart(2,'0')}:${String(nearestM).padStart(2,'0')} ${ampm}</span><span class="time-chevron">⌄</span></button><div class="wq-time-pop hidden" id="${id}TimePop"><div class="wq-time-top"><strong>Choose time</strong><div class="wq-time-ampm"><button type="button" data-ampm="AM">AM</button><button type="button" data-ampm="PM">PM</button></div></div><div class="wq-time-label">Hour</div><div class="wq-time-grid">${Array.from({length:12},(_,i)=>i+1).map(h=>`<button type="button" data-hour="${h}">${h}</button>`).join('')}</div><div class="wq-time-label">Minutes</div><div class="wq-time-grid">${[0,15,30,45].map(mm=>`<button type="button" data-min="${mm}">${String(mm).padStart(2,'0')}</button>`).join('')}</div></div></div>`;
+}
+function updateTimeFromPicker(id){ const h12=Number(document.getElementById(id+'Hour').value),m=Number(document.getElementById(id+'Min').value),ampm=document.getElementById(id+'Display').querySelector('.time-value').textContent.slice(-2);document.getElementById(id).value=to24(h12,m,ampm);document.getElementById(id+'Display').querySelector('.time-value').textContent=`${String(h12).padStart(2,'0')}:${String(m).padStart(2,'0')} ${ampm}`;updateCalcPreview();checkPatternHint(); }
+function bindCustomTimePickers(root=document){
+  root.querySelectorAll('.wq-time-picker').forEach(w=>{const id=w.querySelector('input[id$="Hour"]')?.id.replace(/Hour$/,'');if(!id||w.dataset.bound)return;w.dataset.bound='1';const h=Number(w.querySelector('#'+id+'Hour').value),m=Number(w.querySelector('#'+id+'Min').value),ampm=w.querySelector('.time-value').textContent.slice(-2);w.querySelector(`[data-hour="${h}"]`)?.classList.add('active');w.querySelector(`[data-min="${m}"]`)?.classList.add('active');w.querySelector(`[data-ampm="${ampm}"]`)?.classList.add('active');w.querySelectorAll('[data-hour]').forEach(b=>b.onclick=e=>{e.stopPropagation();w.querySelectorAll('[data-hour]').forEach(x=>x.classList.remove('active'));b.classList.add('active');w.querySelector('#'+id+'Hour').value=b.dataset.hour;updateTimeFromPicker(id)});w.querySelectorAll('[data-min]').forEach(b=>b.onclick=e=>{e.stopPropagation();w.querySelectorAll('[data-min]').forEach(x=>x.classList.remove('active'));b.classList.add('active');w.querySelector('#'+id+'Min').value=b.dataset.min;updateTimeFromPicker(id)});w.querySelectorAll('[data-ampm]').forEach(b=>b.onclick=e=>{e.stopPropagation();w.querySelectorAll('[data-ampm]').forEach(x=>x.classList.remove('active'));b.classList.add('active');w.querySelector('.time-value').textContent=`${String(Number(w.querySelector('#'+id+'Hour').value)).padStart(2,'0')}:${String(Number(w.querySelector('#'+id+'Min').value)).padStart(2,'0')} ${b.dataset.ampm}`;document.getElementById(id).value=to24(Number(w.querySelector('#'+id+'Hour').value),Number(w.querySelector('#'+id+'Min').value),b.dataset.ampm);updateCalcPreview();checkPatternHint()});});
+}
+function initCustomSelects(root=document){
+  root.querySelectorAll('select:not([data-wq-select]):not([data-wq-native])').forEach(sel=>{
+    if(sel.closest('.wq-time-picker')) return;
+    sel.dataset.wqSelect='1';
+    const wrap=document.createElement('div');wrap.className='wq-select-wrap';
+    const btn=document.createElement('button');btn.type='button';btn.className='wq-select-btn';
+    const menu=document.createElement('div');menu.className='wq-select-menu hidden';
+    sel.classList.add('wq-native-select');sel.parentNode.insertBefore(wrap,sel);wrap.appendChild(sel);wrap.appendChild(btn);wrap.appendChild(menu);
+    function refresh(){const o=sel.options[sel.selectedIndex];if(!o)return;const raw=o.textContent.trim();const iconMatch=raw.match(/^[^A-Za-z0-9$]+/);const icon=iconMatch?iconMatch[0].trim():'';const text=icon?raw.slice(iconMatch[0].length).trim():raw;btn.innerHTML=`<span class="wq-select-value">${icon?iconVisual(icon):''}<span>${escapeHtml(text)}</span></span><span style="color:var(--text-faint);font-size:11px">⌄</span>`;menu.querySelectorAll('.wq-select-option').forEach(x=>x.classList.toggle('active',x.dataset.value===sel.value));}
+    menu.innerHTML=Array.from(sel.options).map(o=>{const raw=o.textContent.trim();const iconMatch=raw.match(/^[^A-Za-z0-9$]+/);const icon=iconMatch?iconMatch[0].trim():'';const text=icon?raw.slice(iconMatch[0].length).trim():raw;return `<button type="button" class="wq-select-option ${o.selected?'active':''}" data-value="${escapeHtml(o.value)}">${icon?`<span class="opt-icon">${iconVisual(icon)}</span>`:'<span class="opt-icon">•</span>'}<span>${escapeHtml(text)}</span></button>`}).join('');
+    menu.querySelectorAll('.wq-select-option').forEach(o=>o.onclick=e=>{e.stopPropagation();sel.value=o.dataset.value;sel.dispatchEvent(new Event('change',{bubbles:true}));refresh();menu.classList.add('hidden')});
+    btn.onclick=e=>{e.stopPropagation();document.querySelectorAll('.wq-select-menu,.custom-date-pop,.wq-time-pop').forEach(x=>x!==menu&&x.classList.add('hidden'));menu.classList.toggle('hidden');refresh()};
+    sel.addEventListener('change',refresh);refresh();setTimeout(refresh,0);
+    wrap.addEventListener('click',e=>e.stopPropagation());
+  });
+}
+const _wqOpenModal2=openModal;
+openModal=function(html){_wqOpenModal2(html);const root=document.getElementById('modalRoot');initCustomDatePickers(root);bindCustomTimePickers(root);initCustomSelects(root)};
+document.addEventListener('click',()=>{document.querySelectorAll('.custom-date-pop,.wq-time-pop').forEach(x=>x.classList.add('hidden'))});
+
 </script>
 </body>
 </html>
