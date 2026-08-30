@@ -1090,7 +1090,8 @@ input,select,textarea,button{max-width:100%}
 .security-progress .line{height:1px;flex:1;background:var(--line-soft);}
 .security-question-card{padding:12px;border:1px solid var(--line-soft);background:var(--card-2);border-radius:14px;margin-top:10px;}
 .security-required{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px;}
-</style>\n</head>
+</style>\n\n<style id="profile-name-edit-ui">\n.profile-tile-wrap{display:flex;flex-direction:column;align-items:center;min-width:0;}\n.profile-tile-wrap .profile-tile{width:100%;}\n.profile-edit-name{margin-top:7px;border:0;background:transparent;color:var(--text-faint);font:600 10px/1.2 inherit;padding:5px 7px;border-radius:8px;cursor:pointer;transition:color .16s ease,background .16s ease;}\n.profile-edit-name:hover,.profile-edit-name:focus-visible{color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent);outline:none;}\n@media(max-width:430px){.profile-edit-name{font-size:9.5px;padding:4px 6px;}}\n</style>\n<style>:root{--wq-safe-top:env(safe-area-inset-top,0px);--wq-safe-bottom:env(safe-area-inset-bottom,0px)}body{padding-bottom:max(0px,var(--wq-safe-bottom))}.topbar{padding-top:max(12px,var(--wq-safe-top))}.modal{padding-top:max(18px,var(--wq-safe-top));padding-bottom:max(18px,var(--wq-safe-bottom))}.modal-close{margin-top:calc(-1 * min(10px,var(--wq-safe-top)))}#fancyNotifyRoot{padding-top:max(14px,var(--wq-safe-top))!important}.fab{bottom:max(18px,calc(18px + var(--wq-safe-bottom)))}#toast{bottom:max(86px,calc(86px + var(--wq-safe-bottom)))}.salary-frequency-card{background:var(--bg-2);border:1px solid var(--line-soft);border-radius:14px;padding:12px 13px;margin-top:10px}.salary-frequency-note{font-size:11.5px;line-height:17px;color:var(--text-dim);margin-top:7px}.wq-tutorial-backdrop{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;padding:calc(18px + var(--wq-safe-top)) 16px calc(18px + var(--wq-safe-bottom));background:rgba(4,6,10,.72);backdrop-filter:blur(16px)}.wq-tutorial-card{width:min(420px,100%);max-height:min(720px,calc(100svh - var(--wq-safe-top) - var(--wq-safe-bottom) - 36px));overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:26px;padding:24px;box-shadow:0 30px 90px rgba(0,0,0,.42)}.wq-tutorial-progress{display:flex;gap:6px;margin-bottom:18px}.wq-tutorial-progress span{height:4px;flex:1;border-radius:99px;background:var(--line)}.wq-tutorial-progress span.active{background:var(--accent)}.wq-tutorial-icon{width:56px;height:56px;border-radius:18px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 14%,var(--card-2));color:var(--accent);font-size:27px;margin-bottom:18px}.wq-tutorial-card h3{font-size:25px;margin:0 0 8px}.wq-tutorial-card p{font-size:13.5px;line-height:21px;color:var(--text-dim);margin:0 0 22px}.wq-tutorial-actions{display:flex;gap:8px;align-items:center}.wq-tutorial-actions .btn{flex:1;justify-content:center;min-height:46px}.wq-tutorial-skip{border:none;background:none;color:var(--text-faint);font-size:12px;font-weight:700;padding:10px}@media(max-width:560px){#app-screen{padding-left:12px;padding-right:12px}.topbar{margin-left:-12px;margin-right:-12px;padding-left:12px;padding-right:12px}.icon-btn,.theme-toggle{width:36px;height:36px}.sync-pill{max-width:84px}.sync-pill span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tab{font-size:12.5px}.card-pad{padding:15px}.day-card{padding:13px 14px}.shift-row{align-items:flex-start;flex-wrap:wrap}.shift-actions{margin-left:auto}}@media(max-width:380px){#app-screen{padding-left:10px;padding-right:10px}.topbar{margin-left:-10px;margin-right:-10px;padding-left:10px;padding-right:10px}.sync-pill{display:none}.field-row{grid-template-columns:1fr}.modal{padding-left:16px;padding-right:16px}}</style>
+</head>
 <body>
 
 <div id="landing-screen">
@@ -1354,9 +1355,9 @@ input,select,textarea,button{max-width:100%}
       <div class="brand">WorkQuest <span class="role-badge" id="roleBadge"></span></div>
       <div class="row">
         <div class="sync-pill"><span class="sync-dot" id="syncDot"></span><span id="syncText">—</span></div>
-        <button class="icon-btn" onclick="openSearchModal()" title="Search">⌕</button>
+        <button class="icon-btn" onclick="openSearchModal()" title="Search" aria-label="Search">⌕</button>
         <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme">☀️</button>
-        <button class="icon-btn" onclick="logout()" title="Log out">⎋</button>
+        <button class="icon-btn" onclick="logout()" title="Log out" aria-label="Exit">⎋</button>
       </div>
     </div>
     <div class="row" style="margin-top:12px;">
@@ -1375,6 +1376,7 @@ input,select,textarea,button{max-width:100%}
   <div class="section" id="content"></div>
 </div>
 
+<div id="wqTutorialRoot" class="hidden"></div>
 <div id="modalRoot"></div>
 <div id="fancyNotifyRoot"></div>
 <div id="toast"></div>
@@ -1565,16 +1567,12 @@ function totalEarningsForRange(fromISO, toISO){
   let salary = 0;
   for(const emp of STATE.employers){
     if(emp.payMode!=='salary' || !emp.salaryVersions?.length) continue;
-    const weekStarts = weeksWithShiftsForEmployer(emp.id, fromISO, toISO);
-    for(const ws of weekStarts){
-      const v = versionForDate(emp.salaryVersions, ws);
-      salary += v?.amount||0;
-    }
+    if(emp.salaryFrequency==='monthly'){ let cursor=fromISO.slice(0,7)+'-01'; while(isoCompare(cursor,toISO)<=0){ const [y,m]=cursor.split('-').map(Number); const payday=monthlyDom(y,m,emp.salaryPayDay||1); if(isoCompare(payday,fromISO)>=0&&isoCompare(payday,toISO)<=0){ const v=versionForDate(emp.salaryVersions,payday); salary+=v?.amount||0; } cursor=addDays(payday,1); } } else { const weekStarts=weeksWithShiftsForEmployer(emp.id,fromISO,toISO); for(const ws of weekStarts){ const v=versionForDate(emp.salaryVersions,ws); salary+=v?.amount||0; } }
   }
   return hourly+salary;
 }
 function salaryCreditForWeek(employer, weekStart){
-  if(employer.payMode!=='salary' || !employer.salaryVersions?.length) return 0;
+  if(employer.payMode!=='salary' || employer.salaryFrequency==='monthly' || !employer.salaryVersions?.length) return 0;
   const hasShift = STATE.shifts.some(s=>s.employerId===employer.id && weekForDate(s.date).start===weekStart);
   if(!hasShift) return 0;
   return versionForDate(employer.salaryVersions, weekStart)?.amount||0;
@@ -1625,6 +1623,7 @@ function payPeriodBounds(emp, paydayISO){
 function payPeriodEarnings(emp, paydayISO){
   const {periodStart, periodEnd} = payPeriodBounds(emp, paydayISO);
   if(emp.payMode==='salary'){
+    if(emp.salaryFrequency==='monthly'){ const v=versionForDate(emp.salaryVersions,paydayISO); return v?.amount||0; }
     return weeksWithShiftsForEmployer(emp.id, periodStart, periodEnd).reduce((sum,ws)=>sum+salaryCreditForWeek(emp,ws),0);
   }
   return STATE.shifts.filter(s=>s.employerId===emp.id && isoCompare(s.date,periodStart)>=0 && isoCompare(s.date,periodEnd)<=0)
@@ -1690,7 +1689,10 @@ async function enterApp(){
   setSync('saved','Synced');
   render();
   if(STATE.role==='admin') startTickerWatcher();
+  if(STATE.role==='admin' && localStorage.getItem('wq_pending_quick_tutorial')==='1') setTimeout(showQuickTutorial,220);
 }
+const WQ_TUTORIAL_STEPS=[{icon:'▤',title:'Your Diary',text:'Log shifts and keep each day organised at a glance.'},{icon:'▦',title:'Your Calendar',text:'See your work pattern across the month and spot worked, planned and holiday days.'},{icon:'⌁',title:'Timeline & earnings',text:'Follow your earnings history, including salary and payday information.'},{icon:'＋',title:'Add Shift & settings',text:'Use + Add shift for new work. Pay Rates manages jobs, pay frequency, salary, bonuses and preferences.'}];let _wqTutorialIndex=0;function showQuickTutorial(){if(localStorage.getItem('wq_quick_tutorial_done')==='1'){localStorage.removeItem('wq_pending_quick_tutorial');return;}_wqTutorialIndex=0;renderQuickTutorial()}function renderQuickTutorial(){const root=document.getElementById('wqTutorialRoot');if(!root)return;const x=WQ_TUTORIAL_STEPS[_wqTutorialIndex];root.innerHTML=`<div class="wq-tutorial-backdrop"><div class="wq-tutorial-card" role="dialog" aria-modal="true"><div class="wq-tutorial-progress">${WQ_TUTORIAL_STEPS.map((_,i)=>`<span class="${i<=_wqTutorialIndex?'active':''}"></span>`).join('')}</div><div class="wq-tutorial-icon">${x.icon}</div><h3>${x.title}</h3><p>${x.text}</p><div class="wq-tutorial-actions"><button class="wq-tutorial-skip" onclick="skipQuickTutorial()">Skip</button><button class="btn btn-primary" onclick="nextQuickTutorial()">${_wqTutorialIndex===3?'Got it':'Next'} →</button></div></div></div>`;root.classList.remove('hidden')}function nextQuickTutorial(){if(_wqTutorialIndex===3){finishQuickTutorial();return}_wqTutorialIndex++;renderQuickTutorial()}function skipQuickTutorial(){finishQuickTutorial()}function finishQuickTutorial(){localStorage.setItem('wq_quick_tutorial_done','1');localStorage.removeItem('wq_pending_quick_tutorial');const r=document.getElementById('wqTutorialRoot');if(r){r.classList.add('hidden');r.innerHTML=''}}
+
 function resetAppState(){
   clearInterval(tickerBannerInterval);
   clearInterval(tickerModalInterval);
@@ -1982,6 +1984,7 @@ async function finishMasterSetup(){
   if(passErr){ console.error(passErr); err.textContent='PIN saved, but login setup failed: '+passErr.message; return; }
   _pinActivationMode=false;
   _newSignupMode=false;
+  localStorage.setItem('wq_pending_quick_tutorial','1');
   openPinGate({role:'admin', display_name:'Admin', isNew:true});
 }
 function openMasterForgotModal(){
@@ -2072,11 +2075,14 @@ function renderProfileGrid(){
   grid.innerHTML = html;
 }
 function profileTileHtml(p){
-  return `<button class="profile-tile" onclick='openPinGateById("${p.id}")'>
-      <div class="profile-avatar" style="background:${p.role==='admin'?'var(--accent)':'var(--card-2)'};color:${p.role==='admin'?'var(--on-accent)':'var(--text)'};">${(p.display_name||'?').charAt(0).toUpperCase()}</div>
-      <div class="profile-name">${escapeHtml(p.display_name)}</div>
-      <div class="profile-role">${p.role}</div>
-    </button>`;
+  return `<div class="profile-tile-wrap">
+      <button class="profile-tile" onclick='openPinGateById("${p.id}")' aria-label="Continue as ${escapeHtml(p.display_name)}">
+        <div class="profile-avatar" style="background:${p.role==='admin'?'var(--accent)':'var(--card-2)'};color:${p.role==='admin'?'var(--on-accent)':'var(--text)'};">${(p.display_name||'?').charAt(0).toUpperCase()}</div>
+        <div class="profile-name">${escapeHtml(p.display_name)}</div>
+        <div class="profile-role">${p.role}</div>
+      </button>
+      <button type="button" class="profile-edit-name" onclick='event.stopPropagation();openEditProfileNameModal("${p.id}")' aria-label="Change ${escapeHtml(p.display_name)} name">✎ Edit name</button>
+    </div>`;
 }
 function openPinGateById(profileId){
   const p = STATE.profiles.find(x=>x.id===profileId);
@@ -2311,7 +2317,7 @@ async function loadViewerData(){
   }));
 }
 function rowToEmployer(row){
-  return { id:row.id, name:row.name, rates:row.rates, bonuses:row.bonuses, breakRule:row.break_rule, archived:!!row.archived, icon:row.icon||'💼', color:row.color||'#7C9CFF', payMode:row.pay_mode||'hourly', salaryVersions:row.salary_versions||[], payCycle:row.pay_cycle||{} };
+  return { id:row.id, name:row.name, rates:row.rates, bonuses:row.bonuses, breakRule:row.break_rule, archived:!!row.archived, icon:row.icon||'💼', color:row.color||'#7C9CFF', payMode:row.pay_mode||'hourly', salaryVersions:row.salary_versions||[], payCycle:row.pay_cycle||{}, salaryFrequency:(row.pay_cycle?.salaryFrequency)||'weekly', salaryPayDay:Number(row.pay_cycle?.salaryPayDay)||1 };
 }
 function rowToShift(row){
   return {
@@ -3227,6 +3233,7 @@ function renderAdminDiary(){
   const fy = fyForDate(STATE.weekStart);
   const fyEarned = totalEarningsForRange(fy.start, today);
   const salaryNote = STATE.employers.filter(e=>e.payMode==='salary').map(e=>{
+    if(e.salaryFrequency==='monthly'){ const payday=monthlyDom(Number(week.start.slice(0,4)),Number(week.start.slice(5,7)),Number(e.salaryPayDay)||1); const v=versionForDate(e.salaryVersions,payday); return v?.amount ? `${e.icon||''} ${e.name} $${v.amount.toFixed(2)}/month · payday ${Number(e.salaryPayDay)||1}` : null; }
     const credit = salaryCreditForWeek(e, week.start);
     return credit>0 ? `${e.icon||''} ${e.name} salary $${credit.toFixed(2)} included` : null;
   }).filter(Boolean).join(' · ');
@@ -3379,6 +3386,15 @@ function renderSettings(){
       </div>`;
     }
   }
+  html += `<h2 style="margin:26px 0 4px;">Profile names</h2><p class="muted small" style="margin-bottom:12px;">Change the names shown on your WorkQuest profile picker without changing the account role or PIN.</p>`;
+  if((STATE.profiles||[]).length){
+    html += `<div class="card card-pad" style="margin-bottom:16px;">`;
+    for(const prof of STATE.profiles.filter(p=>p.role==='admin'||p.role==='viewer')){
+      html += `<div class="rate-row" style="cursor:pointer;" onclick="openEditProfileNameModal('${prof.id}')"><span><strong>${escapeHtml(prof.display_name||'Unnamed')}</strong><div class="muted small" style="margin-top:2px;text-transform:capitalize;">${prof.role} profile</div></span><span class="muted small">Edit name ›</span></div>`;
+    }
+    html += `</div>`;
+  }
+
   html += `<h2 style="margin:26px 0 4px;">Viewer profile</h2><p class="muted small" style="margin-bottom:12px;">One extra profile that shares this login, gated by its own 4-digit PIN and a permission-checked read token — shows on the profile picker alongside Admin.</p>`;
   if(STATE.localViewer){
     const p = STATE.localViewer.permissions||{};
@@ -3472,6 +3488,50 @@ async function saveBonusVersion(empId, bonusId){
   toast(`New amount scheduled from ${fmtDateShort(effectiveFrom)}`);
 }
 /* =========================================================================
+   PROFILE NAME MANAGEMENT — visual/account profile setting
+   ========================================================================= */
+function openEditProfileNameModal(profileId){
+  const profile = (STATE.profiles||[]).find(p=>p.id===profileId) || (STATE.localViewer && STATE.localViewer.id===profileId ? STATE.localViewer : null);
+  if(!profile) return;
+  const roleLabel = profile.role==='admin' ? 'Admin' : 'Viewer';
+  openModal(`
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="eyebrow">PROFILE</div>
+    <h3 style="margin-top:5px;">Change ${roleLabel} name</h3>
+    <p class="muted small">This name appears on the profile picker and throughout WorkQuest.</p>
+    <div class="field" style="margin-top:16px;">
+      <label for="profileNameEdit">Display name</label>
+      <input id="profileNameEdit" type="text" maxlength="40" value="${escapeHtml(profile.display_name||'')}" autocomplete="name" placeholder="Enter a name">
+    </div>
+    <div class="row wrap" style="margin-top:16px;">
+      <button class="btn btn-primary" onclick="saveProfileDisplayName('${profile.id}')">Save name</button>
+      <button class="btn" onclick="closeModal()">Cancel</button>
+    </div>
+    <div class="login-error" id="profileNameError"></div>
+  `);
+  setTimeout(()=>document.getElementById('profileNameEdit')?.focus(),0);
+}
+async function saveProfileDisplayName(profileId){
+  const input=document.getElementById('profileNameEdit');
+  const err=document.getElementById('profileNameError');
+  const name=(input?.value||'').trim();
+  if(!name){ if(err) err.textContent='Enter a profile name'; return; }
+  if(name.length>40){ if(err) err.textContent='Keep the name under 40 characters'; return; }
+  setSync('saving','Saving…');
+  const {error}=await sb.from('profiles').update({display_name:name}).eq('id',profileId).eq('owner_id',STATE.authUid);
+  if(error){ console.error(error); if(err) err.textContent='Could not save the name: '+error.message; setSync('error','⚠️ Unable to save'); return; }
+  const profile=(STATE.profiles||[]).find(p=>p.id===profileId);
+  if(profile) profile.display_name=name;
+  if(STATE.localViewer?.id===profileId) STATE.localViewer.display_name=name;
+  if(STATE.activeProfileId===profileId) STATE.activeProfileName=name;
+  setSync('saved','Saved ✓');
+  closeModal();
+  renderProfileGrid();
+  render();
+  toast(`${name} is now the profile name`);
+}
+
+/* =========================================================================
    VIEWER MANAGEMENT (account-based logins)
    ========================================================================= */
 async function updateLocalViewerPerm(key, value){
@@ -3483,7 +3543,7 @@ async function updateLocalViewerPerm(key, value){
 
 async function saveEmployer(emp){
   setSync('saving','Saving…');
-  const row = { id:emp.id, owner_id:STATE.uid, name:emp.name, rates:emp.rates, bonuses:emp.bonuses, break_rule:emp.breakRule, archived:!!emp.archived, icon:emp.icon||'💼', color:emp.color||'#7C9CFF', pay_mode:emp.payMode||'hourly', salary_versions:emp.salaryVersions||[], pay_cycle:emp.payCycle||{} };
+  const row = { id:emp.id, owner_id:STATE.uid, name:emp.name, rates:emp.rates, bonuses:emp.bonuses, break_rule:emp.breakRule, archived:!!emp.archived, icon:emp.icon||'💼', color:emp.color||'#7C9CFF', pay_mode:emp.payMode||'hourly', salary_versions:emp.salaryVersions||[], pay_cycle:{...(emp.payCycle||{}), salaryFrequency:emp.salaryFrequency||'weekly', salaryPayDay:Number(emp.salaryPayDay)||1} };
   if(!navigator.onLine){ offlineQueue.push({type:'upsert', table:'employers', row}); persistQueue(); setSync('error','Waiting to sync'); return; }
   const {error} = await sb.from('employers').upsert(row);
   setSync(error?'error':'saved', error?'⚠️ Unable to save':'Saved ✓');
@@ -3608,7 +3668,7 @@ function openAddJobModal(){
     <div class="field"><label>Pay type</label>
       <select id="jPayMode" onchange="document.getElementById('jHourlyFields').classList.toggle('hidden',this.value!=='hourly');document.getElementById('jSalaryFields').classList.toggle('hidden',this.value!=='salary');">
         <option value="hourly">Hourly rate</option>
-        <option value="salary">Weekly salary</option>
+        <option value="salary">Salary</option>
       </select>
     </div>
     <div id="jHourlyFields">
@@ -3621,13 +3681,7 @@ function openAddJobModal(){
       </div>
       <p class="muted small">You can add more rate tiers (e.g. weekends, after-hours, public holidays) and bonuses once the job is created.</p>
     </div>
-    <div id="jSalaryFields" class="hidden">
-      <div class="field-row">
-        <div class="field"><label>Weekly salary ($)</label><input type="number" step="0.01" id="jSalary" value="0.00"></div>
-        <div class="field"><label>Effective from</label><input type="date" id="jSalaryFrom" value="${getTodaySydney()}"></div>
-      </div>
-      <p class="muted small">This amount is credited once for any week you log at least one shift against this job — logged shift times still show in your diary for hours tracking, they just don't add their own dollar figure.</p>
-    </div>
+    <div id="jSalaryFields" class="hidden"><div class="field"><label>Pay frequency</label><select id="jSalaryFrequency" onchange="toggleSalaryFrequencyFields('jSalaryFrequency','jSalaryMonthlyFields')"><option value="weekly">Weekly</option><option value="fortnightly">Fortnightly</option><option value="monthly">Monthly</option></select></div><div class="field-row"><div class="field"><label>Salary amount ($)</label><input type="number" step="0.01" id="jSalary" value="0.00"></div><div class="field"><label>Effective from</label><input type="date" id="jSalaryFrom" value="${getTodaySydney()}"></div></div><div id="jSalaryMonthlyFields" class="salary-frequency-card hidden"><div class="field" style="margin-bottom:0"><label>Monthly payday</label><select id="jSalaryPayDay">${Array.from({length:31},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('')}</select></div><div class="salary-frequency-note">Months with fewer days use the last available day. Monthly salary is not treated as hourly shift wages.</div></div><p class="muted small" id="jSalaryFrequencyNote">Weekly salary is credited once for any week with a logged shift.</p></div>
     <div class="row wrap"><button class="btn btn-primary" id="saveNewJobBtn" onclick="saveNewJob()" disabled>Add job</button><button class="btn" onclick="closeModal()">Cancel</button></div>
   `);
   wireAddJobValidation();
@@ -3642,18 +3696,18 @@ function updateAddJobButtonState(){
   if(mode.value==='salary'){
     const salary=Number(document.getElementById('jSalary')?.value);
     const from=document.getElementById('jSalaryFrom')?.value;
-    validPay=Number.isFinite(salary)&&salary>0&&!!from;
+    validPay=Number.isFinite(salary)&&salary>=0&&!!from;
   }else{
     const rate=Number(document.getElementById('jRate')?.value);
     const from=document.getElementById('jFrom')?.value;
-    validPay=Number.isFinite(rate)&&rate>0&&!!from;
+    validPay=Number.isFinite(rate)&&rate>=0&&!!from;
   }
   const ready=validName&&validPay;
   btn.disabled=!ready;
   btn.classList.toggle('job-ready',ready);
 }
 function wireAddJobValidation(){
-  ['jName','jPayMode','jRate','jFrom','jSalary','jSalaryFrom'].forEach(id=>{
+  ['jName','jPayMode','jRate','jFrom','jSalary','jSalaryFrom','jSalaryFrequency','jSalaryPayDay'].forEach(id=>{
     const el=document.getElementById(id);
     if(el){ el.addEventListener('input',updateAddJobButtonState); el.addEventListener('change',updateAddJobButtonState); }
   });
@@ -3671,7 +3725,7 @@ async function saveNewJob(){
     if(isNaN(salary) || !from){ toast('Fill in all fields'); return; }
     emp = {
       id: uid('emp'), name, icon:_pendingIcon, color:_pendingColor, archived:false,
-      payMode:'salary', salaryVersions:[{amount:salary, effectiveFrom:from}],
+      payMode:'salary', salaryFrequency:document.getElementById('jSalaryFrequency')?.value||'weekly', salaryPayDay:Number(document.getElementById('jSalaryPayDay')?.value)||1, salaryVersions:[{amount:salary, effectiveFrom:from}],
       rates: [ mkRate('N/A (salaried)',['Mon','Tue','Wed','Thu','Fri','Sat','Sun','PH'], null, null, 0) ],
       bonuses: [], breakRule: {enabled:false, triggerHours:5, breakMinutes:30},
     };
@@ -3723,7 +3777,7 @@ function openEditJobModal(empId){
       <div class="row" style="justify-content:space-between;margin-bottom:8px;"><strong style="font-size:14px;">Weekly salary</strong></div>
       ${(emp.salaryVersions||[]).slice().sort((a,b)=>isoCompare(a.effectiveFrom,b.effectiveFrom)).map(v=>`<div class="rate-row"><span class="muted">from ${fmtDateShort(v.effectiveFrom)}</span><span class="num">$${v.amount.toFixed(2)}</span></div>`).join('') || '<p class="muted small">Not set yet.</p>'}
       <div class="field-row" style="margin-top:10px;">
-        <div class="field"><label>New weekly amount ($)</label><input type="number" step="0.01" id="jSalaryNew"></div>
+        <div class="field"><label>Pay frequency</label><select id="jEditSalaryFrequency" onchange="toggleSalaryFrequencyFields('jEditSalaryFrequency','jEditSalaryMonthlyFields')"><option value="weekly" ${emp.salaryFrequency==='weekly'?'selected':''}>Weekly</option><option value="fortnightly" ${emp.salaryFrequency==='fortnightly'?'selected':''}>Fortnightly</option><option value="monthly" ${emp.salaryFrequency==='monthly'?'selected':''}>Monthly</option></select></div><div id="jEditSalaryMonthlyFields" class="salary-frequency-card ${emp.salaryFrequency==='monthly'?'':'hidden'}"><div class="field" style="margin-bottom:0"><label>Monthly payday</label><select id="jEditSalaryPayDay">${Array.from({length:31},(_,i)=>`<option value="${i+1}" ${Number(emp.salaryPayDay||1)===i+1?'selected':''}>${i+1}</option>`).join('')}</select></div></div><div class="field"><label>New salary amount ($)</label><input type="number" step="0.01" id="jSalaryNew"></div>
         <div class="field"><label>Effective from</label><input type="date" id="jSalaryNewFrom" min="${tomorrowSydney()}" value="${tomorrowSydney()}"></div>
       </div>
       <button class="btn" onclick="saveSalaryVersion('${empId}')">Schedule change</button>
@@ -3762,6 +3816,7 @@ function openEditJobModal(empId){
     ${deleteSection}
   `);
 }
+function toggleSalaryFrequencyFields(selectId,monthlyId){const f=document.getElementById(selectId)?.value;document.getElementById(monthlyId)?.classList.toggle('hidden',f!=='monthly');const n=document.getElementById('jSalaryFrequencyNote');if(n&&selectId==='jSalaryFrequency')n.textContent=f==='monthly'?'Monthly salary is credited as a monthly salary amount, not as hourly shift wages.':'Salary is credited '+(f==='fortnightly'?'per fortnight':'weekly')+' using the existing salary model.';}
 async function savePayCycle(empId){
   const emp = getEmployer(empId);
   const enabled = document.getElementById('pcEnabled').checked;
@@ -3779,6 +3834,7 @@ async function saveSalaryVersion(empId){
   const emp = getEmployer(empId);
   const amount = Number(document.getElementById('jSalaryNew').value);
   const effectiveFrom = document.getElementById('jSalaryNewFrom').value;
+  const freq=document.getElementById('jEditSalaryFrequency')?.value || emp.salaryFrequency || 'weekly'; emp.salaryFrequency=freq; if(freq==='monthly') emp.salaryPayDay=Number(document.getElementById('jEditSalaryPayDay')?.value)||1;
   if(isNaN(amount) || !effectiveFrom){ toast('Enter an amount and a date'); return; }
   if(isoCompare(effectiveFrom, tomorrowSydney())<0){ toast('Effective date must be in the future'); return; }
   emp.salaryVersions = (emp.salaryVersions||[]).filter(v=>v.effectiveFrom!==effectiveFrom);
