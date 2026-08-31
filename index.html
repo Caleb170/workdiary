@@ -4853,6 +4853,35 @@ try { Object.assign(window, {
 }); } catch(e) { console.error(e); }
 </script>
 
+<style id="workquest-pin-screen-size-fix">
+/* Master PIN is a full-viewport auth screen: center the card in the available screen. */
+#master-pin-screen {
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  box-sizing:border-box !important;
+  width:100% !important;
+  min-height:100dvh !important;
+  height:100dvh !important;
+  max-height:100dvh !important;
+  padding:24px !important;
+  overflow:hidden !important;
+}
+#master-pin-screen > .landing-wrap {
+  width:min(100%,520px) !important;
+  max-width:520px !important;
+  margin:0 auto !important;
+  padding:36px 28px !important;
+}
+@media(max-width:430px){
+  #master-pin-screen { padding:16px !important; }
+  #master-pin-screen > .landing-wrap {
+    width:100% !important;
+    max-width:none !important;
+    padding:30px 20px !important;
+  }
+}
+</style>
 <style id="workquest-final-layout-fix">
 /* Startup/auth screens stay locked; the signed-in app shell is the scroll container. */
 #app-screen:not(.hidden) {
