@@ -4984,5 +4984,94 @@ body {
   #app-screen:not(.hidden) { min-height:100dvh !important; }
 }
 </style>
+
+<style id="workquest-true-viewport-fix">
+/* V9: make each WorkQuest view an actual viewport layer.
+   Using fixed inset:0 avoids 100vh/100dvh rounding and leaves no body strip. */
+html {
+  width:100% !important;
+  height:100% !important;
+  min-height:100% !important;
+  background:var(--bg) !important;
+  overflow:hidden !important;
+}
+body {
+  position:fixed !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+  overflow:hidden !important;
+  background:var(--bg) !important;
+}
+
+/* Every pre-login / onboarding screen occupies the whole visual viewport. */
+#landing-screen,
+#email-screen,
+#master-pin-screen,
+#master-setup-screen,
+#profile-screen,
+#pin-screen,
+#pin-setup-screen,
+#setup-complete-screen {
+  position:fixed !important;
+  inset:0 !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  margin:0 !important;
+  box-sizing:border-box !important;
+  background-color:var(--bg) !important;
+}
+
+/* Short auth screens: center their card in the real viewport. */
+#landing-screen,
+#email-screen,
+#master-pin-screen,
+#profile-screen,
+#pin-screen {
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  overflow:hidden !important;
+}
+
+/* Onboarding screens keep their own internal scroll when content is taller. */
+#master-setup-screen,
+#pin-setup-screen,
+#setup-complete-screen {
+  overflow:hidden !important;
+}
+#master-setup-screen .setup-shell,
+#pin-setup-screen .setup-shell,
+#setup-complete-screen .setup-shell {
+  width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  max-height:none !important;
+  box-sizing:border-box !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+}
+
+/* Logged-in WorkQuest is also a true viewport layer, with scrolling inside it. */
+#app-screen:not(.hidden) {
+  position:fixed !important;
+  inset:0 !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  margin:0 !important;
+  box-sizing:border-box !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  background:var(--bg) !important;
+}
+</style>
+
 </body>
 </html>
