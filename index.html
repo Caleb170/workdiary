@@ -4906,5 +4906,83 @@ try { Object.assign(window, {
 #fabAdd.fab { z-index: 2100 !important; }
 #modalRoot, #modalRoot .modal-backdrop { z-index: 3000 !important; }
 </style>
+
+<style id="workquest-full-height-v8">
+/* Final viewport fill: every startup/auth screen reaches the real viewport edge.
+   Safe-area padding is handled by the individual controls, not by the document body. */
+html, body {
+  width:100% !important;
+  height:100% !important;
+  min-height:100% !important;
+  margin:0 !important;
+}
+body {
+  padding-bottom:0 !important;
+}
+
+#landing-screen,
+#email-screen,
+#master-pin-screen,
+#master-setup-screen,
+#profile-screen,
+#pin-screen,
+#pin-setup-screen,
+#setup-complete-screen {
+  box-sizing:border-box !important;
+  width:100vw !important;
+  min-height:100vh !important;
+  height:100vh !important;
+  max-height:none !important;
+}
+
+@supports (height:100dvh) {
+  #landing-screen,
+  #email-screen,
+  #master-pin-screen,
+  #master-setup-screen,
+  #profile-screen,
+  #pin-screen,
+  #pin-setup-screen,
+  #setup-complete-screen {
+    min-height:100dvh !important;
+    height:100dvh !important;
+  }
+}
+
+/* The landing page and simple login screens are true edge-to-edge app views. */
+#landing-screen,
+#email-screen,
+#master-pin-screen,
+#profile-screen,
+#pin-screen {
+  overflow:hidden !important;
+}
+
+/* Longer onboarding forms can still scroll inside their own screen on small displays. */
+#master-setup-screen,
+#pin-setup-screen,
+#setup-complete-screen {
+  overflow:hidden !important;
+}
+#master-setup-screen .setup-shell,
+#pin-setup-screen .setup-shell,
+#setup-complete-screen .setup-shell {
+  box-sizing:border-box !important;
+  width:100% !important;
+  height:100% !important;
+  min-height:100% !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  overscroll-behavior:contain;
+}
+
+/* Signed-in app remains the intentional scrolling surface. */
+#app-screen:not(.hidden) {
+  min-height:100vh !important;
+}
+@supports (height:100dvh) {
+  #app-screen:not(.hidden) { min-height:100dvh !important; }
+}
+</style>
 </body>
 </html>
