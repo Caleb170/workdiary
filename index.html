@@ -1477,6 +1477,13 @@ input,select,textarea,button{max-width:100%}
 <div id="fancyNotifyRoot"></div>
 <div id="toast"></div>
 
+
+<style id="wq-interaction-safety">
+#app-screen:not(.hidden){position:relative;z-index:1000;pointer-events:auto;}
+#app-screen:not(.hidden) *{pointer-events:auto;}
+#landing-screen.hidden,#email-screen.hidden,#master-pin-screen.hidden,#master-setup-screen.hidden,#profile-screen.hidden,#pin-screen.hidden,#pin-setup-screen.hidden,#setup-complete-screen.hidden,#wqTutorialRoot.hidden{display:none!important;pointer-events:none!important;}
+#wqTutorialRoot.hidden,#modalRoot:empty,#fancyNotifyRoot:empty{pointer-events:none!important;}
+</style>
 <script>
 document.documentElement.setAttribute('data-theme', localStorage.getItem('wq_theme') || 'light');
 </script>
@@ -1873,7 +1880,12 @@ async function enterApp(){
   if(STATE.role==='admin'){
     try { startTickerWatcher(); } catch(err) { console.error('Ticker init failed:',err); }
   }
-  if(STATE.role==='admin' && localStorage.getItem('wq_quick_tutorial_done')!=='1') setTimeout(showQuickTutorial,220);
+  // Do not place a full-screen tutorial overlay over a freshly opened account.
+  // A new/empty account must remain immediately interactive; the tutorial can
+  // be launched later without blocking the app during startup.
+  const tutorialRoot=document.getElementById('wqTutorialRoot');
+  if(tutorialRoot){ tutorialRoot.classList.add('hidden'); tutorialRoot.innerHTML=''; }
+  localStorage.removeItem('wq_pending_quick_tutorial');
 
   // Background sync: deliberately DO NOT await this. A slow Supabase table,
   // realtime subscription, or network failure must never disable the Admin UI.
@@ -1891,12 +1903,7 @@ async function enterApp(){
   });
 }
 
-const WQ_TUTORIAL_STEPS=[{icon:'▤',title:'Your Diary',text:'Log shifts and keep each day organised at a glance.'},{icon:'▦',title:'Your Calendar',text:'See your work pattern across the month and spot worked, planned and holiday days.'},{icon:'⌁',title:'Timeline & earnings',text:'Follow your earnings history, including salary and payday information.'},{icon:'＋',title:'Add Shift & settings',text:'Use + Add shift for new work. Pay Rates manages jobs, pay frequency, salary, bonuses and preferences.'}];let _wqTutorialIndex=0;function showQuickTutorial(){if(localStorage.getItem('wq_quick_tutorial_done')==='1'){localStorage.removeItem('wq_pending_quick_tutorial');return;}_wqTutorialIndex=0;renderQuickTutorial()}function renderQuickTutorial(){const root=document.getElementById('wqTutorialRoot');if(!root)return;const x=WQ_TUTORIAL_STEPS[_wqTutorialIndex];root.innerHTML=`<div class="wq-tutorial-backdrop"><div class="wq-tutorial-card" role="dialog" aria-modal="true"><div class="wq-tutorial-top"><span class="wq-tutorial-eyebrow">QUICK TOUR</span><span class="wq-tutorial-count">${_wqTutorialIndex+1} / ${WQ_TUTORIAL_STEPS.length}</span></div><div class="wq-tutorial-progress">${WQ_TUTORIAL_STEPS.map((_,i)=>`<span class="${i<=_wqTutorialIndex?'active':''}"></span>`).join('')}</div><div class="wq-tutorial-visual"><div class="wq-tutorial-icon">${x.icon}</div><div class="wq-tutorial-orb"></div><div class="wq-tutorial-lines"><span></span><span></span><span></span></div></div><h3>${x.title}</h3><p>${x.text}</p><div class="wq-tutorial-actions"><button class="wq-tutorial-skip" onclick="skipQuickTutorial()">Skip</button><button class="btn btn-primary" onclick="nextQuickTutorial()">${_wqTutorialIndex===3?'Got it':'Next'} <span aria-hidden="true">→</span></button></div><button class="wq-tutorial-skip" style="margin-top:8px;font-size:11px;opacity:0.7;" onclick="dontShowTutorialAgain()">Don't show this again</button></div></div>`;root.classList.remove('hidden')}function nextQuickTutorial(){if(_wqTutorialIndex===3){finishQuickTutorial();return}_wqTutorialIndex++;renderQuickTutorial()}function skipQuickTutorial(){
-  localStorage.removeItem('wq_pending_quick_tutorial');
-  const r=document.getElementById('wqTutorialRoot');
-  if(r){r.classList.add('hidden');r.innerHTML=''}
-}
-function dontShowTutorialAgain(){ finishQuickTutorial(); }function finishQuickTutorial(){localStorage.setItem('wq_quick_tutorial_done','1');localStorage.removeItem('wq_pending_quick_tutorial');const r=document.getElementById('wqTutorialRoot');if(r){r.classList.add('hidden');r.innerHTML=''}}
+const WQ_TUTORIAL_STEPS=[{icon:'▤',title:'Your Diary',text:'Log shifts and keep each day organised at a glance.'},{icon:'▦',title:'Your Calendar',text:'See your work pattern across the month and spot worked, planned and holiday days.'},{icon:'⌁',title:'Timeline & earnings',text:'Follow your earnings history, including salary and payday information.'},{icon:'＋',title:'Add Shift & settings',text:'Use + Add shift for new work. Pay Rates manages jobs, pay frequency, salary, bonuses and preferences.'}];let _wqTutorialIndex=0;function showQuickTutorial(){if(localStorage.getItem('wq_quick_tutorial_done')==='1'){localStorage.removeItem('wq_pending_quick_tutorial');return;}_wqTutorialIndex=0;renderQuickTutorial()}function renderQuickTutorial(){const root=document.getElementById('wqTutorialRoot');if(!root)return;const x=WQ_TUTORIAL_STEPS[_wqTutorialIndex];root.innerHTML=`<div class="wq-tutorial-backdrop"><div class="wq-tutorial-card" role="dialog" aria-modal="true"><div class="wq-tutorial-top"><span class="wq-tutorial-eyebrow">QUICK TOUR</span><span class="wq-tutorial-count">${_wqTutorialIndex+1} / ${WQ_TUTORIAL_STEPS.length}</span></div><div class="wq-tutorial-progress">${WQ_TUTORIAL_STEPS.map((_,i)=>`<span class="${i<=_wqTutorialIndex?'active':''}"></span>`).join('')}</div><div class="wq-tutorial-visual"><div class="wq-tutorial-icon">${x.icon}</div><div class="wq-tutorial-orb"></div><div class="wq-tutorial-lines"><span></span><span></span><span></span></div></div><h3>${x.title}</h3><p>${x.text}</p><div class="wq-tutorial-actions"><button class="wq-tutorial-skip" onclick="skipQuickTutorial()">Skip</button><button class="btn btn-primary" onclick="nextQuickTutorial()">${_wqTutorialIndex===3?'Got it':'Next'} <span aria-hidden="true">→</span></button></div></div></div>`;root.classList.remove('hidden')}function nextQuickTutorial(){if(_wqTutorialIndex===3){finishQuickTutorial();return}_wqTutorialIndex++;renderQuickTutorial()}function skipQuickTutorial(){finishQuickTutorial()}function finishQuickTutorial(){localStorage.setItem('wq_quick_tutorial_done','1');localStorage.removeItem('wq_pending_quick_tutorial');const r=document.getElementById('wqTutorialRoot');if(r){r.classList.add('hidden');r.innerHTML=''}}
 
 function resetAppState(){
   clearInterval(tickerBannerInterval);
@@ -2510,10 +2517,10 @@ function wireDigitBoxes(containerId, btnId, onComplete){
    DATA LOADING
    ========================================================================= */
 async function loadAdminData(){
-  // Do not let one non-critical table block the entire Admin application.
-  // The old implementation performed five requests serially, so a single
-  // stalled PostgREST/auth request could leave the UI looking permanently
-  // like it was syncing.
+  // An empty account is a valid account. In particular, an empty `shifts`
+  // result is NOT a loading state — Supabase returns data: [] and that means
+  // the shift sync is complete. Keep the core data load independent so one
+  // optional table cannot hold the whole app in "Syncing…".
   if(!STATE.uid) throw new Error('Admin session has no user id. Please sign in again.');
 
   const started=Date.now();
@@ -2522,18 +2529,46 @@ async function loadAdminData(){
     return res;
   });
 
-  const [empRes,shiftRes,plannedRes]=await Promise.all([
-    request(sb.from('employers').select('*').order('created_at'),'Employers sync'),
-    request(sb.from('shifts').select('*').order('date'),'Shifts sync'),
-    request(sb.from('planned_shifts').select('*').order('date'),'Planned shifts sync')
+  // These are the three core datasets needed to render Admin. Use allSettled
+  // so an optional/empty table is never mistaken for an unfinished sync.
+  // The shifts request is still required: a real shifts-query error should be
+  // reported rather than silently pretending there are no shifts.
+  const results = await Promise.allSettled([
+    request(sb.from('employers').select('*').eq('owner_id',STATE.uid).order('created_at'),'Employers sync'),
+    request(sb.from('shifts').select('*').eq('owner_id',STATE.uid).order('date'),'Shifts sync'),
+    request(sb.from('planned_shifts').select('*').eq('owner_id',STATE.uid).order('date'),'Planned shifts sync')
   ]);
-  STATE.employers=(empRes.data||[]).map(rowToEmployer);
-  STATE.shifts=(shiftRes.data||[]).map(rowToShift);
-  STATE.plannedShifts=(plannedRes.data||[]).map(rowToPlanned);
 
-  // Settings are useful but must never prevent the diary from opening.
-  // If the row is missing, use safe local defaults and let saveSettings()
-  // create it later.
+  const [empResult,shiftResult,plannedResult] = results;
+
+  if(shiftResult.status==='rejected'){
+    throw shiftResult.reason instanceof Error
+      ? shiftResult.reason
+      : new Error(`Shifts sync failed: ${shiftResult.reason||'Supabase request failed'}`);
+  }
+
+  // IMPORTANT: [] is a successful, fully-loaded result.
+  STATE.shifts=(shiftResult.value?.data||[]).map(rowToShift);
+
+  if(empResult.status==='fulfilled'){
+    STATE.employers=(empResult.value?.data||[]).map(rowToEmployer);
+  }else{
+    console.warn('WorkQuest employers sync skipped:',empResult.reason);
+    STATE.employers=STATE.employers||[];
+  }
+
+  if(plannedResult.status==='fulfilled'){
+    STATE.plannedShifts=(plannedResult.value?.data||[]).map(rowToPlanned);
+  }else{
+    console.warn('WorkQuest planned-shifts sync skipped:',plannedResult.reason);
+    STATE.plannedShifts=STATE.plannedShifts||[];
+  }
+
+  // The diary is now fully usable even when there are zero employers/shifts.
+  // Settings/profile metadata is deliberately loaded after the core sync and
+  // can never keep the top-bar status stuck on "Syncing…".
+  setSync('saved', STATE.shifts.length ? 'Synced' : 'Synced · No shifts yet');
+
   try{
     const settingsRes=await request(sb.from('settings').select('*').eq('owner_id',STATE.uid).limit(1),'Settings sync');
     const settingsRows=settingsRes.data||[];
@@ -2550,7 +2585,6 @@ async function loadAdminData(){
     STATE.budget=STATE.budget||{mode:'recommended',categories:[]};
   }
 
-  // Viewer profile metadata is non-critical for Admin mode.
   try{
     const viewerRes=await request(sb.from('profiles').select('id,display_name,permissions').eq('owner_id',STATE.uid).eq('role','viewer').limit(1),'Profile sync');
     STATE.localViewer=(viewerRes.data&&viewerRes.data[0])||null;
@@ -2559,7 +2593,7 @@ async function loadAdminData(){
     STATE.localViewer=null;
   }
 
-  console.info(`WorkQuest Admin sync completed in ${Date.now()-started}ms`);
+  console.info(`WorkQuest Admin core sync completed in ${Date.now()-started}ms (${STATE.shifts.length} shifts)`);
 }
 
 function rowToPlanned(row){
@@ -4559,6 +4593,209 @@ function toast(msg){
     showEmailError('WorkQuest could not connect to Supabase: '+(err?.message||err));
   }
 })();
+
+// Explicitly expose UI handlers for embedded browsers.
+try { Object.assign(window, {
+  addDays: addDays,
+  afterEmailVerified: afterEmailVerified,
+  afterRecoveryEmailVerified: afterRecoveryEmailVerified,
+  archiveJob: archiveJob,
+  authPasswordForPin: authPasswordForPin,
+  backToEmailLogin: backToEmailLogin,
+  backToProfiles: backToProfiles,
+  calcElapsedPay: calcElapsedPay,
+  calcIncomeTax: calcIncomeTax,
+  calcMedicareLevy: calcMedicareLevy,
+  calculateShiftPay: calculateShiftPay,
+  cancelSeries: cancelSeries,
+  checkPatternHint: checkPatternHint,
+  closeModal: closeModal,
+  computeBreakMinutes: computeBreakMinutes,
+  continueFromEmail: continueFromEmail,
+  continueToLogin: continueToLogin,
+  createViewerFromOnboarding: createViewerFromOnboarding,
+  currentBracket: currentBracket,
+  currentEffectiveRatePerHour: currentEffectiveRatePerHour,
+  dateFromISO: dateFromISO,
+  dayTotal: dayTotal,
+  deleteBonus: deleteBonus,
+  deleteBudgetCat: deleteBudgetCat,
+  deleteJob: deleteJob,
+  deleteRateTier: deleteRateTier,
+  deleteShiftModal: deleteShiftModal,
+  deleteShiftRow: deleteShiftRow,
+  dismissFancyNotification: dismissFancyNotification,
+  dowIndex: dowIndex,
+  dowShort: dowShort,
+  endHolidayToday: endHolidayToday,
+  enterApp: enterApp,
+  enterProfile: enterProfile,
+  escapeHtml: escapeHtml,
+  exportFyPdf: exportFyPdf,
+  exportWeekIcs: exportWeekIcs,
+  findActiveShift: findActiveShift,
+  finishMasterSetup: finishMasterSetup,
+  finishPinSetup: finishPinSetup,
+  flushOfflineQueue: flushOfflineQueue,
+  fmtDateShort: fmtDateShort,
+  formatAUShort: formatAUShort,
+  formatWeekHeading: formatWeekHeading,
+  fullSignOut: fullSignOut,
+  fyForDate: fyForDate,
+  fyFromStartYear: fyFromStartYear,
+  getEmployer: getEmployer,
+  getTodaySydney: getTodaySydney,
+  handleRealtimeShiftChange: handleRealtimeShiftChange,
+  hexAlpha: hexAlpha,
+  initDemoCarousel: initDemoCarousel,
+  initTheme: initTheme,
+  isHoliday: isHoliday,
+  isPublicHoliday: isPublicHoliday,
+  isoCompare: isoCompare,
+  isoFromDate: isoFromDate,
+  isoFromParts: isoFromParts,
+  jobIconHtml: jobIconHtml,
+  jobIconSvg: jobIconSvg,
+  jumpToDate: jumpToDate,
+  loadAdminData: loadAdminData,
+  loadMasterForgotQuestions: loadMasterForgotQuestions,
+  loadProfilePinResetQuestions: loadProfilePinResetQuestions,
+  loadProfiles: loadProfiles,
+  loadViewerData: loadViewerData,
+  logout: logout,
+  medicareRatePct: medicareRatePct,
+  mkBonus: mkBonus,
+  mkRate: mkRate,
+  monthlyDom: monthlyDom,
+  navCalMonth: navCalMonth,
+  navMiniCal: navMiniCal,
+  navWeek: navWeek,
+  nextPaydayForEmployer: nextPaydayForEmployer,
+  notifyViewers: notifyViewers,
+  openAddBonusModal: openAddBonusModal,
+  openAddBudgetCatModal: openAddBudgetCatModal,
+  openAddHolidayModal: openAddHolidayModal,
+  openAddJobModal: openAddJobModal,
+  openAddRateTierModal: openAddRateTierModal,
+  openAddShiftModal: openAddShiftModal,
+  openDayModal: openDayModal,
+  openEditBonusModal: openEditBonusModal,
+  openEditBudgetCatModal: openEditBudgetCatModal,
+  openEditHolidayModal: openEditHolidayModal,
+  openEditJobModal: openEditJobModal,
+  openEditProfileNameModal: openEditProfileNameModal,
+  openEditRateModal: openEditRateModal,
+  openEditShiftModal: openEditShiftModal,
+  openMasterForgotModal: openMasterForgotModal,
+  openModal: openModal,
+  openPinGate: openPinGate,
+  openPinGateById: openPinGateById,
+  openProfilePinResetModal: openProfilePinResetModal,
+  openSearchModal: openSearchModal,
+  openTickerModal: openTickerModal,
+  overlapMinutes: overlapMinutes,
+  payPeriodBounds: payPeriodBounds,
+  payPeriodEarnings: payPeriodEarnings,
+  persistQueue: persistQueue,
+  pickColor: pickColor,
+  pickIcon: pickIcon,
+  profileTileHtml: profileTileHtml,
+  readPayAdjustment: readPayAdjustment,
+  refreshOnShiftBanner: refreshOnShiftBanner,
+  removeHoliday: removeHoliday,
+  render: render,
+  renderAdminDiary: renderAdminDiary,
+  renderBudget: renderBudget,
+  renderCalendar: renderCalendar,
+  renderFyPill: renderFyPill,
+  renderMiniCal: renderMiniCal,
+  renderPredictionCard: renderPredictionCard,
+  renderProfileGrid: renderProfileGrid,
+  renderSettings: renderSettings,
+  renderShiftModal: renderShiftModal,
+  renderTax: renderTax,
+  renderTimeline: renderTimeline,
+  renderViewerDiary: renderViewerDiary,
+  resendOtp: resendOtp,
+  resetAppState: resetAppState,
+  restoreJob: restoreJob,
+  retryAdminSync: retryAdminSync,
+  rowToEmployer: rowToEmployer,
+  rowToPlanned: rowToPlanned,
+  rowToShift: rowToShift,
+  runSearch: runSearch,
+  salaryCreditForWeek: salaryCreditForWeek,
+  saveBonus: saveBonus,
+  saveBonusVersion: saveBonusVersion,
+  saveBudgetCat: saveBudgetCat,
+  saveEmployer: saveEmployer,
+  saveHoliday: saveHoliday,
+  saveHolidayEdit: saveHolidayEdit,
+  saveJobName: saveJobName,
+  saveNewJob: saveNewJob,
+  savePayCycle: savePayCycle,
+  saveProfileDisplayName: saveProfileDisplayName,
+  saveRateTier: saveRateTier,
+  saveRateVersion: saveRateVersion,
+  saveSalaryVersion: saveSalaryVersion,
+  saveSettings: saveSettings,
+  saveShiftModal: saveShiftModal,
+  selectFY: selectFY,
+  selectMiniCalDate: selectMiniCalDate,
+  sendOtp: sendOtp,
+  setBudgetMode: setBudgetMode,
+  setEmailBusy: setEmailBusy,
+  setSync: setSync,
+  setupNotifyChannel: setupNotifyChannel,
+  shiftsOnDate: shiftsOnDate,
+  showEmailError: showEmailError,
+  showFancyNotification: showFancyNotification,
+  showMasterPinLockout: showMasterPinLockout,
+  showPinLockout: showPinLockout,
+  showScreen: showScreen,
+  startPinRecovery: startPinRecovery,
+  startTickerWatcher: startTickerWatcher,
+  startViewerSetup: startViewerSetup,
+  submitMasterPin: submitMasterPin,
+  submitPinEntry: submitPinEntry,
+  submitProfilePinReset: submitProfilePinReset,
+  subscribeRealtimeAdmin: subscribeRealtimeAdmin,
+  swatchPickerHtml: swatchPickerHtml,
+  switchTab: switchTab,
+  sydneyNowParts: sydneyNowParts,
+  timePickerHtml: timePickerHtml,
+  timeToMinutes: timeToMinutes,
+  to12: to12,
+  to24: to24,
+  toast: toast,
+  toggleAdjustVisibility: toggleAdjustVisibility,
+  toggleAmPm: toggleAmPm,
+  toggleFyMenu: toggleFyMenu,
+  toggleMiniCal: toggleMiniCal,
+  toggleSalaryFrequencyFields: toggleSalaryFrequencyFields,
+  toggleTheme: toggleTheme,
+  tomorrowSydney: tomorrowSydney,
+  totalEarningsForRange: totalEarningsForRange,
+  tryMasterReset: tryMasterReset,
+  uid: uid,
+  upcomingPaydays: upcomingPaydays,
+  updateAddJobButtonState: updateAddJobButtonState,
+  updateBudgetCat: updateBudgetCat,
+  updateCalcPreview: updateCalcPreview,
+  updateLocalViewerPerm: updateLocalViewerPerm,
+  updateTimeFromPicker: updateTimeFromPicker,
+  verifyOtp: verifyOtp,
+  versionForDate: versionForDate,
+  weekDays: weekDays,
+  weekForDate: weekForDate,
+  weeklyAverageEarnings: weeklyAverageEarnings,
+  weeksWithShiftsForEmployer: weeksWithShiftsForEmployer,
+  wireAddJobValidation: wireAddJobValidation,
+  wireDigitBoxes: wireDigitBoxes,
+  wqShowStartupError: wqShowStartupError,
+  wqWithTimeout: wqWithTimeout,
+  writeShift: writeShift
+}); } catch(e) { console.error(e); }
 </script>
 </body>
 </html>
