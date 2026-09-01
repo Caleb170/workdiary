@@ -4,15 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>WorkQuest</title>
-<link rel="manifest" href="manifest.json">
+<meta name="description" content="A private work diary for shifts, earnings, paydays, tax estimates and budgets.">
+<meta name="color-scheme" content="light dark">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0B0D12">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="WorkQuest">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230B0D12'/%3E%3Ctext x='90' y='115' font-size='90' text-anchor='middle' fill='%237C9CFF' font-family='Georgia,serif' font-weight='700'%3EW%3C/text%3E%3C/svg%3E">
-<script>
-if('serviceWorker' in navigator){ window.addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
-</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='17' fill='%235b6fe0'/%3E%3Cpath d='M14 19l8 28h8l4-15 4 15h8l8-28h-8l-4 17-4-17h-8l-4 17-4-17z' fill='white'/%3E%3C/svg%3E" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.min.js"></script>
@@ -1548,36 +1547,107 @@ body {
 </div>
 
 <div id="app-screen" class="hidden">
-  <div class="topbar">
+  <aside class="topbar" aria-label="WorkQuest navigation">
     <div class="topbar-row">
-      <div class="brand">WorkQuest <span class="role-badge" id="roleBadge"></span></div>
-      <div class="row">
+      <div class="brand-lockup">
+        <div class="brand-mark" aria-hidden="true"><span>W</span></div>
+        <div class="brand-copy">
+          <div class="brand">WorkQuest</div>
+          <div class="profile-line"><span id="activeProfileName">My workspace</span><span class="role-badge" id="roleBadge"></span></div>
+        </div>
+      </div>
+      <div class="mobile-utilities">
         <div class="sync-pill"><span class="sync-dot" id="syncDot"></span><span id="syncText">—</span></div>
-        <button class="icon-btn" onclick="openSearchModal()" title="Search" aria-label="Search">⌕</button>
-        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme">☀️</button>
-        <button class="icon-btn" onclick="logout()" title="Log out" aria-label="Exit">⎋</button>
+        <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileMenu()" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+        </button>
       </div>
     </div>
-    <div class="row" style="margin-top:12px;">
+
+    <div class="sidebar-status">
+      <div class="sync-pill"><span class="sync-dot sync-dot-mirror"></span><span class="sync-text-mirror">Ready</span></div>
       <div class="fy-pill" id="fyPillWrap"></div>
     </div>
-    <div class="tabs" id="tabs">
-      <button class="tab active" data-tab="diary" onclick="switchTab('diary')">Diary</button>
-      <button class="tab" data-tab="calendar" onclick="switchTab('calendar')">Calendar</button>
-      <button class="tab" data-tab="timeline" onclick="switchTab('timeline')">Timeline</button>
-      <button class="tab" data-tab="tax" onclick="switchTab('tax')">Tax</button>
-      <button class="tab" data-tab="budget" onclick="switchTab('budget')">Budget</button>
-      <button class="tab" data-tab="settings" onclick="switchTab('settings')">Pay Rates</button>
+
+    <nav class="tabs" id="tabs" aria-label="Workspace" role="tablist">
+      <button class="tab active" data-tab="diary" onclick="switchTab('diary')" role="tab" aria-selected="true">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v3M17 3v3M4.5 8.5h15M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"></path><path d="M8 12h3v3H8zM14 12h2M14 16h2"></path></svg>
+        <span>Diary</span>
+      </button>
+      <button class="tab" data-tab="calendar" onclick="switchTab('calendar')" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v3M17 3v3M4.5 8.5h15M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"></path><path d="M8 12h2M12 12h2M16 12h1M8 16h2M12 16h2M16 16h1"></path></svg>
+        <span>Calendar</span>
+      </button>
+      <button class="tab" data-tab="timeline" onclick="switchTab('timeline')" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V9M12 19V5M19 19v-7"></path><path d="M3 19h18"></path></svg>
+        <span>Timeline</span>
+      </button>
+      <button class="tab" data-tab="tax" onclick="switchTab('tax')" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10l2 3v15l-3-2-2 2-2-2-2 2-2-2-3 2V6l2-3Z"></path><path d="M9 8h6M9 12h6M9 16h3"></path></svg>
+        <span>Tax</span>
+      </button>
+      <button class="tab" data-tab="budget" onclick="switchTab('budget')" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h14.5A1.5 1.5 0 0 1 20 9v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h11"></path><path d="M15 12h5v4h-5a2 2 0 0 1 0-4Z"></path></svg>
+        <span>Budget</span>
+      </button>
+      <button class="tab" data-tab="settings" onclick="switchTab('settings')" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M8 14v6M16 4v6"></path></svg>
+        <span>Pay & settings</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-actions">
+      <button class="utility-btn" onclick="openSearchModal()">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><span>Search</span><kbd>⌘ K</kbd>
+      </button>
+      <button class="utility-btn" onclick="toggleTheme()">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.5A8 8 0 0 1 8.5 4 8.1 8.1 0 1 0 20 15.5Z"></path></svg><span>Appearance</span>
+      </button>
+      <button class="utility-btn" onclick="logout()">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5H5v14h4M13 8l4 4-4 4M8 12h9"></path></svg><span>Switch profile</span>
+      </button>
+      <button class="utility-btn utility-danger" onclick="fullSignOut()">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5H5v14h3M13 8l4 4-4 4M8 12h9"></path></svg><span>Sign out</span>
+      </button>
     </div>
-  </div>
-  <div id="onShiftBanner" class="hidden"></div>
-  <div class="section" id="content"></div>
+  </aside>
+  <main class="workspace" aria-live="polite">
+    <div id="onShiftBanner" class="hidden"></div>
+    <div class="section" id="content" role="tabpanel"></div>
+  </main>
+</div>
+
+<div id="mobileMenu" class="mobile-menu-backdrop hidden" onclick="if(event.target===this)closeMobileMenu()">
+  <aside class="mobile-menu-sheet" role="dialog" aria-modal="true" aria-labelledby="mobileMenuTitle">
+    <div class="mobile-menu-head">
+      <div><div class="view-kicker">WORKQUEST</div><h2 id="mobileMenuTitle">Menu</h2></div>
+      <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">×</button>
+    </div>
+
+    <div class="mobile-menu-label">Navigate</div>
+    <div class="mobile-menu-grid">
+      <button data-menu-tab="diary" onclick="mobileMenuNavigate('diary')"><span>▤</span><strong>Diary</strong></button>
+      <button data-menu-tab="calendar" onclick="mobileMenuNavigate('calendar')"><span>▦</span><strong>Calendar</strong></button>
+      <button data-menu-tab="timeline" onclick="mobileMenuNavigate('timeline')"><span>⌁</span><strong>Timeline</strong></button>
+      <button data-menu-tab="tax" onclick="mobileMenuNavigate('tax')"><span>％</span><strong>Tax</strong></button>
+      <button data-menu-tab="budget" onclick="mobileMenuNavigate('budget')"><span>◫</span><strong>Budget</strong></button>
+      <button data-menu-tab="settings" onclick="mobileMenuNavigate('settings')"><span>☷</span><strong>Pay & settings</strong></button>
+    </div>
+
+    <div class="mobile-menu-label">Account & app</div>
+    <div class="mobile-menu-list">
+      <button onclick="closeMobileMenu();openSearchModal()"><span>⌕</span><strong>Search shifts</strong><i>›</i></button>
+      <button onclick="toggleTheme();syncMobileMenuThemeLabel()"><span>◐</span><strong id="mobileThemeLabel">Change appearance</strong><i>›</i></button>
+      <button onclick="closeMobileMenu();logout()"><span>⇄</span><strong>Switch profile</strong><i>›</i></button>
+      <button class="mobile-menu-danger" onclick="closeMobileMenu();fullSignOut()"><span>↪</span><strong>Sign out</strong><i>›</i></button>
+    </div>
+  </aside>
 </div>
 
 <div id="wqTutorialRoot" class="hidden"></div>
 <div id="modalRoot"></div>
 <div id="fancyNotifyRoot"></div>
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 
 
 <style id="wq-interaction-safety">
@@ -1628,17 +1698,15 @@ button,a,input,select,textarea{touch-action:manipulation}button{cursor:pointer}b
    ========================================================================= */
 const SUPABASE_URL = 'https://amppadqaygmfqtcsiesn.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_O03dMgtLJEdG5RnmGPt2ng_dh2uQj8r';
-// IMPORTANT: this is a standalone file/PWA, not a multi-tab SPA.
-// Supabase Auth's background refresh + persisted browser storage has had
-// real-world deadlock/freeze bugs in Chromium/Safari, especially after a tab
-// is suspended or a persisted session is close to expiry. WorkQuest does not
-// need background auth refresh to render or edit the diary, so keep the auth
-// session in memory and never let an auth refresh compete with UI startup.
+// Keep the signed-in Supabase account on this device. The WorkQuest master PIN
+// and profile PIN remain the quick local gates, so returning users do not need
+// to repeat the email verification flow on every visit.
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-    detectSessionInUrl: false,
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: 'workquest-auth-session',
     flowType: 'implicit',
     debug: false,
   }
@@ -1663,8 +1731,10 @@ async function wqSafeRefreshSession(){
   }
 }
 function startSafeAuthRefresh(){
+  // Supabase now owns refresh scheduling and pauses it safely with page
+  // visibility. Keeping a second refresh loop would duplicate network work.
   clearInterval(_wqAuthRefreshTimer);
-  _wqAuthRefreshTimer=setInterval(wqSafeRefreshSession,5*60*1000);
+  _wqAuthRefreshTimer=null;
 }
 function stopSafeAuthRefresh(){
   clearInterval(_wqAuthRefreshTimer);
@@ -2001,9 +2071,16 @@ async function enterApp(){
   app.classList.remove('hidden');
   app.style.pointerEvents='auto';
   document.getElementById('roleBadge').textContent = STATE.role==='admin' ? 'Admin' : 'Viewer';
+  document.getElementById('activeProfileName').textContent = STATE.activeProfileName || 'My workspace';
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('hidden'));
   STATE.activeTab = 'diary';
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab==='diary'));
+  document.querySelectorAll('.tab').forEach(t=>{
+    const active=t.dataset.tab==='diary';
+    t.classList.toggle('active',active);
+    t.setAttribute('aria-selected',String(active));
+  });
+  document.title='Diary — WorkQuest';
+  syncMobileMenuActiveTab();
   if(STATE.role==='viewer'){
     ['settings','timeline','tax','budget'].forEach(t=>{ const el=document.querySelector(`[data-tab="${t}"]`); if(el) el.classList.add('hidden'); });
   }
@@ -2053,9 +2130,10 @@ function logout(){
   resetAppState();
   loadProfiles();
 }
-function fullSignOut(){
+async function fullSignOut(){
   if(STATE.viewerToken){ sb.rpc('end_viewer_session', {p_token: STATE.viewerToken}); }
-  sb.auth.signOut();
+  try{ await sb.auth.signOut({scope:'local'}); }catch(e){ console.warn('Sign out cleanup:',e); }
+  localStorage.removeItem('wq_last_profile_id');
   location.reload();
 }
 
@@ -2070,7 +2148,9 @@ function showScreen(name){
     profile:'profile-screen', pin:'pin-screen', 'pin-setup':'pin-setup-screen', 'setup-complete':'setup-complete-screen',
   };
   Object.values(map).forEach(id=>document.getElementById(id).classList.add('hidden'));
-  document.getElementById(map[name]).classList.remove('hidden');
+  const screen=document.getElementById(map[name]);
+  screen.classList.remove('hidden');
+  wqPolishActionButtons(screen);
 }
 function initDemoCarousel(){
   const track = document.getElementById('phoneTrack');
@@ -2123,6 +2203,7 @@ async function continueFromEmail(){
   const email = document.getElementById('emailInput').value.trim().toLowerCase();
   if(!email || !email.includes('@')){ showEmailError('Enter a valid email'); return; }
   STATE.email = email;
+  localStorage.setItem('wq_last_email', email);
   showEmailError('');
   setEmailBusy(true);
   const {data, error} = await sb.rpc('check_account_status', {p_email: email});
@@ -2197,8 +2278,8 @@ async function resendOtp(){
   toast('New verification code sent');
 }
 function showEmailError(msg){ document.getElementById('emailError').textContent = msg; }
-function backToEmailLogin(){
-  try{ sb.auth.signOut(); }catch(e){}
+async function backToEmailLogin(){
+  try{ await sb.auth.signOut({scope:'local'}); }catch(e){}
   _pinActivationMode=false; _pinRecoveryMode=false;
   document.getElementById('emailStep').classList.remove('hidden');
   document.getElementById('otpStep').classList.add('hidden');
@@ -2426,13 +2507,15 @@ function renderProfileGrid(){
       </button>`;
   }
   grid.innerHTML = html;
+  wqPolishActionButtons(grid);
 }
 function profileTileHtml(p){
-  return `<div class="profile-tile-wrap">
+  const recent=localStorage.getItem('wq_last_profile_id')===p.id;
+  return `<div class="profile-tile-wrap ${recent?'recent-profile':''}">
       <button class="profile-tile" onclick='openPinGateById("${p.id}")' aria-label="Continue as ${escapeHtml(p.display_name)}">
         <div class="profile-avatar" style="background:${p.role==='admin'?'var(--accent)':'var(--card-2)'};color:${p.role==='admin'?'var(--on-accent)':'var(--text)'};">${(p.display_name||'?').charAt(0).toUpperCase()}</div>
         <div class="profile-name">${escapeHtml(p.display_name)}</div>
-        <div class="profile-role">${p.role}</div>
+        <div class="profile-role">${recent?'Last used · ':''}${p.role}</div>
       </button>
       <button type="button" class="profile-edit-name" onclick='event.stopPropagation();openEditProfileNameModal("${p.id}")' aria-label="Change ${escapeHtml(p.display_name)} name">✎ Edit name</button>
     </div>`;
@@ -2602,15 +2685,9 @@ async function finishPinSetup(){
   }
 }
 async function continueToLogin(){
-  try{ await sb.auth.signOut(); }catch(e){}
-  if(realtimeChannel){ sb.removeChannel(realtimeChannel); realtimeChannel=null; }
-  STATE.authUid=null; STATE.email=null; STATE.role=null; STATE.uid=null; STATE.ownerId=null;
-  document.getElementById('emailInput').value='';
-  document.getElementById('emailStep').classList.remove('hidden');
-  document.getElementById('otpStep').classList.add('hidden');
-  document.getElementById('emailError').textContent='';
-  document.getElementById('emailSub').textContent='Enter your email to continue';
-  showScreen('email');
+  // Setup already produced a valid persisted Supabase session. Continue into
+  // the profile picker instead of forcing a second email sign-in.
+  await loadProfiles();
 }
 function createViewerFromOnboarding(){
   startViewerSetup();
@@ -2623,6 +2700,7 @@ async function enterProfile(profileId, role, displayName, token){
   STATE.viewerToken = token || null;
   STATE.activeProfileId = profileId;
   STATE.activeProfileName = displayName;
+  localStorage.setItem('wq_last_profile_id',profileId);
   await enterApp();
 }
 
@@ -2681,7 +2759,19 @@ async function loadViewerData(generation=_wqSyncGeneration){
   if(!STATE.viewerToken){STATE.shifts=[];throw new Error('Viewer session missing — please log in again.');}
   const r=await wqRequest(()=>sb.rpc('get_viewer_data',{p_token:STATE.viewerToken}),'Viewer data sync',15000);
   if(generation!==_wqSyncGeneration)return;
-  STATE.shifts=(r.data||[]).map(x=>({id:String(x.date||'')+'|'+String(x.employer||'')+'|'+String(x.start_time||''),date:x.date,employerName:x.employer||'Hidden',start:x.start_time,end:x.end_time,hours:Number(x.hours)||0,status:x.status,source:x.source}));
+  STATE.shifts=(r.data||[]).map(x=>({id:String(x.date||'')+'|'+String(x.employer||'')+'|'+String(x.start_time||''),date:x.date,employerName:x.employer||'Hidden',employerColor:safeJobColor(x.employer_color||x.job_color||x.color,x.employer),start:x.start_time,end:x.end_time,hours:Number(x.hours)||0,status:x.status,source:x.source}));
+}
+
+function safeJobColor(value,seed='WorkQuest'){
+  const colour=String(value||'').trim();
+  if(/^#[0-9a-f]{6}$/i.test(colour)) return colour;
+  const palette=['#5B6FE0','#E4572E','#B77A12','#A05ACC','#27899A','#C84148'];
+  let hash=0;for(const char of String(seed||'WorkQuest'))hash=((hash<<5)-hash+char.charCodeAt(0))|0;
+  return palette[Math.abs(hash)%palette.length];
+}
+function shiftJobColor(shift){
+  if(STATE.role==='admin'){const employer=getEmployer(shift.employerId);return safeJobColor(employer?.color,employer?.name);}
+  return safeJobColor(shift.employerColor,shift.employerName);
 }
 
 function rowToEmployer(row){
@@ -2705,6 +2795,8 @@ function setSync(state,text){
   if(!dot) return;
   dot.className='sync-dot '+state;
   t.textContent=text;
+  document.querySelectorAll('.sync-dot-mirror').forEach(el=>{ el.className='sync-dot sync-dot-mirror '+state; });
+  document.querySelectorAll('.sync-text-mirror').forEach(el=>{ el.textContent=text; });
 }
 window.addEventListener('offline', ()=> setSync('error','Offline'));
 window.addEventListener('online', ()=>{ setSync('saving','Syncing…'); flushOfflineQueue(); });
@@ -2755,7 +2847,14 @@ async function deleteShiftRow(id){
    ========================================================================= */
 function switchTab(tab){
   STATE.activeTab = tab;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
+  document.querySelectorAll('.tab').forEach(t=>{
+    const active=t.dataset.tab===tab;
+    t.classList.toggle('active',active);
+    t.setAttribute('aria-selected',String(active));
+  });
+  const label={diary:'Diary',calendar:'Calendar',timeline:'Timeline',tax:'Tax',budget:'Budget',settings:'Pay & settings'}[tab]||'WorkQuest';
+  document.title=`${label} — WorkQuest`;
+  syncMobileMenuActiveTab();
   render();
 }
 function render(){
@@ -2767,6 +2866,8 @@ function render(){
   else if(STATE.activeTab==='tax') el.innerHTML = renderTax();
   else if(STATE.activeTab==='budget') el.innerHTML = renderBudget();
   else if(STATE.activeTab==='settings') el.innerHTML = renderSettings();
+  wqEnhanceRenderedView(el);
+  wqPolishActionButtons(el);
   const fab = document.getElementById('fabAdd');
   if(fab) fab.classList.toggle('hidden', !(STATE.role==='admin' && STATE.activeTab==='diary'));
   if(STATE.role==='admin'){
@@ -2777,6 +2878,30 @@ function render(){
       document.body.appendChild(fab2);
     }
     fab2.classList.toggle('hidden', STATE.activeTab!=='diary');
+  }
+}
+
+function wqEnhanceRenderedView(el){
+  const copy={
+    diary:['Work diary','Your week, pay and upcoming shifts in one place.'],
+    calendar:['Calendar','See the shape of your month and open any day for details.'],
+    timeline:['Earnings timeline','Follow pay periods, hours and earnings across the year.'],
+    tax:['Tax position','A clear estimate of gross income, tax and take-home pay.'],
+    budget:['Budget planner','Turn your real earnings into a plan you can keep.'],
+    settings:['Pay & settings','Manage jobs, rates, holidays, profiles and exports.'],
+  }[STATE.activeTab]||['WorkQuest','Your work, clearly organised.'];
+  el.dataset.view=STATE.activeTab;
+  const quickAdd=STATE.role==='admin'&&STATE.activeTab==='diary'
+    ? '<button class="btn btn-primary view-primary-action" onclick="openAddShiftModal()">+ Add shift</button>' : '';
+  el.insertAdjacentHTML('afterbegin',`<header class="view-intro"><div><div class="view-kicker">${STATE.role==='admin'?'Personal workspace':'Shared workspace'}</div><h1>${copy[0]}</h1><p>${copy[1]}</p></div>${quickAdd}</header>`);
+  if(STATE.activeTab==='diary'){
+    const cards=[...el.querySelectorAll(':scope > .day-card')];
+    if(cards.length){
+      const grid=document.createElement('div');
+      grid.className='diary-card-grid';
+      cards[0].before(grid);
+      cards.forEach(card=>grid.appendChild(card));
+    }
   }
 }
 
@@ -3042,14 +3167,18 @@ function openTickerModal(shiftId){
 function initTheme(){
   const saved = localStorage.getItem('wq_theme') || 'light';
   document.documentElement.setAttribute('data-theme', saved);
-  document.getElementById('themeToggle').textContent = saved==='dark' ? '☀️' : '🌙';
+  const toggle=document.getElementById('themeToggle');
+  if(toggle) toggle.textContent = saved==='dark' ? '☀️' : '🌙';
+  syncMobileMenuThemeLabel();
 }
 function toggleTheme(){
   const cur = document.documentElement.getAttribute('data-theme');
   const next = cur==='light' ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('wq_theme', next);
-  document.getElementById('themeToggle').textContent = next==='dark' ? '☀️' : '🌙';
+  const toggle=document.getElementById('themeToggle');
+  if(toggle) toggle.textContent = next==='dark' ? '☀️' : '🌙';
+  syncMobileMenuThemeLabel();
 }
 
 /* =========================================================================
@@ -3113,7 +3242,10 @@ function renderCalendar(){
     else if(STATE.role==='admin' && shifts.length){ inner += `<span class="amt">$${dayTotal(iso).toFixed(0)}</span>`; }
     else if(shifts.length){ inner += `<span class="dot"></span>`; }
     if(isPH && !holiday){ inner += `<span style="display:block;font-size:8.5px;font-weight:700;color:var(--accent);margin-top:2px;">PH</span>`; }
-    html += `<div class="${cls}"><button onclick="openDayModal('${iso}')">${inner}</button></div>`;
+    const jobColours=[...new Set(shifts.map(shiftJobColor))].slice(0,4);
+    if(jobColours.length) inner += `<span class="cal-job-dots" aria-hidden="true">${jobColours.map(colour=>`<i style="background:${colour}"></i>`).join('')}</span>`;
+    const jobBorder=jobColours.length?` style="border:2px solid ${jobColours[0]}!important"`:'';
+    html += `<div class="${cls}${jobColours.length?' has-job-colour':''}"${jobBorder}><button onclick="openDayModal('${iso}')">${inner}</button></div>`;
   }
   html += `</div>
   <div class="cal-legend">
@@ -3137,7 +3269,7 @@ function openDayModal(iso){
       const emp=getEmployer(s.employerId);
       return `<div class="shift-row" style="border-left:3px solid ${emp?emp.color||'var(--accent)':'var(--accent)'};padding-left:8px;"><div><div class="shift-emp">${emp?jobIconHtml(emp.icon):jobIconHtml('💼')} ${escapeHtml(emp?emp.name:'?')}</div><div class="shift-time">${s.start} → ${s.end} · ${s.locked.paidHours.toFixed(2)} hrs</div></div><div class="shift-amt money">$${s.locked.totalPay.toFixed(2)}</div></div>`;
     }
-    return `<div class="shift-row"><div><div class="shift-emp">${escapeHtml(s.employerName)}</div><div class="shift-time">${s.start} → ${s.end} · ${Number(s.hours).toFixed(2)} hrs</div></div></div>`;
+    return `<div class="shift-row" style="border-left:3px solid ${shiftJobColor(s)};padding-left:8px;"><div><div class="shift-emp">${escapeHtml(s.employerName)}</div><div class="shift-time">${s.start} → ${s.end} · ${Number(s.hours).toFixed(2)} hrs</div></div></div>`;
   }).join('') : `<div class="day-empty">No shifts recorded</div>`;
   openModal(`
     <button class="modal-close" onclick="closeModal()">×</button>
@@ -3685,7 +3817,7 @@ function renderViewerDiary(){
     if(!shifts.length){ html+=`<div class="day-empty">No shifts</div>`; }
     else{
       for(const s of shifts){
-        html += `<div class="shift-row">
+        html += `<div class="shift-row" style="border-left:3px solid ${shiftJobColor(s)};padding-left:8px;">
           <div>
             <div class="shift-emp">${escapeHtml(s.employerName)} ${s.status==='planned'?'<span class="day-status st-planned" style="margin-left:6px;">Planned</span>':''}</div>
             <div class="shift-time">${s.start} → ${s.end} · ${Number(s.hours).toFixed(2)} hrs</div>
@@ -4336,9 +4468,20 @@ function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':
    ADD / EDIT SHIFT MODAL
    ========================================================================= */
 function openModal(html){
-  document.getElementById('modalRoot').innerHTML = `<div class="modal-backdrop" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`;
+  _wqModalReturnFocus=document.activeElement;
+  document.getElementById('modalRoot').innerHTML = `<div class="modal-backdrop" onclick="if(event.target===this)closeModal()"><div class="modal" role="dialog" aria-modal="true">${html}</div></div>`;
+  const modal=document.querySelector('#modalRoot .modal');
+  modal?.querySelectorAll('.modal-close').forEach(button=>button.setAttribute('aria-label','Close dialog'));
+  wqPolishActionButtons(modal);
+  requestAnimationFrame(()=>modal?.querySelector('input:not([type="hidden"]),select,textarea,button')?.focus({preventScroll:true}));
 }
-function closeModal(){ document.getElementById('modalRoot').innerHTML=''; clearInterval(tickerModalInterval); }
+let _wqModalReturnFocus=null;
+function closeModal(){
+  document.getElementById('modalRoot').innerHTML='';
+  clearInterval(tickerModalInterval);
+  if(_wqModalReturnFocus && typeof _wqModalReturnFocus.focus==='function') _wqModalReturnFocus.focus({preventScroll:true});
+  _wqModalReturnFocus=null;
+}
 function openAddShiftModal(){
   renderShiftModal(null);
 }
@@ -4615,17 +4758,90 @@ async function cancelSeries(seriesId, fromDate){
   toast(`${ids.length} shift${ids.length>1?'s':''} cancelled`);
   if(!error) notifyViewers('🗑️', 'Shifts cancelled', `${ids.length} upcoming shift${ids.length>1?'s were':' was'} cancelled`);
 }
+let _wqToastTimer=null;
 function toast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2200);
+  clearTimeout(_wqToastTimer);
+  _wqToastTimer=setTimeout(()=>t.classList.remove('show'), 2800);
 }
+
+/* =========================================================================
+   APP EXPERIENCE — semantic actions, mobile menu and keyboard shortcuts
+   ========================================================================= */
+function wqPolishActionButtons(root=document){
+  if(!root || !root.querySelectorAll) return;
+  root.querySelectorAll('button').forEach(button=>{
+    const label=(button.textContent||button.getAttribute('aria-label')||'').trim().toLowerCase();
+    if(button.classList.contains('tab') || button.classList.contains('week-nav-btn')) return;
+    if(/^(continue|verify|save|add|create|schedule|reset|next|got it|install|open)/.test(label) || button.classList.contains('btn-primary') || button.classList.contains('login-btn')){
+      button.classList.add('action-positive');
+    }
+    if(/^(cancel|delete|remove|close|archive|sign out)/.test(label) || button.classList.contains('btn-danger') || button.classList.contains('modal-close')){
+      button.classList.add('action-negative');
+    }
+  });
+}
+
+let _wqMenuReturnFocus=null;
+function toggleMobileMenu(){
+  const menu=document.getElementById('mobileMenu');
+  if(menu.classList.contains('hidden')) openMobileMenu(); else closeMobileMenu();
+}
+function openMobileMenu(){
+  const menu=document.getElementById('mobileMenu');
+  _wqMenuReturnFocus=document.activeElement;
+  syncMobileMenuThemeLabel();
+  syncMobileMenuActiveTab();
+  menu.classList.remove('hidden');
+  document.getElementById('mobileMenuBtn')?.setAttribute('aria-expanded','true');
+  requestAnimationFrame(()=>menu.querySelector('.mobile-menu-close')?.focus({preventScroll:true}));
+}
+function closeMobileMenu(){
+  document.getElementById('mobileMenu')?.classList.add('hidden');
+  document.getElementById('mobileMenuBtn')?.setAttribute('aria-expanded','false');
+  if(_wqMenuReturnFocus && typeof _wqMenuReturnFocus.focus==='function') _wqMenuReturnFocus.focus({preventScroll:true});
+  _wqMenuReturnFocus=null;
+}
+function mobileMenuNavigate(tab){
+  closeMobileMenu();
+  switchTab(tab);
+  document.getElementById('app-screen')?.scrollTo({top:0,behavior:'smooth'});
+}
+function syncMobileMenuThemeLabel(){
+  const label=document.getElementById('mobileThemeLabel');
+  if(!label) return;
+  label.textContent=document.documentElement.getAttribute('data-theme')==='dark'?'Use light appearance':'Use dark appearance';
+}
+function syncMobileMenuActiveTab(){
+  document.querySelectorAll('[data-menu-tab]').forEach(button=>{
+    const active=button.dataset.menuTab===STATE.activeTab;
+    button.classList.toggle('active',active);
+    if(active) button.setAttribute('aria-current','page'); else button.removeAttribute('aria-current');
+  });
+  document.getElementById('mobileMenuBtn')?.classList.toggle('has-active-section',['tax','budget','settings'].includes(STATE.activeTab));
+}
+
+document.addEventListener('keydown',event=>{
+  if(event.key==='Escape' && document.querySelector('#modalRoot .modal')){
+    event.preventDefault(); closeModal(); return;
+  }
+  if(event.key==='Escape' && !document.getElementById('mobileMenu')?.classList.contains('hidden')){
+    event.preventDefault(); closeMobileMenu(); return;
+  }
+  if((event.metaKey||event.ctrlKey) && event.key.toLowerCase()==='k'){
+    if(!document.getElementById('app-screen').classList.contains('hidden')){
+      event.preventDefault(); openSearchModal();
+    }
+  }
+});
 
 /* =========================================================================
    INIT — restore session if one exists
    ========================================================================= */
 (async function init(){
   try{
+    wqPolishActionButtons(document);
     initDemoCarousel();
     wireDigitBoxes('otpBoxes','verifyOtpBtn', verifyOtp);
     wireDigitBoxes('masterPinBoxes', null, submitMasterPin);
@@ -4638,9 +4854,17 @@ function toast(msg){
     if(error) throw error;
     if(session){
       STATE.authUid=session.user.id; STATE.email=session.user.email;
+      localStorage.setItem('wq_last_email',session.user.email||'');
       await wqWithTimeout(afterEmailVerified(),15000,'Account verification');
     } else {
-      showScreen('landing');
+      const rememberedEmail=localStorage.getItem('wq_last_email')||'';
+      if(rememberedEmail){
+        document.getElementById('emailInput').value=rememberedEmail;
+        document.getElementById('emailSub').textContent='Your account is remembered on this device';
+        showScreen('email');
+      }else{
+        showScreen('landing');
+      }
     }
   }catch(err){
     console.error('WorkQuest init failed:',err);
@@ -5070,6 +5294,269 @@ body {
   overflow-x:hidden !important;
   overflow-y:auto !important;
   background:var(--bg) !important;
+}
+</style>
+
+<style id="workquest-2026-redesign">
+/* =========================================================================
+   WORKQUEST 2026 — edge-to-edge responsive workspace
+   ========================================================================= */
+:root{
+  --bg:#090b11;--bg-2:#10131b;--card:#161b26;--card-2:#202738;
+  --line:#31394c;--line-soft:#242b3a;
+  --text:#f7f8fc;--text-dim:#a8afbf;--text-faint:#6f788d;
+  --accent:#819dff;--accent-strong:#657fe4;--on-accent:#071024;
+  --positive:#35c991;--positive-strong:#20aa77;--on-positive:#06130e;
+  --green:#819dff;--green-dim:#19233d;
+  --amber:#f2bd61;--amber-dim:#302513;
+  --rust:#ff7373;--rust-dim:#351819;
+  --blue:#819dff;--blue-dim:#19233d;
+  --radius:20px;--radius-sm:13px;
+  --shadow-sm:0 5px 18px rgba(0,0,0,.13);
+  --shadow-md:0 18px 55px rgba(0,0,0,.22);
+  --shadow-lg:0 36px 110px rgba(0,0,0,.38);
+}
+[data-theme="light"]{
+  --bg:#f4f5f8;--bg-2:#fbfbfd;--card:#ffffff;--card-2:#eceff5;
+  --line:#d9deea;--line-soft:#e7eaf1;
+  --text:#171b25;--text-dim:#656d7d;--text-faint:#949baa;
+  --accent:#5b6fe0;--accent-strong:#4f62ca;--on-accent:#ffffff;
+  --positive:#15956a;--positive-strong:#0d7d57;--on-positive:#ffffff;
+  --green:#5b6fe0;--green-dim:#e8ebff;
+  --amber:#a96c16;--amber-dim:#fff1d8;
+  --rust:#c84148;--rust-dim:#fce6e7;
+  --blue:#526fca;--blue-dim:#e8edff;
+  --shadow-sm:0 6px 22px rgba(22,51,39,.055);
+  --shadow-md:0 18px 50px rgba(22,51,39,.10);
+  --shadow-lg:0 34px 95px rgba(22,51,39,.16);
+}
+
+html,body{width:100%!important;height:100%!important;margin:0!important;background:var(--bg)!important;overflow:hidden!important}
+body{position:fixed!important;inset:0!important;padding:0!important;color:var(--text);font-feature-settings:"cv02","cv03","cv04","cv11"}
+::selection{background:color-mix(in srgb,var(--accent) 32%,transparent);color:var(--text)}
+button,input,select,textarea{font:inherit}
+button svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+input,select,textarea{
+  min-height:48px;border:0!important;border-radius:14px;background:var(--card-2)!important;color:var(--text)!important;
+  box-shadow:inset 0 0 0 1px transparent!important;padding-inline:14px;transition:box-shadow .18s ease,background .18s ease,transform .18s ease
+}
+input:hover,select:hover,textarea:hover{background:color-mix(in srgb,var(--card-2) 82%,var(--accent) 18%)!important}
+input:focus,select:focus,textarea:focus{outline:0!important;box-shadow:inset 0 0 0 2px var(--accent),0 0 0 4px color-mix(in srgb,var(--accent) 14%,transparent)!important;background:var(--card)!important}
+label{color:var(--text-dim);font-weight:750}
+
+/* True full-screen signed-in shell */
+#app-screen:not(.hidden){
+  position:fixed!important;inset:0!important;width:100%!important;height:auto!important;min-height:0!important;max-width:none!important;
+  margin:0!important;padding:0!important;display:grid!important;grid-template-columns:264px minmax(0,1fr);overflow:hidden!important;background:var(--bg)!important
+}
+.topbar{
+  position:relative!important;inset:auto!important;z-index:50!important;width:100%;height:100%;margin:0!important;padding:24px 18px 20px!important;
+  display:flex;flex-direction:column;gap:18px;background:linear-gradient(180deg,var(--bg-2),color-mix(in srgb,var(--bg-2) 88%,var(--bg)))!important;
+  border:0!important;box-shadow:14px 0 50px rgba(0,0,0,.08);box-sizing:border-box;overflow:hidden
+}
+.topbar-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px!important}
+.brand-lockup{display:flex;align-items:center;gap:12px;min-width:0}
+.brand-mark{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;flex:0 0 44px;color:#fff;background:linear-gradient(145deg,var(--accent),var(--accent-strong));box-shadow:0 12px 30px color-mix(in srgb,var(--accent) 26%,transparent),inset 0 1px 0 rgba(255,255,255,.25)}
+.brand-mark span{font-family:'Fraunces',Georgia,serif;font-size:24px;font-weight:700;line-height:1;transform:translateY(-1px)}
+.brand-copy{min-width:0}
+.brand{font-size:21px!important;line-height:1.05;letter-spacing:-.045em;color:var(--text)}
+.profile-line{display:flex;align-items:center;gap:7px;margin-top:5px;font-size:11px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.role-badge{font-size:8px;padding:3px 6px;background:var(--blue-dim);color:var(--accent);border:0;letter-spacing:.11em}
+.mobile-utilities{display:none!important}
+.mobile-menu-btn{display:none}
+
+.sidebar-status{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;padding:11px;background:color-mix(in srgb,var(--card) 74%,transparent);border-radius:16px}
+.sync-pill{min-width:0;height:32px;padding:0 9px;border:0!important;background:transparent!important;color:var(--text-dim);font-size:11px}
+.sync-dot{width:7px;height:7px;box-shadow:0 0 0 4px color-mix(in srgb,currentColor 10%,transparent)}
+.fy-pill{position:relative}
+.fy-pill-btn{min-height:32px;border:0!important;border-radius:10px!important;background:var(--card-2)!important;color:var(--text)!important;padding:0 10px!important;font:750 11px 'IBM Plex Mono',monospace!important}
+.fy-menu{left:auto!important;right:0!important;top:39px!important;border:0!important;border-radius:14px!important;background:var(--card)!important;box-shadow:var(--shadow-md)!important;padding:7px!important}
+
+.tabs{display:flex!important;flex:1 1 auto;flex-direction:column;justify-content:flex-start;gap:5px!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;overflow-y:auto!important;overflow-x:hidden!important;scrollbar-width:none}
+.tab{
+  width:100%;min-height:46px;flex:0 0 auto!important;display:flex;align-items:center;justify-content:flex-start;gap:12px;
+  padding:0 13px!important;border:0!important;border-radius:14px!important;color:var(--text-dim)!important;background:transparent!important;
+  font-size:13px!important;font-weight:700!important;letter-spacing:-.01em;text-align:left;box-shadow:none!important
+}
+.tab svg{width:20px;height:20px;flex:0 0 20px;opacity:.76}
+.tab:hover{color:var(--text)!important;background:color-mix(in srgb,var(--card-2) 72%,transparent)!important;transform:translateX(2px)}
+.tab.active{color:var(--on-accent)!important;background:linear-gradient(135deg,var(--accent),var(--accent-strong))!important;box-shadow:0 12px 28px color-mix(in srgb,var(--accent) 24%,transparent)!important}
+.tab.active svg{opacity:1}
+
+.sidebar-actions{display:flex;flex-direction:column;gap:4px;margin-top:auto;padding-top:12px}
+.utility-btn{width:100%;min-height:40px;border:0;border-radius:12px;background:transparent;color:var(--text-dim);display:flex;align-items:center;gap:10px;padding:0 11px;font-size:11.5px;font-weight:700;text-align:left}
+.utility-btn svg{width:18px;height:18px;flex:0 0 18px}.utility-btn span{flex:1}
+.utility-btn kbd{font:600 9px 'IBM Plex Mono',monospace;color:var(--text-faint);background:var(--card-2);border-radius:6px;padding:3px 5px}
+.utility-btn:hover{background:var(--card-2);color:var(--text);transform:translateX(2px)}
+.utility-danger{color:var(--rust)}.utility-danger:hover{color:var(--rust);background:var(--rust-dim)}
+
+.workspace{position:relative;min-width:0;height:100%;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;background:
+  radial-gradient(800px 500px at 92% -8%,color-mix(in srgb,var(--accent) 7%,transparent),transparent 65%),
+  radial-gradient(700px 430px at 16% 105%,color-mix(in srgb,var(--blue) 5%,transparent),transparent 70%),var(--bg);scrollbar-gutter:stable}
+.workspace::-webkit-scrollbar{width:10px}.workspace::-webkit-scrollbar-thumb{background:var(--line);border:3px solid transparent;border-radius:999px;background-clip:padding-box}
+.section#content{width:100%;max-width:1540px;margin:0 auto;padding:34px clamp(28px,4vw,66px) 110px!important;box-sizing:border-box}
+#onShiftBanner:not(.hidden){width:100%;max-width:1540px;margin:0 auto;padding:24px clamp(28px,4vw,66px) 0;box-sizing:border-box}
+
+.view-intro{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin:0 0 26px}
+.view-intro h1{font-size:clamp(32px,4vw,50px);line-height:.98;letter-spacing:-.052em;margin:4px 0 8px}
+.view-intro p{max-width:610px;margin:0;color:var(--text-dim);font-size:13.5px;line-height:1.55}
+.view-kicker{font-size:9px;font-weight:850;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+.view-primary-action{flex:0 0 auto;min-height:48px!important;padding-inline:20px!important}
+
+/* Surfaces and information density */
+.card,.day-card,.tax-hero,.budget-hero,.budget-cat-card,.onshift-banner,.viewer-note{border:0!important;background:var(--card);box-shadow:var(--shadow-sm)}
+.card,.day-card,.tax-hero,.budget-hero{border-radius:20px!important}
+.card-pad{padding:20px!important}
+.eyebrow{color:var(--text-faint);font-size:9.5px;letter-spacing:.13em}
+.display,.big-num,.week-total{letter-spacing:-.035em}
+
+#content[data-view="diary"]>.card:first-of-type{padding:24px!important;background:linear-gradient(135deg,color-mix(in srgb,var(--card) 88%,var(--accent) 12%),var(--card))!important;box-shadow:var(--shadow-md)}
+#content[data-view="diary"]>.card:first-of-type .display{font-size:clamp(27px,3vw,38px)!important}
+.week-head{margin:22px 0 14px;padding:14px 16px;background:color-mix(in srgb,var(--card) 78%,transparent);border-radius:18px;box-shadow:var(--shadow-sm)}
+.week-nav-btn{width:42px!important;height:42px!important;border:0!important;border-radius:13px!important;background:var(--card-2)!important;color:var(--text)!important;font-size:20px!important}
+.week-nav-btn:hover{background:color-mix(in srgb,var(--card-2) 72%,var(--accent) 28%)!important;transform:translateY(-1px)}
+.week-total{font-size:24px;color:var(--green)}
+.diary-card-grid{display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:14px;align-items:stretch}
+.day-card{margin:0!important;padding:18px!important;min-width:0;transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
+.day-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.day-card.today{background:linear-gradient(145deg,color-mix(in srgb,var(--card) 86%,var(--accent) 14%),var(--card))!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 34%,transparent),var(--shadow-md)!important}
+.day-top{margin-bottom:12px}.day-dow{font-size:17px}.day-date{font-size:11px}.day-status{border-radius:8px;padding:4px 8px}
+.shift-row{min-height:60px;padding:11px 0;border-top:1px solid var(--line-soft)!important}.shift-row[style*="border-left"]{border-left-width:2px!important;border-radius:4px}
+.shift-amt{font-size:14px}.shift-actions .btn{min-height:34px!important;padding:6px 10px!important}
+.day-empty{padding:10px 0;font-style:normal;color:var(--text-faint)}
+
+#content[data-view="calendar"] .cal-grid{gap:7px;padding:14px;background:color-mix(in srgb,var(--card) 76%,transparent);border-radius:22px;box-shadow:var(--shadow-sm)}
+.cal-cell{min-height:clamp(72px,8vw,112px)!important;border:0!important;border-radius:14px!important;background:var(--card)!important;box-shadow:none!important;transition:transform .15s ease,background .15s ease,box-shadow .15s ease}
+.cal-cell:not(.blank):hover{transform:translateY(-2px);box-shadow:var(--shadow-sm)!important}.cal-cell.blank{background:transparent!important}
+.cal-cell.today{box-shadow:inset 0 0 0 2px var(--accent)!important}.cal-cell.worked{background:var(--green-dim)!important}.cal-cell.future{background:var(--amber-dim)!important}.cal-cell.holiday{background:var(--rust-dim)!important}
+.cal-cell.has-job-colour{position:relative;overflow:hidden}.cal-cell.has-job-colour.today{box-shadow:inset 0 0 0 1px var(--card),0 0 0 2px var(--accent)!important}
+.cal-job-dots{position:absolute;left:8px;right:8px;bottom:7px;display:flex;justify-content:center;gap:4px}.cal-job-dots i{width:6px;height:6px;border-radius:99px;box-shadow:0 0 0 1px color-mix(in srgb,var(--card) 70%,transparent)}
+.cal-dow{padding-bottom:5px;color:var(--text-faint);font-size:10px;letter-spacing:.07em}.cal-legend{padding:15px 4px 0}
+
+.tl-month{border:0!important;border-radius:18px!important;background:var(--card);box-shadow:var(--shadow-sm);padding:18px;margin-bottom:14px}.tl-month h3{margin-top:0!important}.tl-week{padding:12px 5px}.tax-hero,.budget-hero{padding:24px!important;box-shadow:var(--shadow-md)}
+.budget-cat-card{padding:16px 18px!important}.budget-bar-track{height:9px;background:var(--card-2)}
+#content[data-view="settings"] .emp-block{transition:transform .18s ease,box-shadow .18s ease}#content[data-view="settings"] .emp-block:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+
+/* Every action communicates intent: green proceeds, red cancels or removes. */
+.btn,.login-btn,.secondary-setup-btn,.back-btn,.link-btn,.modal-close{border:0!important}
+.btn{min-height:42px;border-radius:12px!important;background:var(--card-2);color:var(--text);font-weight:750;padding:9px 15px}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.04)}
+button.action-positive,.btn-primary,.login-btn,.setup-save{
+  background:linear-gradient(135deg,var(--positive),var(--positive-strong))!important;color:var(--on-positive)!important;
+  box-shadow:0 11px 25px color-mix(in srgb,var(--positive) 22%,transparent)!important
+}
+button.action-positive:hover,.btn-primary:hover,.login-btn:hover{transform:translateY(-2px);box-shadow:0 15px 34px color-mix(in srgb,var(--positive) 28%,transparent)!important}
+button.action-negative,.btn-danger{
+  background:linear-gradient(135deg,var(--rust),color-mix(in srgb,var(--rust) 78%,#8d1f26))!important;color:white!important;
+  box-shadow:0 10px 24px color-mix(in srgb,var(--rust) 20%,transparent)!important
+}
+button.action-negative:hover,.btn-danger:hover{transform:translateY(-2px);filter:saturate(1.05)}
+button:disabled{opacity:.38!important;filter:saturate(.3);box-shadow:none!important;transform:none!important}
+.modal-close,.modal-close.action-negative{width:38px!important;height:38px!important;display:grid!important;place-items:center;background:var(--rust)!important;color:white!important;border-radius:12px!important;font-size:23px!important;line-height:1!important;box-shadow:0 10px 24px color-mix(in srgb,var(--rust) 22%,transparent)!important}
+.link-btn.action-negative{padding:10px 14px!important;border-radius:11px!important;background:var(--rust-dim)!important;color:var(--rust)!important}
+.fancy-notify-close{width:30px;height:30px;border-radius:9px!important;background:var(--rust-dim)!important;color:var(--rust)!important;font-size:18px}
+
+/* Modals, notices and feedback */
+.modal-backdrop{position:fixed!important;inset:0!important;display:flex;align-items:center!important;justify-content:center;padding:24px!important;background:rgba(2,8,6,.74)!important;backdrop-filter:blur(12px) saturate(.85);z-index:4000!important}
+.modal{width:min(600px,100%)!important;max-width:none!important;max-height:min(86dvh,820px)!important;padding:26px!important;border:0!important;border-radius:24px!important;background:var(--bg-2)!important;box-shadow:var(--shadow-lg)!important;scrollbar-gutter:auto!important}
+.modal::before{display:none!important}.modal h3{font-size:25px!important;margin-right:52px!important}
+.calc-preview{background:var(--card)!important;border:0!important;border-radius:15px!important;padding:15px!important}
+#toast{bottom:28px!important;padding:13px 18px!important;border:0!important;border-radius:13px!important;background:var(--text)!important;color:var(--bg)!important;box-shadow:var(--shadow-md)!important;font-weight:700;z-index:5000!important}
+.fancy-notify{border:0!important;background:var(--card)!important;box-shadow:var(--shadow-lg)!important}.fancy-notify-icon{background:var(--green-dim)!important;color:var(--green)!important}
+.onshift-banner{padding:14px 16px!important}.onshift-dot{box-shadow:0 0 0 5px color-mix(in srgb,var(--green) 15%,transparent)}
+#wqStartupError{border:0!important;border-radius:16px!important;background:var(--rust-dim)!important;box-shadow:var(--shadow-sm)}
+
+/* Auth and onboarding remain edge-to-edge, with calm floating surfaces. */
+#landing-screen,#email-screen,#master-pin-screen,#master-setup-screen,#profile-screen,#pin-screen,#pin-setup-screen,#setup-complete-screen{
+  position:fixed!important;inset:0!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;box-sizing:border-box!important;background-color:var(--bg)!important
+}
+#email-screen,#master-pin-screen,#profile-screen,#pin-screen{display:flex!important;align-items:center!important;justify-content:center!important;overflow:hidden!important;padding:max(18px,env(safe-area-inset-top)) 18px max(18px,env(safe-area-inset-bottom))!important;background:
+  radial-gradient(700px 480px at 50% 18%,color-mix(in srgb,var(--accent) 13%,transparent),transparent 68%),var(--bg)!important}
+#email-screen>.landing-wrap,#master-pin-screen>.landing-wrap,#pin-screen>.landing-wrap{
+  width:min(100%,430px)!important;max-width:430px!important;padding:36px 30px!important;border:0!important;border-radius:28px!important;background:color-mix(in srgb,var(--card) 94%,transparent)!important;box-shadow:var(--shadow-lg)!important;backdrop-filter:blur(20px)
+}
+.login-title{font-size:clamp(30px,5vw,38px)!important;letter-spacing:-.045em}.login-sub{font-size:13.5px;line-height:1.55}
+.pin-boxes input{border-radius:14px!important;background:var(--card-2)!important}.pin-boxes input:focus{transform:translateY(-2px)}
+.otp-code-wrap{border:0!important;background:var(--bg-2)!important;border-radius:20px!important;box-shadow:none!important}.otp-icon,.setup-icon{background:linear-gradient(135deg,var(--accent),var(--accent-strong))!important;color:var(--on-accent)!important}
+.setup-card{border:0!important;background:var(--card)!important;box-shadow:var(--shadow-lg)!important}.setup-section,.profile-setup-section{border:0!important;background:var(--bg-2)!important;box-shadow:none!important}
+.complete-mark{border:0!important;box-shadow:0 12px 30px color-mix(in srgb,var(--accent) 15%,transparent)!important}.landing-kicker span{background:var(--accent)!important;box-shadow:0 0 12px color-mix(in srgb,var(--accent) 55%,transparent)!important}
+
+#profile-screen>.landing-wrap{max-width:980px!important}.profile-grid{width:min(820px,100%)!important}.profile-tile{border:0!important}.profile-tile-wrap.recent-profile .profile-tile{background:color-mix(in srgb,var(--blue-dim) 78%,transparent)}
+.profile-avatar{border:0!important}.profile-edit-name{border:0!important;border-radius:9px!important;background:var(--card-2)!important;color:var(--text-dim)!important}
+
+/* Landing becomes a landscape product moment on larger screens. */
+#landing-screen{overflow:hidden!important;background:
+  radial-gradient(800px 560px at 76% 42%,color-mix(in srgb,var(--accent) 18%,transparent),transparent 65%),
+  radial-gradient(700px 500px at 15% 96%,color-mix(in srgb,var(--blue) 8%,transparent),transparent 72%),var(--bg)!important}
+.landing-orbit{border-color:color-mix(in srgb,var(--accent) 13%,transparent)!important}.store-live-dot{background:var(--accent)!important}
+.appstore-hero .landing-brand{color:var(--text);text-shadow:none!important}.appstore-hero .landing-cta.action-positive{background:linear-gradient(135deg,var(--positive),var(--positive-strong))!important;color:var(--on-positive)!important}
+.premium-phone{border:0!important}.hero-card{border:0!important;background:color-mix(in srgb,var(--card) 90%,transparent)!important;box-shadow:var(--shadow-md)!important}
+
+.fab{left:auto!important;right:34px!important;bottom:28px!important;transform:none!important;min-height:52px!important;border:0!important;border-radius:16px!important;background:linear-gradient(135deg,var(--positive),var(--positive-strong))!important;color:var(--on-positive)!important;box-shadow:0 18px 42px color-mix(in srgb,var(--positive) 28%,transparent)!important;z-index:2500!important}
+.fab:hover{transform:translateY(-3px)!important}
+
+/* Compact app-style overflow menu */
+.mobile-menu-backdrop{position:fixed;inset:0;z-index:6500;display:flex;align-items:flex-end;justify-content:center;padding:14px;background:rgba(3,5,10,.72);backdrop-filter:blur(14px)}
+.mobile-menu-sheet{width:min(100%,520px);max-height:min(88dvh,760px);overflow-y:auto;overscroll-behavior:contain;padding:20px 18px max(20px,calc(20px + env(safe-area-inset-bottom)));border-radius:26px;background:var(--bg-2);box-shadow:var(--shadow-lg)}
+.mobile-menu-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px}.mobile-menu-head h2{font-size:30px;margin:2px 0 0}.mobile-menu-close{width:40px;height:40px;border:0;border-radius:13px;background:var(--rust);color:#fff;font-size:25px;line-height:1;box-shadow:0 10px 24px color-mix(in srgb,var(--rust) 22%,transparent)}
+.mobile-menu-label{margin:18px 2px 9px;color:var(--text-faint);font-size:9px;font-weight:850;letter-spacing:.15em;text-transform:uppercase}
+.mobile-menu-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.mobile-menu-grid button{min-width:0;min-height:82px;border:0;border-radius:16px;background:var(--card);color:var(--text);display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:8px;padding:13px;text-align:left}.mobile-menu-grid button span{color:var(--accent);font-size:20px}.mobile-menu-grid button strong{font-size:11px;line-height:1.25}
+.mobile-menu-grid button.active{background:var(--blue-dim);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 35%,transparent)}
+.mobile-menu-list{display:flex;flex-direction:column;gap:6px}.mobile-menu-list button{width:100%;min-height:50px;border:0;border-radius:14px;background:var(--card);color:var(--text);display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:9px;padding:0 14px;text-align:left}.mobile-menu-list button>span{color:var(--accent);font-size:19px}.mobile-menu-list button strong{font-size:12.5px}.mobile-menu-list button i{color:var(--text-faint);font-size:19px;font-style:normal}.mobile-menu-list .mobile-menu-danger{background:var(--rust-dim);color:var(--rust)}.mobile-menu-list .mobile-menu-danger>span{color:var(--rust)}
+
+@media(min-width:900px){
+  .appstore-hero{display:grid!important;grid-template-columns:minmax(330px,440px) minmax(460px,650px);grid-template-rows:auto auto auto auto auto auto auto;column-gap:clamp(34px,7vw,100px);align-items:center;max-width:1180px!important;text-align:left!important}
+  .store-topline{grid-column:1;grid-row:1;justify-content:flex-start!important;margin:0 0 20px!important}
+  .appstore-hero .landing-brand{grid-column:1;grid-row:2;font-size:clamp(64px,7vw,96px)!important}
+  .appstore-hero .landing-tag{grid-column:1;grid-row:3;margin:20px 0 22px!important;font-size:17px;line-height:1.6;max-width:420px}
+  .hero-stage{grid-column:2;grid-row:1/9;height:min(76vh,720px);margin:0!important}
+  .store-feature-row{grid-column:1;grid-row:4;justify-content:flex-start;margin:0 0 16px}
+  .appstore-hero .phone-dots{grid-column:1;grid-row:5;justify-content:flex-start}.appstore-hero .landing-slide-caption{grid-column:1;grid-row:6;margin:4px 0 18px!important}
+  .appstore-hero .landing-cta{grid-column:1;grid-row:7;margin:0!important}.appstore-hero .landing-note{grid-column:1;grid-row:8;text-align:left}
+  .premium-phone{width:300px!important;height:590px!important;border-radius:50px!important}.premium-phone .phone-screen{border-radius:41px!important}.premium-phone .phone-notch{width:108px!important}
+  .hero-card-left{left:0!important;top:24%!important}.hero-card-right{right:0!important;bottom:22%!important}
+}
+
+@media(max-width:899px){
+  #app-screen:not(.hidden){display:flex!important;flex-direction:column!important;overflow:hidden!important;padding:0!important}
+  .topbar{position:relative!important;top:auto!important;flex:0 0 auto;width:100%;height:auto;margin:0!important;padding:max(10px,env(safe-area-inset-top)) 14px 10px!important;display:block!important;background:color-mix(in srgb,var(--bg) 94%,transparent)!important;backdrop-filter:blur(22px) saturate(1.2);box-shadow:0 10px 30px rgba(0,0,0,.08)!important;overflow:visible}
+  .topbar-row{min-height:44px!important}.brand-mark{width:38px;height:38px;flex-basis:38px;border-radius:12px}.brand-mark span{font-size:20px}.brand{font-size:19px!important}.profile-line{margin-top:3px}.role-badge{display:none}
+  .mobile-utilities{display:flex!important;align-items:center;gap:6px}.mobile-utilities .sync-pill{display:flex!important;max-width:92px}.mobile-menu-btn{width:40px;height:40px;display:grid!important;place-items:center;flex:0 0 40px;border:0;border-radius:13px;background:var(--card)!important;color:var(--text)!important;box-shadow:var(--shadow-sm)}.mobile-menu-btn svg{width:21px;height:21px}
+  .mobile-menu-btn.has-active-section{color:var(--accent)!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent),var(--shadow-sm)}
+  .sidebar-status{display:flex;padding:0;margin-top:8px;background:transparent}.sidebar-status>.sync-pill{display:none}.sidebar-status .fy-pill{margin-left:0}.fy-pill-btn{background:color-mix(in srgb,var(--card) 88%,transparent)!important}
+  .sidebar-actions{display:none!important}
+  .tabs{position:fixed!important;left:10px;right:10px;bottom:max(10px,env(safe-area-inset-bottom));z-index:2600!important;height:72px;display:flex!important;flex-direction:row!important;gap:4px!important;padding:6px!important;border:0!important;border-radius:22px!important;background:color-mix(in srgb,var(--card) 96%,transparent)!important;box-shadow:0 22px 60px rgba(0,0,0,.28)!important;backdrop-filter:blur(24px);overflow:hidden!important}
+  .tabs .tab[data-tab="tax"],.tabs .tab[data-tab="budget"],.tabs .tab[data-tab="settings"]{display:none!important}
+  .tab{width:auto;min-width:0;min-height:60px;flex:1 1 0!important;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:5px 7px!important;border-radius:16px!important;font-size:10px!important;text-align:center}
+  .tab svg{width:20px;height:20px;flex-basis:20px}.tab:hover{transform:none}.tab.active{box-shadow:0 8px 20px color-mix(in srgb,var(--accent) 22%,transparent)!important}
+  .workspace{flex:1 1 auto;height:auto;min-height:0;overflow-y:auto;overflow-x:hidden;background:transparent;-webkit-overflow-scrolling:touch}
+  .section#content{padding:22px 14px 124px!important}.view-intro{align-items:flex-start;margin-bottom:20px}.view-intro h1{font-size:34px}.view-intro p{font-size:12.5px}.view-primary-action{display:none}
+  #onShiftBanner:not(.hidden){padding:14px 14px 0}
+  .diary-card-grid{grid-template-columns:1fr;gap:11px}.day-card:hover{transform:none}
+  #content[data-view="calendar"] .cal-grid{gap:3px;padding:7px;border-radius:16px}.cal-cell{min-height:58px!important;border-radius:9px!important}.cal-dow{font-size:8px}.cal-cell .amt{font-size:8px}
+  .fab{right:16px!important;bottom:96px!important;min-height:50px!important;border-radius:15px!important}
+  #toast{bottom:98px!important;max-width:calc(100vw - 28px)!important}
+  .modal-backdrop{align-items:flex-end!important;padding:0!important}.modal{width:100%!important;max-height:92dvh!important;border-radius:24px 24px 0 0!important;padding:22px 17px max(22px,calc(22px + env(safe-area-inset-bottom)))!important}.modal::before{content:""!important;display:block!important;width:42px;height:4px;border-radius:99px;background:var(--line);margin:-8px auto 18px}
+  .premium-phone,.hero-card{animation:none!important}.premium-phone{transform:none!important}
+}
+
+@media(max-width:560px){
+  #landing-screen{overflow-y:auto!important;padding:20px 12px 36px!important}.appstore-hero{min-height:max-content}.hero-stage{height:410px!important}.premium-phone{width:198px!important;height:390px!important}.hero-card{display:none!important}.store-feature-row{margin-top:4px}.appstore-hero .landing-brand{font-size:46px!important}
+  #email-screen>.landing-wrap,#master-pin-screen>.landing-wrap,#pin-screen>.landing-wrap{padding:30px 18px!important;border-radius:24px!important}
+  .pin-boxes.pin6{gap:5px!important}.pin-boxes.pin6 input{width:42px!important;height:54px!important;font-size:21px!important}
+  #profile-screen>.landing-wrap{height:100%;overflow-y:auto;padding:74px 14px 110px!important}.profile-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.profile-avatar{width:min(33vw,112px)!important;height:min(33vw,112px)!important}
+  .field-row{grid-template-columns:1fr}.row.wrap>.btn{flex:1 1 130px}
+}
+
+@media(max-width:380px){
+  .brand-copy{max-width:130px}.mobile-utilities .sync-pill{display:none!important}.tabs{height:68px}.tab{min-height:56px}.section#content{padding-inline:10px!important}.pin-boxes.pin6 input{width:38px!important;height:51px!important}.pin-boxes.pin6{gap:4px!important}.mobile-menu-grid{gap:6px}.mobile-menu-grid button{padding:11px;min-height:76px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+@media(hover:none){
+  button:hover,.btn:hover,.day-card:hover,.fab:hover{transform:none!important}
 }
 </style>
 
