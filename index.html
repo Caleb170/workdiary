@@ -2087,6 +2087,7 @@ async function enterApp(){
     ['settings','timeline','tax','budget'].forEach(t=>{ const el=document.querySelector(`[data-tab="${t}"]`); if(el) el.classList.add('hidden'); });
   }
   syncMobileMenuAccess();
+  setupNotifyChannel(STATE.uid,STATE.role==='viewer');
 
   initTheme();
   renderFyPill();
@@ -2108,7 +2109,7 @@ async function enterApp(){
 
   const generation=++_wqSyncGeneration;
   const syncTask=STATE.role==='admin'?loadAdminData(generation):loadViewerData(generation);
-  syncTask.then(()=>{if(generation!==_wqSyncGeneration)return;setSync('saved',STATE.role==='admin'&&STATE.shifts.length?'Synced':'Synced');wqScheduleRender('post-sync');document.getElementById('wqStartupError')?.remove();}).catch(e=>{if(generation===_wqSyncGeneration)wqShowStartupError(e);});
+  syncTask.then(async()=>{if(generation!==_wqSyncGeneration)return;setSync('saved',STATE.role==='admin'&&STATE.shifts.length?'Synced':'Synced');wqScheduleRender('post-sync');document.getElementById('wqStartupError')?.remove();if(STATE.role==='viewer')await showPendingViewerShiftNotifications();}).catch(e=>{if(generation===_wqSyncGeneration)wqShowStartupError(e);});
 }
 
 const WQ_TUTORIAL_STEPS=[{icon:'▤',title:'Your Diary',text:'Log shifts and keep each day organised at a glance.'},{icon:'▦',title:'Your Calendar',text:'See your work pattern across the month and spot worked, planned and holiday days.'},{icon:'⌁',title:'Timeline & earnings',text:'Follow your earnings history, including salary and payday information.'},{icon:'＋',title:'Add Shift & settings',text:'Use + Add shift for new work. Pay Rates manages jobs, pay frequency, salary, bonuses and preferences.'}];let _wqTutorialIndex=0;function showQuickTutorial(){if(localStorage.getItem('wq_quick_tutorial_done')==='1'){localStorage.removeItem('wq_pending_quick_tutorial');return;}_wqTutorialIndex=0;renderQuickTutorial()}function renderQuickTutorial(){const root=document.getElementById('wqTutorialRoot');if(!root)return;const x=WQ_TUTORIAL_STEPS[_wqTutorialIndex];root.innerHTML=`<div class="wq-tutorial-backdrop"><div class="wq-tutorial-card" role="dialog" aria-modal="true"><div class="wq-tutorial-top"><span class="wq-tutorial-eyebrow">QUICK TOUR</span><span class="wq-tutorial-count">${_wqTutorialIndex+1} / ${WQ_TUTORIAL_STEPS.length}</span></div><div class="wq-tutorial-progress">${WQ_TUTORIAL_STEPS.map((_,i)=>`<span class="${i<=_wqTutorialIndex?'active':''}"></span>`).join('')}</div><div class="wq-tutorial-visual"><div class="wq-tutorial-icon">${x.icon}</div><div class="wq-tutorial-orb"></div><div class="wq-tutorial-lines"><span></span><span></span><span></span></div></div><h3>${x.title}</h3><p>${x.text}</p><div class="wq-tutorial-actions"><button class="wq-tutorial-skip" onclick="skipQuickTutorial()">Skip</button><button class="btn btn-primary" onclick="nextQuickTutorial()">${_wqTutorialIndex===3?'Got it':'Next'} <span aria-hidden="true">→</span></button></div></div></div>`;root.classList.remove('hidden')}function nextQuickTutorial(){if(_wqTutorialIndex===3){finishQuickTutorial();return}_wqTutorialIndex++;renderQuickTutorial()}function skipQuickTutorial(){finishQuickTutorial()}function finishQuickTutorial(){localStorage.setItem('wq_quick_tutorial_done','1');localStorage.removeItem('wq_pending_quick_tutorial');const r=document.getElementById('wqTutorialRoot');if(r){r.classList.add('hidden');r.innerHTML=''}}
@@ -2998,11 +2999,35 @@ document.addEventListener('visibilitychange', ()=>{
 window.addEventListener('focus', ()=>{
   if(_notifyChannelKey && !notifyChannelReady) setupNotifyChannel(_notifyChannelKey, _notifyIsReceiver);
 });
-function notifyViewers(icon, title, message){
-  if(STATE.role!=='admin' || !notifyChannel) return;
-  const payload = {icon, title, message};
-  if(!notifyChannelReady){ notifyPendingQueue.push(payload); return; }
-  notifyChannel.send({type:'broadcast', event:'shift_change', payload});
+function shiftNotificationAction(title){
+  const value=String(title||'').toLowerCase();
+  if(value.includes('remov')||value.includes('delet')||value.includes('cancel'))return 'removed a shift';
+  if(value.includes('updat')||value.includes('edit'))return 'edited a shift';
+  return 'added a shift';
+}
+async function persistViewerShiftNotification(payload){
+  if(!STATE.localViewer?.id)return false;
+  try{
+    const current=await wqRequest(()=>sb.from('profiles').select('permissions').eq('id',STATE.localViewer.id).limit(1),'Notification settings',10000);
+    const permissions={...((current.data||[])[0]?.permissions||{})};
+    if(permissions.shiftNotifications===false)return false;
+    const events=Array.isArray(permissions.shiftNotificationEvents)?permissions.shiftNotificationEvents:[];
+    events.push({...payload,id:uid('notice'),createdAt:new Date().toISOString()});
+    permissions.shiftNotificationEvents=events.slice(-24);
+    const {error}=await sb.rpc('update_viewer_permissions',{p_profile_id:STATE.localViewer.id,p_permissions:permissions});
+    if(error)throw error;
+    STATE.localViewer.permissions=permissions;
+    return true;
+  }catch(error){console.warn('Could not store viewer notification:',error);return true;}
+}
+async function notifyViewers(icon, title, message){
+  if(STATE.role!=='admin')return;
+  const actor=STATE.activeProfileName||'Admin';
+  const payload={icon,title:`${actor} ${shiftNotificationAction(title)}`,message,actor};
+  const enabled=await persistViewerShiftNotification(payload);
+  if(!enabled||!notifyChannel)return;
+  if(!notifyChannelReady){notifyPendingQueue.push(payload);return;}
+  notifyChannel.send({type:'broadcast',event:'shift_change',payload});
 }
 let _fancyTimeout=null;
 function showFancyNotification({icon, title, message}){
@@ -3025,6 +3050,39 @@ function dismissFancyNotification(){
   if(!el) return;
   el.classList.remove('show');
   setTimeout(()=>{ document.getElementById('fancyNotifyRoot').innerHTML=''; }, 350);
+}
+
+let _viewerNotificationState=null;
+async function showPendingViewerShiftNotifications(){
+  if(STATE.role!=='viewer'||!STATE.activeProfileId)return;
+  try{
+    const result=await wqRequest(()=>sb.from('profiles').select('permissions').eq('id',STATE.activeProfileId).limit(1),'Viewer notifications',10000);
+    const permissions={...((result.data||[])[0]?.permissions||{})};
+    if(permissions.shiftNotifications===false)return;
+    const events=(Array.isArray(permissions.shiftNotificationEvents)?permissions.shiftNotificationEvents:[]).filter(event=>event?.createdAt&&event.createdAt>String(permissions.shiftNotificationsSeenAt||''));
+    if(!events.length)return;
+    _viewerNotificationState={permissions,latest:events[events.length-1].createdAt};
+    const root=document.getElementById('fancyNotifyRoot');
+    root.innerHTML=`<div class="viewer-notice-screen" role="dialog" aria-modal="true" aria-labelledby="viewerNoticeTitle">
+      <div class="viewer-notice-glow"></div>
+      <div class="viewer-notice-mark">✦</div>
+      <div class="viewer-notice-kicker">WORKQUEST UPDATE</div>
+      <h2 id="viewerNoticeTitle">${events.length===1?'Your diary changed':events.length+' diary updates'}</h2>
+      <p>Here’s what happened since you last opened this profile.</p>
+      <div class="viewer-notice-list">${events.slice(-6).reverse().map(event=>`<div class="viewer-notice-item"><span>${escapeHtml(event.icon||'📅')}</span><div><strong>${escapeHtml(event.title||'A shift changed')}</strong><small>${escapeHtml(event.message||'Your shared diary was updated')}</small></div></div>`).join('')}</div>
+      <button class="btn btn-primary viewer-notice-continue" onclick="dismissViewerShiftNotifications()">Continue to diary</button>
+    </div>`;
+    root.classList.add('viewer-notice-active');
+  }catch(error){console.warn('Viewer notification check skipped:',error);}
+}
+async function dismissViewerShiftNotifications(){
+  const state=_viewerNotificationState;_viewerNotificationState=null;
+  document.getElementById('fancyNotifyRoot')?.classList.remove('viewer-notice-active');
+  document.getElementById('fancyNotifyRoot').innerHTML='';
+  if(!state||!STATE.activeProfileId)return;
+  state.permissions.shiftNotificationsSeenAt=state.latest;
+  const {error}=await sb.rpc('update_viewer_permissions',{p_profile_id:STATE.activeProfileId,p_permissions:state.permissions});
+  if(error)console.warn('Could not mark viewer notifications read:',error);
 }
 
 /* =========================================================================
@@ -3224,6 +3282,15 @@ function initTheme(){
   const toggle=document.getElementById('themeToggle');
   if(toggle) toggle.textContent = saved==='dark' ? '☀️' : '🌙';
   syncMobileMenuThemeLabel();
+  syncBrowserChromeColor();
+}
+function syncBrowserChromeColor(){
+  requestAnimationFrame(()=>{
+    const colour=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()||'#090b11';
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content',colour);
+    document.documentElement.style.backgroundColor=colour;
+    document.body.style.backgroundColor=colour;
+  });
 }
 function toggleTheme(){
   const cur = document.documentElement.getAttribute('data-theme');
@@ -3233,6 +3300,7 @@ function toggleTheme(){
   const toggle=document.getElementById('themeToggle');
   if(toggle) toggle.textContent = next==='dark' ? '☀️' : '🌙';
   syncMobileMenuThemeLabel();
+  syncBrowserChromeColor();
 }
 
 /* =========================================================================
@@ -3954,6 +4022,7 @@ function renderSettings(){
         <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;text-transform:none;font-weight:500;"><input type="checkbox" style="width:auto;" ${p.showTimes!==false?'checked':''} onchange="updateLocalViewerPerm('showTimes',this.checked)">Shift times</label>
         <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;text-transform:none;font-weight:500;"><input type="checkbox" style="width:auto;" ${p.showHours!==false?'checked':''} onchange="updateLocalViewerPerm('showHours',this.checked)">Hours</label>
         <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;text-transform:none;font-weight:500;"><input type="checkbox" style="width:auto;" ${p.showPlanned!==false?'checked':''} onchange="updateLocalViewerPerm('showPlanned',this.checked)">Planned shifts</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;text-transform:none;font-weight:500;"><input type="checkbox" style="width:auto;" ${p.shiftNotifications!==false?'checked':''} onchange="updateLocalViewerPerm('shiftNotifications',this.checked)">Shift update notifications</label>
       </div>
       <p class="muted small" style="margin-top:10px;">To remove this profile or change its PIN, that's managed from the profile picker for now — sign out and back in to reach it.</p>
     </div>`;
@@ -5569,6 +5638,13 @@ button:disabled{opacity:.38!important;filter:saturate(.3);box-shadow:none!import
 .mobile-menu-grid button.active{background:var(--blue-dim);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 35%,transparent)}
 .mobile-menu-list{display:flex;flex-direction:column;gap:6px}.mobile-menu-list button{width:100%;min-height:50px;border:0;border-radius:14px;background:var(--card);color:var(--text);display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:9px;padding:0 14px;text-align:left}.mobile-menu-list button>span{color:var(--accent);font-size:19px}.mobile-menu-list button strong{font-size:12.5px}.mobile-menu-list button i{color:var(--text-faint);font-size:19px;font-style:normal}.mobile-menu-list .mobile-menu-danger{background:var(--rust-dim);color:var(--rust)}.mobile-menu-list .mobile-menu-danger>span{color:var(--rust)}
 
+/* Full-screen, stored viewer update card. */
+#fancyNotifyRoot.viewer-notice-active{inset:0!important;padding:0!important;z-index:8000!important;display:grid!important;place-items:center!important;background:color-mix(in srgb,var(--bg) 82%,transparent)!important;backdrop-filter:blur(22px) saturate(.85);pointer-events:auto!important}
+.viewer-notice-screen{position:relative;width:min(430px,calc(100% - 28px));max-height:calc(100dvh - 40px);overflow:auto;padding:28px 22px 22px;border:0;border-radius:28px;background:linear-gradient(155deg,color-mix(in srgb,var(--card) 90%,var(--accent) 10%),var(--card));box-shadow:0 32px 100px rgba(0,0,0,.38);text-align:center;color:var(--text);isolation:isolate}
+.viewer-notice-glow{position:absolute;z-index:-1;inset:-100px -60px auto;height:230px;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 34%,transparent),transparent 68%);pointer-events:none}.viewer-notice-mark{width:62px;height:62px;margin:0 auto 15px;border-radius:21px;display:grid;place-items:center;background:linear-gradient(145deg,var(--accent),#9b68ef);color:#fff;font-size:27px;box-shadow:0 16px 38px color-mix(in srgb,var(--accent) 30%,transparent)}
+.viewer-notice-kicker{font-size:9px;font-weight:900;letter-spacing:.18em;color:var(--accent)}.viewer-notice-screen h2{margin:7px 0 7px;font-size:28px;letter-spacing:-.04em}.viewer-notice-screen>p{margin:0 auto 19px;max-width:300px;color:var(--text-dim);font-size:12.5px;line-height:1.55}
+.viewer-notice-list{display:grid;gap:8px;text-align:left}.viewer-notice-item{display:grid;grid-template-columns:42px 1fr;align-items:center;gap:11px;padding:12px;border:0;border-radius:16px;background:var(--card-2)}.viewer-notice-item>span{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:color-mix(in srgb,var(--accent) 15%,var(--card));font-size:19px}.viewer-notice-item strong{display:block;font-size:12.5px}.viewer-notice-item small{display:block;margin-top:3px;color:var(--text-dim);font-size:10.5px;line-height:1.35}.viewer-notice-continue{width:100%;margin-top:17px;min-height:50px!important}
+
 @media(min-width:900px){
   .appstore-hero{display:grid!important;grid-template-columns:minmax(330px,440px) minmax(460px,650px);grid-template-rows:auto auto auto auto auto auto auto;column-gap:clamp(34px,7vw,100px);align-items:center;max-width:1180px!important;text-align:left!important}
   .store-topline{grid-column:1;grid-row:1;justify-content:flex-start!important;margin:0 0 20px!important}
@@ -5586,17 +5662,17 @@ button:disabled{opacity:.38!important;filter:saturate(.3);box-shadow:none!import
   html,body{height:100%!important;min-height:100dvh!important;background:var(--bg)!important;overscroll-behavior:none!important}
   #app-screen:not(.hidden){display:grid!important;grid-template-columns:1fr!important;grid-template-rows:auto minmax(0,1fr) auto!important;position:fixed!important;inset:0!important;width:auto!important;height:auto!important;min-height:0!important;overflow:hidden!important;padding:0!important;background:var(--bg)!important}
   .topbar{display:contents!important}
-  .topbar-row{grid-column:1;grid-row:1;position:relative!important;z-index:55!important;width:100%;min-height:calc(56px + env(safe-area-inset-top))!important;padding:env(safe-area-inset-top) 76px 0 12px!important;display:flex!important;justify-content:flex-start!important;gap:9px!important;background:var(--bg-2)!important;border-bottom:1px solid var(--line-soft)!important;box-shadow:none!important;backdrop-filter:none!important}
+  .topbar-row{grid-column:1;grid-row:1;position:relative!important;z-index:55!important;width:100%;min-height:calc(56px + env(safe-area-inset-top))!important;padding:env(safe-area-inset-top) 76px 0 12px!important;display:flex!important;justify-content:flex-start!important;gap:9px!important;background:var(--bg)!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important}
   .brand-lockup{min-width:0;flex:1}.brand-mark{display:none!important}.brand{font-size:16px!important;letter-spacing:-.025em!important}.profile-line{max-width:150px;margin-top:1px;font-size:9.5px}.role-badge{display:none}
   .mobile-utilities{display:flex!important;order:-1;align-items:center;gap:0}.mobile-utilities .sync-pill{display:none!important}.mobile-menu-btn{width:38px;height:38px;display:grid!important;place-items:center;flex:0 0 38px;border:0;border-radius:11px;background:var(--card-2)!important;color:var(--text)!important;box-shadow:none!important}.mobile-menu-btn svg{width:20px;height:20px}
   .mobile-menu-btn.has-active-section{color:var(--accent)!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent),var(--shadow-sm)}
   .sidebar-status{position:fixed!important;z-index:70!important;top:calc(env(safe-area-inset-top) + 9px);right:10px;width:auto!important;height:38px;display:flex!important;align-items:center;padding:0!important;margin:0!important;background:transparent!important}.sidebar-status>.sync-pill{display:none}.sidebar-status .fy-pill{margin:0!important}.fy-pill-btn{min-width:58px!important;height:38px!important;padding:0 8px!important;background:var(--card-2)!important;font-size:10px!important}.fy-menu{right:0!important;left:auto!important;top:43px!important;min-width:92px!important}
   .sidebar-actions{display:none!important}
-  .tabs{grid-column:1;grid-row:3;position:relative!important;inset:auto!important;z-index:60!important;width:100%!important;height:calc(62px + env(safe-area-inset-bottom))!important;display:flex!important;flex-direction:row!important;gap:2px!important;margin:0!important;padding:5px 8px max(5px,env(safe-area-inset-bottom))!important;border:0!important;border-top:1px solid var(--line-soft)!important;border-radius:0!important;background:var(--bg-2)!important;box-shadow:none!important;backdrop-filter:none!important;overflow:hidden!important}
+  .tabs{grid-column:1;grid-row:3;position:relative!important;inset:auto!important;z-index:60!important;width:100%!important;height:calc(62px + env(safe-area-inset-bottom))!important;display:flex!important;flex-direction:row!important;gap:5px!important;margin:0!important;padding:5px 8px max(5px,env(safe-area-inset-bottom))!important;border:0!important;border-top:0!important;border-radius:0!important;background:var(--bg)!important;box-shadow:none!important;backdrop-filter:none!important;overflow:hidden!important}
   .tabs .tab[data-tab="tax"],.tabs .tab[data-tab="budget"],.tabs .tab[data-tab="settings"]{display:none!important}
   .tab{width:auto;min-width:0;min-height:50px;flex:1 1 0!important;display:flex;flex-direction:column;justify-content:center;gap:2px;padding:3px 6px!important;border-radius:11px!important;font-size:9px!important;text-align:center}
-  .tab svg{width:18px;height:18px;flex-basis:18px}.tab:hover{transform:none}.tab.active{box-shadow:none!important}
-  .workspace{grid-column:1;grid-row:2;width:100%;height:auto;min-height:0;overflow-y:auto;overflow-x:hidden;background:var(--bg)!important;-webkit-overflow-scrolling:touch}
+  .tab svg{width:18px;height:18px;flex-basis:18px}.tab:hover{transform:none}.tab.active{background:linear-gradient(145deg,var(--accent),#8b65e7)!important;color:#fff!important;box-shadow:0 8px 24px color-mix(in srgb,var(--accent) 28%,transparent)!important}
+  .workspace{grid-column:1;grid-row:2;width:100%;height:auto;min-height:0;overflow-y:auto;overflow-x:hidden;background:radial-gradient(500px 320px at 100% 0,color-mix(in srgb,var(--accent) 8%,transparent),transparent 66%),var(--bg)!important;-webkit-overflow-scrolling:touch}
   .section#content{padding:16px 12px 28px!important}.view-intro{display:none!important}.view-primary-action{display:none}
   #onShiftBanner:not(.hidden){padding:14px 14px 0}
   .diary-card-grid{grid-template-columns:1fr;gap:11px}.day-card:hover{transform:none}
