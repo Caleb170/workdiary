@@ -2334,6 +2334,19 @@ async function startPinRecovery(){
   const email = STATE.email || document.getElementById('emailInput').value.trim().toLowerCase();
   if(!email){ backToEmailLogin(); return; }
   STATE.email=email;
+  // On an authenticated or remembered device, use the two security questions
+  // created with the account immediately. Email is only the fallback when the
+  // saved Supabase session has expired.
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    if(session?.user){
+      STATE.authUid=session.user.id;
+      STATE.email=session.user.email||email;
+      _pinRecoveryMode=false;
+      openMasterForgotModal();
+      return;
+    }
+  }catch(error){console.warn('Direct security-question recovery unavailable:',error);}
   _pinRecoveryMode=true;
   _newSignupMode=false;
   document.getElementById('emailStep').classList.add('hidden');
@@ -3284,7 +3297,9 @@ function initTheme(){
 }
 function syncBrowserChromeColor(){
   requestAnimationFrame(()=>{
-    const colour=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()||'#090b11';
+    const app=document.getElementById('app-screen');
+    const source=app&&!app.classList.contains('hidden')?app:document.documentElement;
+    const colour=getComputedStyle(source).getPropertyValue('--bg').trim()||'#090b11';
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content',colour);
     document.documentElement.style.backgroundColor=colour;
     document.body.style.backgroundColor=colour;
@@ -5704,10 +5719,14 @@ button:disabled{opacity:.38!important;filter:saturate(.3);box-shadow:none!import
 <style id="workquest-no-bottom-strip">
 /* Final mobile viewport rule: no footer border and no duplicated safe-area band. */
 @media(max-width:899px){
+  [data-theme="light"] #app-screen:not(.hidden){--bg:#ffffff;--bg-2:#ffffff;--card:#ffffff;--card-2:#f3f5fa;--line:#e3e6ed;--line-soft:#eff1f5;--text:#101218;--text-dim:#545b69;--text-faint:#858c99}
   html,body{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;margin:0!important;padding:0!important;background:var(--bg)!important;overflow:hidden!important}
   #app-screen:not(.hidden){position:fixed!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;background:var(--bg)!important}
   #app-screen:not(.hidden) .tabs{height:58px!important;min-height:58px!important;margin:0!important;padding:4px 8px!important;border:0!important;border-top:0!important;outline:0!important;background:var(--bg)!important;box-shadow:none!important}
   #app-screen:not(.hidden) .workspace{margin:0!important;border:0!important;outline:0!important;background-color:var(--bg)!important}
+  [data-theme="light"] #app-screen:not(.hidden) .workspace{background:radial-gradient(520px 320px at 100% 0,rgba(91,111,224,.10),transparent 68%),linear-gradient(180deg,#f7f8fc 0%,#fbfbfd 58%,#ffffff 100%)!important;color:#101218!important}
+  [data-theme="light"] #app-screen:not(.hidden) .topbar-row,[data-theme="light"] #app-screen:not(.hidden) .tabs{background:#ffffff!important;color:#101218!important}
+  [data-theme="light"] .mobile-menu-sheet{background:#ffffff!important;color:#101218!important}
   #fabAdd.fab{bottom:68px!important}
   #toast{bottom:66px!important}
 }
