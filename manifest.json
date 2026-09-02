@@ -3,9 +3,11 @@
   "short_name": "WorkQuest",
   "description": "Your work diary and earnings tracker",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#0B0D12",
-  "theme_color": "#0B0D12",
+  "display_override": ["standalone", "fullscreen"],
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "orientation": "portrait",
   "icons": [
     {
