@@ -2351,9 +2351,12 @@ async function startPinRecovery(){
   }catch(error){console.warn('Direct security-question recovery unavailable:',error);}
   _pinRecoveryMode=true;
   _newSignupMode=false;
+  document.getElementById('emailInput').value=email;
   document.getElementById('emailStep').classList.add('hidden');
   document.getElementById('otpStep').classList.remove('hidden');
   document.getElementById('emailSub').textContent = `We need to verify ${email} before you can reset your PIN.`;
+  showEmailError('');
+  showScreen('email');
   setEmailBusy(true);
   const {error}=await sb.auth.signInWithOtp({email, options:{shouldCreateUser:false}});
   setEmailBusy(false);
