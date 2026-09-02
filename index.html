@@ -2494,6 +2494,7 @@ async function loadMasterForgotQuestions(){
     <button class="btn btn-primary" onclick="tryMasterReset()">Reset PIN</button>
     <div class="login-error" id="masterForgotError"></div>
   `;
+  wireDigitBoxes('masterResetPinBoxes',null,null);
 }
 async function tryMasterReset(){
   const a1 = document.getElementById('mfp1').value;
@@ -2760,8 +2761,11 @@ async function enterProfile(profileId, role, displayName, token){
 }
 
 function wireDigitBoxes(containerId, btnId, onComplete){
+  const container=document.getElementById(containerId);
   const boxes=[...document.querySelectorAll('#'+containerId+' input')];
+  const isSecret=!container?.classList.contains('otp-boxes');
   boxes.forEach((box,i)=>{
+    if(isSecret){box.type='password';box.autocomplete=containerId.toLowerCase().includes('setup')||containerId.toLowerCase().includes('reset')?'new-password':'current-password';}
     box.addEventListener('input',()=>{
       box.value = box.value.replace(/[^0-9]/g,'');
       if(box.value && i<boxes.length-1) boxes[i+1].focus();
@@ -5727,12 +5731,19 @@ button:disabled{opacity:.38!important;filter:saturate(.3);box-shadow:none!import
   [data-theme="light"] #app-screen:not(.hidden) .workspace{background:radial-gradient(520px 280px at 100% 0,rgba(91,111,224,.08),transparent 70%),linear-gradient(180deg,#f5f7fc 0%,#fbfcfe 34%,#ffffff 58%,#ffffff 100%)!important;color:#101218!important}
   [data-theme="light"] #app-screen:not(.hidden) .topbar-row,[data-theme="light"] #app-screen:not(.hidden) .tabs{background:#ffffff!important;color:#101218!important}
   [data-theme="light"] .mobile-menu-sheet{background:#ffffff!important;color:#101218!important}
-  [data-theme="light"] #landing-screen:not(.hidden){background:radial-gradient(560px 330px at 50% 22%,rgba(91,111,224,.10),transparent 70%),linear-gradient(180deg,#f4f6fb 0%,#fafbfe 30%,#ffffff 56%,#ffffff 100%)!important;color:#101218!important}
-  [data-theme="light"] #landing-screen .landing-brand,[data-theme="light"] #landing-screen .landing-tag,[data-theme="light"] #landing-screen .store-topline,[data-theme="light"] #landing-screen .store-feature-row,[data-theme="light"] #landing-screen .store-feature-row strong,[data-theme="light"] #landing-screen .store-feature-row span,[data-theme="light"] #landing-screen .landing-slide-caption,[data-theme="light"] #landing-screen .landing-note{color:#101218!important;text-shadow:none!important}
+  [data-theme="light"] #landing-screen:not(.hidden){background:linear-gradient(180deg,#f5f7fc 0%,#ffffff 30%,#ffffff 100%)!important;color:#101218!important}
+  [data-theme="light"] #landing-screen .landing-wrap{background:transparent!important;color:#101218!important}
+  [data-theme="light"] #landing-screen .landing-orbit{display:none!important}
+  [data-theme="light"] #landing-screen .landing-brand,[data-theme="light"] #landing-screen .landing-tag,[data-theme="light"] #landing-screen .store-topline,[data-theme="light"] #landing-screen .store-topline span,[data-theme="light"] #landing-screen .store-feature-row,[data-theme="light"] #landing-screen .store-feature-row strong,[data-theme="light"] #landing-screen .store-feature-row span,[data-theme="light"] #landing-screen .landing-slide-caption,[data-theme="light"] #landing-screen .landing-note{color:#101218!important;text-shadow:none!important}
   [data-theme="light"] #app-screen:not(.hidden) .view-intro h1,[data-theme="light"] #app-screen:not(.hidden) .view-intro p{color:#101218!important}
   #fabAdd.fab{bottom:68px!important}
   #toast{bottom:66px!important}
 }
+</style>
+
+<style id="workquest-secret-pin-mask">
+/* PINs are passwords; verification codes remain readable. */
+.pin-boxes:not(.otp-boxes) input{-webkit-text-security:disc!important;text-security:disc!important;color:var(--text)!important;caret-color:var(--accent)}
 </style>
 
 </body>
