@@ -11,6 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="WorkQuest">
+<link rel="manifest" href="./manifest.json">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='17' fill='%235b6fe0'/%3E%3Cpath d='M14 19l8 28h8l4-15 4 15h8l8-28h-8l-4 17-4-17h-8l-4 17-4-17z' fill='white'/%3E%3C/svg%3E" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -1632,6 +1633,7 @@ body {
       <button data-menu-tab="tax" onclick="mobileMenuNavigate('tax')"><span>％</span><strong>Tax</strong></button>
       <button data-menu-tab="budget" onclick="mobileMenuNavigate('budget')"><span>◫</span><strong>Budget</strong></button>
       <button data-menu-tab="settings" onclick="mobileMenuNavigate('settings')"><span>☷</span><strong>Pay & settings</strong></button>
+      <button data-menu-tab="achievements" onclick="mobileMenuNavigate('achievements')"><span>🏆</span><strong>Achievements</strong></button>
     </div>
 
     <div class="mobile-menu-label">Account & app</div>
@@ -2043,6 +2045,7 @@ function mkBonus(label,type,amount){return {id:uid('bonus'),label,type,versions:
 let STATE={
   role:null, uid:null, ownerId:null, authUid:null, email:null, viewerToken:null,
   localViewer:null,
+  viewerProfiles:[], activeSharePerson:null, sharing:{people:[],assignments:{},challenges:[]}, selectedCalendarPerson:'all',
   employers:[], shifts:[], plannedShifts:[],
   holidays:[], budget:{mode:'recommended', categories:[]},
   weekStart: weekForDate(getTodaySydney()).start,
@@ -2569,16 +2572,15 @@ async function loadProfiles(){
 function renderProfileGrid(){
   const grid = document.getElementById('profileGrid');
   const admin = STATE.profiles.find(p=>p.role==='admin');
-  const viewer = STATE.profiles.find(p=>p.role==='viewer');
+  const viewers = STATE.profiles.filter(p=>p.role==='viewer').slice(0,4);
   let html = '';
   if(admin) html += profileTileHtml(admin);
-  if(viewer){
-    html += profileTileHtml(viewer);
-  } else {
+  viewers.forEach(viewer=>{html+=profileTileHtml(viewer);});
+  if(viewers.length<4){
     html += `<button class="profile-tile add" onclick="startViewerSetup()">
         <div class="profile-avatar">+</div>
-        <div class="profile-name">Viewer</div>
-        <div class="profile-role">Add</div>
+        <div class="profile-name">Person ${viewers.length+1}</div>
+        <div class="profile-role">Add shared profile</div>
       </button>`;
   }
   grid.innerHTML = html;
@@ -2754,6 +2756,8 @@ async function finishPinSetup(){
     // Creating a Viewer profile is something the Admin does FOR someone
     // else — don't switch the admin's own session into Viewer mode.
     // Hand them back to the picker so they choose what to do next.
+    const sharedPerson=sharingPeople().find(person=>!person.profileId&&String(person.name||'').toLowerCase()===name.toLowerCase());
+    if(sharedPerson){sharedPerson.profileId=profileId;await saveSettings();}
     toast(`Viewer profile "${name}" created — share its PIN with them`);
     showScreen('profile');
     loadProfiles();
@@ -2815,10 +2819,26 @@ async function loadAdminData(generation=_wqSyncGeneration){
     STATE.shifts=(b.value?.data||[]).map(rowToShift).filter(Boolean);
     STATE.employers=a.status==='fulfilled'?(a.value?.data||[]).map(rowToEmployer).filter(Boolean):(STATE.employers||[]);
     STATE.plannedShifts=c.status==='fulfilled'?(c.value?.data||[]).map(rowToPlanned).filter(Boolean):(STATE.plannedShifts||[]);
-    try{const r=await wqRequest(()=>sb.from('settings').select('*').eq('owner_id',STATE.uid).limit(1),'Settings sync');const row=(r.data||[])[0];STATE.holidays=row?.data?.holidays||[];STATE.budget=row?.data?.budget||{mode:'recommended',categories:[]};}catch(e){console.warn('Settings sync skipped:',e);}
-    try{const r=await wqRequest(()=>sb.from('profiles').select('id,display_name,permissions').eq('owner_id',STATE.uid).eq('role','viewer').limit(1),'Profile sync');STATE.localViewer=(r.data||[])[0]||null;}catch(e){console.warn('Viewer profile sync skipped:',e);}
+    try{const r=await wqRequest(()=>sb.from('settings').select('*').eq('owner_id',STATE.uid).limit(1),'Settings sync');const row=(r.data||[])[0];STATE.holidays=row?.data?.holidays||[];STATE.budget=row?.data?.budget||{mode:'recommended',categories:[]};STATE.sharing=row?.data?.sharing||{people:[],assignments:{},challenges:[]};}catch(e){console.warn('Settings sync skipped:',e);}
+    try{const r=await wqRequest(()=>sb.from('profiles').select('id,display_name,permissions').eq('owner_id',STATE.uid).eq('role','viewer'),'Profile sync');STATE.viewerProfiles=r.data||[];STATE.localViewer=STATE.viewerProfiles[0]||null;}catch(e){console.warn('Viewer profile sync skipped:',e);}
+    try{await loadSecureSharingAdmin();}catch(e){console.warn('Secure sharing sync skipped:',e);}
   })();
   _wqSyncInFlight=run;try{return await run;}finally{if(_wqSyncInFlight===run)_wqSyncInFlight=null;}
+}
+
+function normaliseShareMember(row){
+  return {id:row.id,name:row.display_name||row.name||'Shared calendar',email:row.invited_email||row.email||'',color:safeJobColor(row.colour||row.color,row.display_name||row.name),showDayAmount:!!(row.show_day_amount??row.showDayAmount),showWeekAmount:!!(row.show_week_amount??row.showWeekAmount),token:row.invite_token||row.token||'',status:row.status||'invited'};
+}
+async function loadSecureSharingAdmin(){
+  const [membersResult,assignmentsResult,challengesResult]=await Promise.all([
+    wqRequest(()=>sb.rpc('get_my_share_members'),'Shared people sync',10000),
+    wqRequest(()=>sb.rpc('get_my_share_assignments'),'Shared shifts sync',10000),
+    wqRequest(()=>sb.from('share_challenges').select('*').eq('owner_id',STATE.uid).order('created_at',{ascending:false}),'Challenges sync',10000)
+  ]);
+  const people=(membersResult.data||[]).map(normaliseShareMember),assignments={};
+  for(const row of assignmentsResult.data||[]){(assignments[row.shift_id]||(assignments[row.shift_id]=[])).push(row.member_id);}
+  const challenges=(challengesResult.data||[]).map(row=>({id:row.id,personId:row.member_id,type:row.challenge_type,target:Number(row.target),weekStart:row.week_start,createdAt:row.created_at}));
+  STATE.sharing={people,assignments,challenges};
 }
 
 function rowToPlanned(row){
@@ -2826,7 +2846,7 @@ function rowToPlanned(row){
 }
 async function saveSettings(){
   setSync('saving','Saving…');
-  const row = {owner_id:STATE.uid, data:{holidays:STATE.holidays, budget:STATE.budget}};
+  const row = {owner_id:STATE.uid, data:{holidays:STATE.holidays, budget:STATE.budget, sharing:STATE.sharing}};
   const {error} = await sb.from('settings').upsert(row);
   setSync(error?'error':'saved', error?'⚠️ Unable to save':'Saved ✓');
 }
@@ -2837,12 +2857,18 @@ async function loadViewerData(generation=_wqSyncGeneration){
   if(!STATE.viewerToken){STATE.shifts=[];throw new Error('Viewer session missing — please log in again.');}
   const r=await wqRequest(()=>sb.rpc('get_viewer_data',{p_token:STATE.viewerToken}),'Viewer data sync',15000);
   if(generation!==_wqSyncGeneration)return;
-  STATE.shifts=(r.data||[]).map(x=>({id:String(x.date||'')+'|'+String(x.employer||'')+'|'+String(x.start_time||''),date:x.date,employerName:x.employer||'Hidden',employerColor:safeJobColor(x.employer_color||x.job_color||x.color,x.employer),start:x.start_time,end:x.end_time,hours:Number(x.hours)||0,status:x.status,source:x.source}));
+  STATE.shifts=(r.data||[]).map(x=>({id:String(x.id||String(x.date||'')+'|'+String(x.employer||'')+'|'+String(x.start_time||'')),shareSourceId:x.id||null,date:x.date,employerName:x.employer||'Hidden',employerColor:safeJobColor(x.employer_color||x.job_color||x.color,x.employer),start:x.start_time,end:x.end_time,hours:Number(x.hours)||0,totalPay:Number(x.total_pay||x.amount||0),status:x.status,source:x.source}));
   try{
     const colours=await wqRequest(()=>sb.from('employers').select('name,color').eq('owner_id',STATE.authUid),'Job colour sync',10000);
     const byName=new Map((colours.data||[]).map(job=>[String(job.name||'').trim().toLowerCase(),safeJobColor(job.color,job.name)]));
     STATE.shifts.forEach(shift=>{const exact=byName.get(String(shift.employerName||'').trim().toLowerCase());if(exact)shift.employerColor=exact;});
   }catch(error){console.warn('Exact viewer job colours unavailable; using stable colours.',error);}
+  try{
+    const result=await wqRequest(()=>sb.from('settings').select('data').eq('owner_id',STATE.authUid).limit(1),'Shared calendar sync',10000);
+    STATE.sharing=(result.data||[])[0]?.data?.sharing||STATE.sharing;
+    STATE.activeSharePerson=sharingPeople().find(person=>person.profileId===STATE.activeProfileId||String(person.name||'').toLowerCase()===String(STATE.activeProfileName||'').toLowerCase())||null;
+    if(STATE.activeSharePerson&&STATE.shifts.some(shift=>shift.shareSourceId)){const allowed=new Set(Object.entries(STATE.sharing.assignments||{}).filter(([,ids])=>(ids||[]).includes(STATE.activeSharePerson.id)).map(([id])=>id));STATE.shifts=STATE.shifts.filter(shift=>allowed.has(shift.shareSourceId||shift.id));}
+  }catch(error){console.warn('Shared calendar selection unavailable:',error);}
 }
 
 function safeJobColor(value,seed='WorkQuest'){
@@ -2929,7 +2955,7 @@ async function deleteShiftRow(id){
    RENDER
    ========================================================================= */
 function switchTab(tab){
-  if(STATE.role==='viewer'&&!['diary','calendar'].includes(tab)){
+  if(STATE.role==='viewer'&&!['diary','calendar','achievements'].includes(tab)){
     STATE.activeTab='diary';
     closeMobileMenu();
     toast('That section is only available to the Admin profile');
@@ -2941,7 +2967,7 @@ function switchTab(tab){
     t.classList.toggle('active',active);
     t.setAttribute('aria-selected',String(active));
   });
-  const label={diary:'Diary',calendar:'Calendar',timeline:'Timeline',tax:'Tax',budget:'Budget',settings:'Pay & settings'}[tab]||'WorkQuest';
+  const label={diary:'Diary',calendar:'Calendar',timeline:'Timeline',tax:'Tax',budget:'Budget',settings:'Pay & settings',achievements:'Achievements'}[tab]||'WorkQuest';
   document.title=`${label} — WorkQuest`;
   syncMobileMenuActiveTab();
   render();
@@ -2955,6 +2981,7 @@ function render(){
   else if(STATE.activeTab==='tax') el.innerHTML = renderTax();
   else if(STATE.activeTab==='budget') el.innerHTML = renderBudget();
   else if(STATE.activeTab==='settings') el.innerHTML = renderSettings();
+  else if(STATE.activeTab==='achievements') el.innerHTML = renderAchievements();
   wqEnhanceRenderedView(el);
   wqPolishActionButtons(el);
   const fab = document.getElementById('fabAdd');
@@ -2978,6 +3005,7 @@ function wqEnhanceRenderedView(el){
     tax:['Tax position','A clear estimate of gross income, tax and take-home pay.'],
     budget:['Budget planner','Turn your real earnings into a plan you can keep.'],
     settings:['Pay & settings','Manage jobs, rates, holidays, profiles and exports.'],
+    achievements:['Achievements','Celebrate streaks, milestones and weekly challenges.'],
   }[STATE.activeTab]||['WorkQuest','Your work, clearly organised.'];
   el.dataset.view=STATE.activeTab;
   const quickAdd=STATE.role==='admin'&&STATE.activeTab==='diary'
@@ -3369,13 +3397,30 @@ document.addEventListener('click', (e)=>{
    CALENDAR (month view)
    ========================================================================= */
 let calCursor = getTodaySydney().slice(0,7); // 'YYYY-MM'
+function sharingPeople(){return Array.isArray(STATE.sharing?.people)?STATE.sharing.people:[];}
+function shiftsForCalendarDate(iso){
+  const shifts=STATE.role==='admin'?shiftsOnDate(iso):STATE.shifts.filter(s=>s.date===iso);
+  if(STATE.role!=='admin'||STATE.selectedCalendarPerson==='all')return shifts;
+  const assigned=STATE.sharing?.assignments||{};
+  return shifts.filter(shift=>(assigned[shift.id]||[]).includes(STATE.selectedCalendarPerson));
+}
+function selectCalendarPerson(id){STATE.selectedCalendarPerson=id;render();}
+function renderCalendarPeopleBar(){
+  if(STATE.role!=='admin')return '';
+  const people=sharingPeople();
+  return `<div class="people-calendar-bar"><div class="people-calendar-scroll">
+    <button class="person-chip ${STATE.selectedCalendarPerson==='all'?'active':''}" onclick="selectCalendarPerson('all')"><span class="person-avatar all">✦</span><strong>My calendar</strong></button>
+    ${people.map(person=>`<button class="person-chip ${STATE.selectedCalendarPerson===person.id?'active':''}" onclick="selectCalendarPerson('${person.id}')"><span class="person-avatar" style="background:${safeJobColor(person.color,person.name)}">${escapeHtml((person.name||'?').charAt(0).toUpperCase())}</span><strong>${escapeHtml(person.name)}</strong></button>`).join('')}
+    ${people.length<4?`<button class="person-chip invite" onclick="openShareHub()"><span class="person-avatar add">＋</span><strong>Invite</strong></button>`:''}
+  </div><button class="share-hub-button" onclick="openShareHub()">Manage sharing</button></div>`;
+}
 function renderCalendar(){
   const [y,m] = calCursor.split('-').map(Number);
   const monthStart = isoFromParts(y,m,1);
   const daysInMonth = new Date(Date.UTC(y,m,0)).getUTCDate();
   const startDow = (dowIndex(monthStart)+6)%7; // Monday-first offset
   const today = getTodaySydney();
-  let html = `<div class="week-head">
+  let html = `${renderCalendarPeopleBar()}<div class="week-head">
     <button class="week-nav-btn" onclick="navCalMonth(-1)">‹</button>
     <div class="eyebrow">${MONTH_LONG[m-1]} ${y}</div>
     <button class="week-nav-btn" onclick="navCalMonth(1)">›</button>
@@ -3385,7 +3430,7 @@ function renderCalendar(){
   for(let i=0;i<startDow;i++) html += `<div class="cal-cell blank"></div>`;
   for(let d=1; d<=daysInMonth; d++){
     const iso = isoFromParts(y,m,d);
-    const shifts = STATE.role==='admin' ? shiftsOnDate(iso) : STATE.shifts.filter(s=>s.date===iso);
+    const shifts = shiftsForCalendarDate(iso);
     const isToday = iso===today;
     const holiday = STATE.role==='admin' && isHoliday(iso);
     const isPH = isPublicHoliday(iso);
@@ -3397,7 +3442,8 @@ function renderCalendar(){
     else if(shifts.length) cls += ' worked';
     let inner = `<span class="d">${d}</span>`;
     if(holiday){ inner += `<span class="na">N/A</span>`; }
-    else if(STATE.role==='admin' && shifts.length){ inner += `<span class="amt">$${dayTotal(iso).toFixed(0)}</span>`; }
+    else if(STATE.role==='admin' && shifts.length){ inner += `<span class="amt">$${shifts.reduce((sum,s)=>sum+(s.locked?.totalPay||0),0).toFixed(0)}</span>`; }
+    else if(shifts.length&&STATE.activeSharePerson?.showDayAmount){inner+=`<span class="amt">$${shifts.reduce((sum,s)=>sum+Number(s.totalPay||0),0).toFixed(0)}</span>`;}
     else if(shifts.length){ inner += `<span class="dot"></span>`; }
     if(isPH && !holiday){ inner += `<span style="display:block;font-size:8.5px;font-weight:700;color:var(--accent);margin-top:2px;">PH</span>`; }
     const jobColours=[...new Set(shifts.map(shiftJobColor))].slice(0,4);
@@ -3421,11 +3467,11 @@ function navCalMonth(dir){
   render();
 }
 function openDayModal(iso){
-  const shifts = STATE.role==='admin' ? shiftsOnDate(iso) : STATE.shifts.filter(s=>s.date===iso);
+  const shifts = shiftsForCalendarDate(iso);
   let body = shifts.length ? shifts.map(s=>{
     if(STATE.role==='admin'){
       const emp=getEmployer(s.employerId);
-      return `<div class="shift-row" style="border-left:3px solid ${emp?emp.color||'var(--accent)':'var(--accent)'};padding-left:8px;"><div><div class="shift-emp">${emp?jobIconHtml(emp.icon):jobIconHtml('💼')} ${escapeHtml(emp?emp.name:'?')}</div><div class="shift-time">${s.start} → ${s.end} · ${s.locked.paidHours.toFixed(2)} hrs</div></div><div class="shift-amt money">$${s.locked.totalPay.toFixed(2)}</div></div>`;
+      return `<div class="shift-row" style="border-left:3px solid ${emp?emp.color||'var(--accent)':'var(--accent)'};padding-left:8px;"><div><div class="shift-emp">${emp?jobIconHtml(emp.icon):jobIconHtml('💼')} ${escapeHtml(emp?emp.name:'?')}</div><div class="shift-time">${s.start} → ${s.end} · ${s.locked.paidHours.toFixed(2)} hrs</div>${sharingPeople().length?`<div class="shift-share-pills">${sharingPeople().map(person=>`<button class="mini-share ${(STATE.sharing.assignments?.[s.id]||[]).includes(person.id)?'on':''}" onclick="toggleShiftShare('${s.id}','${person.id}',this)">${escapeHtml(person.name)}</button>`).join('')}</div>`:''}</div><div class="shift-amt money">$${s.locked.totalPay.toFixed(2)}</div></div>`;
     }
     return `<div class="shift-row" style="border-left:3px solid ${shiftJobColor(s)};padding-left:8px;"><div><div class="shift-emp">${escapeHtml(s.employerName)}</div><div class="shift-time">${s.start} → ${s.end} · ${Number(s.hours).toFixed(2)} hrs</div></div></div>`;
   }).join('') : `<div class="day-empty">No shifts recorded</div>`;
@@ -3963,7 +4009,7 @@ function renderViewerDiary(){
       <button class="week-nav-btn" onclick="navWeek(-1)">‹</button>
       <div class="eyebrow">${formatWeekHeading(week.start,week.end)}</div>
       <button class="week-nav-btn" onclick="navWeek(1)">›</button>
-    </div>`;
+    </div>${STATE.activeSharePerson?.showWeekAmount?`<div class="card card-pad shared-week-total"><span>Shared weekly total</span><strong>$${STATE.shifts.filter(s=>isoCompare(s.date,week.start)>=0&&isoCompare(s.date,week.end)<=0).reduce((sum,s)=>sum+Number(s.totalPay||0),0).toFixed(2)}</strong></div>`:''}`;
   const today = getTodaySydney();
   for(const d of days){
     const shifts = STATE.shifts.filter(s=>s.date===d);
@@ -3987,8 +4033,68 @@ function renderViewerDiary(){
   }
   return html;
 }
+
+/* =========================================================================
+   SHARED CALENDARS, INVITES, CHALLENGES + ACHIEVEMENTS
+   ========================================================================= */
+function openShareHub(){
+  if(STATE.role!=='admin'){toast('Sharing is managed by the Admin profile');return;}
+  const people=sharingPeople();
+  openModal(`<button class="modal-close" onclick="closeModal()">×</button>
+    <div class="eyebrow">SHARED CALENDARS</div><h3 style="margin-top:5px">Your crew</h3>
+    <p class="muted small">Invite up to four people, choose what each person can see, then tap their name on Calendar to manage their shifts.</p>
+    <div class="share-people-list">${people.map(person=>sharePersonCard(person)).join('')||'<div class="share-empty">No shared calendars yet.</div>'}</div>
+    ${people.length<4?`<div class="share-invite-form"><div class="field-row"><div class="field"><label>Name</label><input id="shareInviteName" maxlength="32" placeholder="e.g. Mia"></div><div class="field"><label>Email</label><input id="shareInviteEmail" type="email" placeholder="mia@example.com"></div></div><button class="btn btn-primary btn-block" onclick="addSharedPerson()">Invite person</button></div>`:'<div class="viewer-note">All four shared calendar slots are being used.</div>'}
+  `);
+}
+function sharePersonCard(person){
+  return `<div class="share-person-card"><div class="share-person-top"><span class="person-avatar" style="background:${safeJobColor(person.color,person.name)}">${escapeHtml((person.name||'?').charAt(0).toUpperCase())}</span><div><strong>${escapeHtml(person.name)}</strong><small>${escapeHtml(person.email||'Invite not sent')}</small></div><button class="share-remove" onclick="removeSharedPerson('${person.id}')">Remove</button></div>
+    <div class="share-permissions"><label><input type="checkbox" ${person.showDayAmount?'checked':''} onchange="updateSharedPerson('${person.id}','showDayAmount',this.checked)"> Daily $ totals</label><label><input type="checkbox" ${person.showWeekAmount?'checked':''} onchange="updateSharedPerson('${person.id}','showWeekAmount',this.checked)"> Weekly $ totals</label></div>
+    <div class="share-person-actions"><button class="btn btn-sm" onclick="sendShareInvite('${person.id}')">Send invitation</button><button class="btn btn-sm" onclick="openChallengeCreator('${person.id}')">Start challenge</button></div></div>`;
+}
+async function addSharedPerson(){
+  const name=document.getElementById('shareInviteName')?.value.trim();
+  const email=document.getElementById('shareInviteEmail')?.value.trim().toLowerCase();
+  if(!name||!email||!email.includes('@')){toast('Enter a name and valid email');return;}
+  if(sharingPeople().length>=4){toast('You can share with up to four people');return;}
+  if(sharingPeople().some(person=>person.email===email)){toast('That email already has a calendar');return;}
+  const colours=['#5B6FE0','#A05ACC','#27899A','#E4572E'],colour=colours[sharingPeople().length%colours.length];
+  try{const result=await wqRequest(()=>sb.rpc('create_share_invite',{p_email:email,p_display_name:name,p_colour:colour}),'Create invitation',12000);STATE.sharing.people.push(normaliseShareMember(result.data||{}));closeModal();render();openShareHub();toast(`${name}'s secure calendar is ready`);}catch(error){toast(error.message||'Could not create invitation');}
+}
+async function updateSharedPerson(id,key,value){const person=sharingPeople().find(item=>item.id===id);if(!person)return;const previous=person[key];person[key]=value;try{await wqRequest(()=>sb.rpc('update_share_member_options',{p_member_id:id,p_show_day:person.showDayAmount,p_show_week:person.showWeekAmount}),'Update sharing permissions',10000);toast('Sharing permissions updated');}catch(error){person[key]=previous;render();toast(error.message||'Could not update permissions');}}
+async function removeSharedPerson(id){
+  const person=sharingPeople().find(item=>item.id===id);if(!person||!confirm(`Remove ${person.name}'s shared calendar?`))return;
+  try{await wqRequest(()=>sb.rpc('revoke_share_member',{p_member_id:id}),'Remove shared calendar',10000);STATE.sharing.people=sharingPeople().filter(item=>item.id!==id);Object.keys(STATE.sharing.assignments||{}).forEach(shiftId=>{STATE.sharing.assignments[shiftId]=(STATE.sharing.assignments[shiftId]||[]).filter(personId=>personId!==id);});STATE.sharing.challenges=(STATE.sharing.challenges||[]).filter(challenge=>challenge.personId!==id);if(STATE.selectedCalendarPerson===id)STATE.selectedCalendarPerson='all';closeModal();render();openShareHub();}catch(error){toast(error.message||'Could not remove shared calendar');}
+}
+function sendShareInvite(id){
+  const person=sharingPeople().find(item=>item.id===id);if(!person)return;
+  const subject=encodeURIComponent(`${STATE.activeProfileName||'Someone'} invited you to WorkQuest`);
+  if(!person.token){toast(person.status==='active'?'Invitation already accepted':'Refresh and try again');return;}
+  const link=`${location.href.split('?')[0]}?share_invite=${encodeURIComponent(person.token)}`;
+  const body=encodeURIComponent(`Hi ${person.name},\n\nI've created a private WorkQuest calendar for you. Open this secure invitation link and sign in using this email address:\n${link}\n\nYou will only see the shifts and earnings totals I choose to share.`);
+  location.href=`mailto:${encodeURIComponent(person.email)}?subject=${subject}&body=${body}`;
+}
+async function toggleShiftShare(shiftId,personId,button){
+  const assignments=STATE.sharing.assignments||(STATE.sharing.assignments={});
+  const current=new Set(assignments[shiftId]||[]),wasShared=current.has(personId),nextShared=!wasShared;if(nextShared)current.add(personId);else current.delete(personId);assignments[shiftId]=[...current];button?.classList.toggle('on',nextShared);try{await wqRequest(()=>sb.rpc('assign_shared_shift',{p_member_id:personId,p_shift_id:shiftId,p_shared:nextShared}),'Share shift',10000);toast(nextShared?'Shift shared':'Shift unshared');}catch(error){if(wasShared)current.add(personId);else current.delete(personId);assignments[shiftId]=[...current];button?.classList.toggle('on',wasShared);toast(error.message||'Could not update shared shift');}
+}
+function openChallengeCreator(personId){
+  const person=sharingPeople().find(item=>item.id===personId);if(!person)return;
+  closeModal();openModal(`<button class="modal-close" onclick="closeModal();openShareHub()">×</button><div class="eyebrow">WEEKLY CHALLENGE</div><h3>Challenge ${escapeHtml(person.name)}</h3><div class="challenge-choice"><button class="active" data-challenge-type="shifts" onclick="selectChallengeType('shifts')">⚡ Shifts</button><button data-challenge-type="earnings" onclick="selectChallengeType('earnings')">💰 Earnings</button></div><div class="field"><label id="challengeTargetLabel">Target shifts this week</label><input id="challengeTarget" type="number" min="1" value="5"></div><button class="btn btn-primary btn-block" onclick="saveChallenge('${personId}')">Start challenge</button>`);
+}
+let _challengeType='shifts';
+function selectChallengeType(type){_challengeType=type;document.querySelectorAll('[data-challenge-type]').forEach(b=>b.classList.toggle('active',b.dataset.challengeType===type));document.getElementById('challengeTargetLabel').textContent=type==='earnings'?'Target earnings this week ($)':'Target shifts this week';}
+async function saveChallenge(personId){const target=Number(document.getElementById('challengeTarget')?.value);if(!target||target<1){toast('Enter a challenge target');return;}const weekStart=weekForDate(getTodaySydney()).start;try{const result=await wqRequest(()=>sb.rpc('save_share_challenge',{p_member_id:personId,p_type:_challengeType,p_target:target,p_week_start:weekStart}),'Save challenge',10000);STATE.sharing.challenges=(STATE.sharing.challenges||[]).filter(c=>!(c.personId===personId&&c.type===_challengeType&&c.weekStart===weekStart));STATE.sharing.challenges.push({id:result.data||uid('challenge'),personId,type:_challengeType,target,weekStart,createdAt:new Date().toISOString()});closeModal();toast('Challenge started');render();}catch(error){toast(error.message||'Could not start challenge');}}
+function achievementStats(){
+  const shifts=STATE.shifts||[];const today=getTodaySydney();const currentWeek=weekForDate(today);const weekShifts=shifts.filter(s=>isoCompare(s.date,currentWeek.start)>=0&&isoCompare(s.date,currentWeek.end)<=0);const weekCash=weekShifts.reduce((sum,s)=>sum+Number(s.locked?.totalPay||s.totalPay||0),0);const worked=shifts.filter(s=>isoCompare(s.date,today)<=0);let streak=0,cursor=today;while(streak<365){if(shifts.some(s=>s.date===cursor)){streak++;cursor=addDays(cursor,-1);}else if(streak===0){cursor=addDays(cursor,-1);if(isoCompare(cursor,addDays(today,-7))<0)break;}else break;}return {total:worked.length,week:weekShifts.length,weekCash,streak};
+}
+function renderAchievements(){
+  const stats=achievementStats();const badges=[{icon:'🌱',name:'First shift',note:'Record your first shift',on:stats.total>=1},{icon:'🔥',name:'On a roll',note:'Work 3 days in a row',on:stats.streak>=3},{icon:'⚡',name:'Power week',note:'Complete 5 shifts in a week',on:stats.week>=5},{icon:'🏆',name:'Century club',note:'Record 100 shifts',on:stats.total>=100},{icon:'💎',name:'Big week',note:'Earn $1,000 in one week',on:stats.weekCash>=1000},{icon:'🗓️',name:'Committed',note:'Record 30 shifts',on:stats.total>=30}];
+  const challenges=(STATE.sharing?.challenges||[]).filter(c=>STATE.role==='admin'||c.personId===STATE.activeSharePerson?.id);
+  return `<div class="achievement-hero"><span>🏆</span><div><div class="eyebrow">YOUR PROGRESS</div><h2>${badges.filter(b=>b.on).length} of ${badges.length} unlocked</h2><p>${stats.total} shifts recorded · ${stats.week} this week</p></div></div><div class="achievement-grid">${badges.map(b=>`<div class="achievement-card ${b.on?'unlocked':'locked'}"><span>${b.icon}</span><strong>${b.name}</strong><small>${b.on?'Unlocked':b.note}</small></div>`).join('')}</div>${challenges.length?`<h3 class="achievement-section-title">Active challenges</h3><div class="challenge-list">${challenges.map(c=>{const value=c.type==='earnings'?stats.weekCash:stats.week;const pct=Math.min(100,value/c.target*100);return `<div class="challenge-card"><div><strong>${c.type==='earnings'?'Cash climb':'Shift sprint'}</strong><small>${c.type==='earnings'?'$'+value.toFixed(0):value} of ${c.type==='earnings'?'$':''}${c.target}</small></div><div class="challenge-track"><i style="width:${pct}%"></i></div><b>${Math.round(pct)}%</b></div>`}).join('')}</div>`:''}`;
+}
 function renderSettings(){
-  let html = `<h2 style="margin-bottom:4px;">Holidays</h2><p class="muted small" style="margin-bottom:10px;">Mark date ranges you're away. Those days show as N/A on the calendar and aren't counted as missed work.</p>`;
+  let html = `<h2 style="margin-bottom:4px;">Shared calendars</h2><p class="muted small" style="margin-bottom:10px;">Invite up to four people, control earnings visibility and create weekly challenges.</p><div class="card card-pad share-settings-summary"><div class="share-avatar-stack">${sharingPeople().map(p=>`<span style="background:${safeJobColor(p.color,p.name)}">${escapeHtml((p.name||'?')[0].toUpperCase())}</span>`).join('')||'<span>＋</span>'}</div><div><strong>${sharingPeople().length} of 4 people</strong><small>${sharingPeople().length?'Separate calendars are ready':'Invite your first person'}</small></div><button class="btn btn-primary" onclick="openShareHub()">Manage</button></div><h2 style="margin:26px 0 4px;">Holidays</h2><p class="muted small" style="margin-bottom:10px;">Mark date ranges you're away. Those days show as N/A on the calendar and aren't counted as missed work.</p>`;
   html += `<div class="card card-pad" style="margin-bottom:22px;">`;
   if(!STATE.holidays.length) html += `<p class="muted small">No holidays set.</p>`;
   STATE.holidays.forEach((h,i)=>{
@@ -4980,12 +5086,12 @@ function syncMobileMenuActiveTab(){
     button.classList.toggle('active',active);
     if(active) button.setAttribute('aria-current','page'); else button.removeAttribute('aria-current');
   });
-  document.getElementById('mobileMenuBtn')?.classList.toggle('has-active-section',['tax','budget','settings'].includes(STATE.activeTab));
+  document.getElementById('mobileMenuBtn')?.classList.toggle('has-active-section',['tax','budget','settings','achievements'].includes(STATE.activeTab));
 }
 function syncMobileMenuAccess(){
   const viewer=STATE.role==='viewer';
   document.querySelectorAll('[data-menu-tab]').forEach(button=>{
-    const allowed=!viewer||['diary','calendar'].includes(button.dataset.menuTab);
+    const allowed=!viewer||['diary','calendar','achievements'].includes(button.dataset.menuTab);
     button.classList.toggle('hidden',!allowed);
     button.setAttribute('aria-hidden',String(!allowed));
   });
@@ -5010,6 +5116,8 @@ document.addEventListener('keydown',event=>{
    ========================================================================= */
 (async function init(){
   try{
+    const inviteToken=new URLSearchParams(location.search).get('share_invite');
+    if(inviteToken)localStorage.setItem('wq_pending_share_invite',inviteToken);
     wqPolishActionButtons(document);
     initDemoCarousel();
     wireDigitBoxes('otpBoxes','verifyOtpBtn', verifyOtp);
@@ -5024,6 +5132,8 @@ document.addEventListener('keydown',event=>{
     if(session){
       STATE.authUid=session.user.id; STATE.email=session.user.email;
       localStorage.setItem('wq_last_email',session.user.email||'');
+      const pendingInvite=localStorage.getItem('wq_pending_share_invite');
+      if(pendingInvite){try{await wqRequest(()=>sb.rpc('accept_share_invite',{p_token:pendingInvite}),'Accept invitation',12000);localStorage.removeItem('wq_pending_share_invite');history.replaceState({},document.title,location.pathname);localStorage.setItem('wq_share_invite_accepted','1');}catch(error){console.warn('Invitation is waiting for the matching account:',error);}}
       if(await tryTrustedDevice(session))return;
       await wqWithTimeout(afterEmailVerified(),15000,'Account verification');
     } else {
@@ -5042,6 +5152,8 @@ document.addEventListener('keydown',event=>{
     showEmailError('WorkQuest could not connect to Supabase: '+(err?.message||err));
   }
 })();
+
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(error=>console.warn('App install support unavailable:',error)));}
 
 // Explicitly expose UI handlers for embedded browsers.
 try { Object.assign(window, {
@@ -5765,6 +5877,13 @@ button:disabled{opacity:.38!important;filter:saturate(.3);box-shadow:none!import
 <style id="workquest-secret-pin-mask">
 /* PINs are passwords; verification codes remain readable. */
 .pin-boxes:not(.otp-boxes) input{-webkit-text-security:disc!important;text-security:disc!important;color:var(--text)!important;caret-color:var(--accent)}
+</style>
+
+<style id="workquest-sharing-achievements">
+.people-calendar-bar{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:10px;border:0;border-radius:20px;background:var(--card);box-shadow:var(--shadow-sm)}.people-calendar-scroll{display:flex;align-items:center;gap:7px;min-width:0;flex:1;overflow-x:auto;scrollbar-width:none}.people-calendar-scroll::-webkit-scrollbar{display:none}.person-chip{flex:0 0 auto;min-height:50px;padding:5px 10px 5px 6px;border:0;border-radius:15px;background:transparent;color:var(--text-dim);display:flex;align-items:center;gap:7px}.person-chip strong{font-size:10.5px;white-space:nowrap}.person-chip.active{background:var(--blue-dim);color:var(--text)}.person-avatar{width:36px;height:36px;flex:0 0 36px;border-radius:12px;display:grid;place-items:center;color:#fff;font-size:13px;font-weight:900;box-shadow:0 7px 16px rgba(0,0,0,.12)}.person-avatar.all{background:linear-gradient(145deg,var(--accent),#9868e9)}.person-avatar.add{background:var(--card-2);color:var(--accent);box-shadow:none}.share-hub-button{min-height:42px;padding:0 13px;border:0;border-radius:13px;background:linear-gradient(145deg,var(--accent),#8f67e5);color:#fff;font-size:10.5px;font-weight:800;white-space:nowrap}.shift-share-pills{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.mini-share{min-height:25px;padding:3px 8px;border:0;border-radius:8px;background:var(--card-2);color:var(--text-faint);font-size:9px;font-weight:800}.mini-share.on{background:var(--blue-dim);color:var(--accent)}
+.share-people-list{display:grid;gap:9px;margin:17px 0}.share-empty{padding:24px;border-radius:18px;background:var(--card);color:var(--text-faint);text-align:center;font-size:12px}.share-person-card{padding:14px;border:0;border-radius:18px;background:var(--card);box-shadow:var(--shadow-sm)}.share-person-top{display:grid;grid-template-columns:42px 1fr auto;align-items:center;gap:10px}.share-person-top>div{min-width:0}.share-person-top strong,.share-person-top small{display:block}.share-person-top small{margin-top:2px;color:var(--text-faint);font-size:10px;overflow:hidden;text-overflow:ellipsis}.share-remove{border:0;background:var(--rust-dim);color:var(--rust);border-radius:9px;padding:7px 9px;font-size:9px;font-weight:800}.share-permissions{display:flex;flex-wrap:wrap;gap:8px 14px;margin:13px 0}.share-permissions label{display:flex;align-items:center;gap:6px;font-size:10.5px;text-transform:none}.share-permissions input{width:16px;height:16px;min-height:16px}.share-person-actions{display:flex;gap:7px}.share-invite-form{padding:15px;border-radius:18px;background:var(--card-2)}.share-settings-summary{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;margin-bottom:20px}.share-settings-summary strong,.share-settings-summary small{display:block}.share-settings-summary small{margin-top:3px;color:var(--text-faint);font-size:10px}.share-avatar-stack{display:flex}.share-avatar-stack span{width:34px;height:34px;margin-left:-8px;border:3px solid var(--card);border-radius:12px;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:900}.share-avatar-stack span:first-child{margin-left:0}.challenge-choice{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:17px 0}.challenge-choice button{min-height:58px;border:0;border-radius:16px;background:var(--card);color:var(--text-dim);font-weight:800}.challenge-choice button.active{background:var(--blue-dim);color:var(--accent);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)}
+.achievement-hero{display:flex;align-items:center;gap:16px;padding:22px;margin-bottom:16px;border:0;border-radius:24px;background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 18%,var(--card)),var(--card));box-shadow:var(--shadow-md)}.achievement-hero>span{width:64px;height:64px;display:grid;place-items:center;border-radius:21px;background:linear-gradient(145deg,#ffbf4b,#f58c48);font-size:29px;box-shadow:0 15px 35px rgba(245,140,72,.25)}.achievement-hero h2{margin:4px 0;font-size:24px}.achievement-hero p{margin:0;color:var(--text-dim);font-size:11px}.achievement-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.achievement-card{min-height:145px;padding:17px;border:0;border-radius:20px;background:var(--card);box-shadow:var(--shadow-sm);display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end}.achievement-card>span{font-size:31px;margin-bottom:auto}.achievement-card strong{font-size:13px}.achievement-card small{margin-top:4px;color:var(--text-dim);font-size:9.5px}.achievement-card.locked{filter:grayscale(1);opacity:.48}.achievement-card.unlocked{background:linear-gradient(155deg,color-mix(in srgb,var(--card) 84%,#ffc65b 16%),var(--card))}.achievement-section-title{margin:24px 0 10px}.challenge-list{display:grid;gap:9px}.challenge-card{display:grid;grid-template-columns:minmax(110px,1fr) minmax(120px,2fr) auto;align-items:center;gap:13px;padding:15px;border-radius:18px;background:var(--card);box-shadow:var(--shadow-sm)}.challenge-card strong,.challenge-card small{display:block}.challenge-card small{margin-top:3px;color:var(--text-faint);font-size:9.5px}.challenge-track{height:9px;border-radius:99px;background:var(--card-2);overflow:hidden}.challenge-track i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--accent),#a665e8)}.challenge-card b{font:800 11px 'IBM Plex Mono',monospace;color:var(--accent)}
+@media(max-width:600px){.people-calendar-bar{margin-inline:-2px;padding:7px;border-radius:16px}.share-hub-button{display:none}.person-chip{min-height:45px;padding-right:8px}.person-avatar{width:32px;height:32px;flex-basis:32px;border-radius:10px}.achievement-grid{grid-template-columns:repeat(2,1fr)}.achievement-card{min-height:132px}.achievement-hero{padding:18px}.challenge-card{grid-template-columns:1fr auto}.challenge-track{grid-column:1/-1;grid-row:2}.share-person-top{grid-template-columns:38px 1fr auto}}
 </style>
 
 </body>
