@@ -1336,11 +1336,13 @@ body {
     <div id="otpStep" class="hidden otp-verification">
       <div class="otp-icon">✦</div>
       <div class="otp-heading">Check your email</div>
-      <div class="otp-copy">Enter the 6-digit code we sent you. It should arrive within a few seconds.</div>
+      <div class="otp-copy">Enter the 8-digit code we sent you. It should arrive within a few seconds.</div>
       <div class="otp-code-wrap">
         <div class="otp-code-label">VERIFICATION CODE</div>
         <div class="pin-boxes otp-boxes" id="otpBoxes">
           <input maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code">
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
           <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
           <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
           <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
@@ -2281,13 +2283,13 @@ async function sendOtp(){
   if(error){ showEmailError(error.message); return; }
   document.getElementById('emailStep').classList.add('hidden');
   document.getElementById('otpStep').classList.remove('hidden');
-  document.getElementById('emailSub').textContent = `We sent a 6-digit code to ${email}`;
+  document.getElementById('emailSub').textContent = `We sent an 8-digit code to ${email}`;
   document.querySelectorAll('#otpBoxes input')[0].focus();
 }
 async function verifyOtp(){
   const email = document.getElementById('emailInput').value.trim().toLowerCase();
   const token = [...document.querySelectorAll('#otpBoxes input')].map(i=>i.value).join('');
-  if(token.length!==6) return;
+  if(token.length!==8) return;
   setEmailBusy(true);
   const {data, error} = await sb.auth.verifyOtp({ email, token, type:'email' });
   setEmailBusy(false);
@@ -2491,16 +2493,30 @@ async function loadMasterForgotQuestions(){
         <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
       </div>
     </div>
+    <div class="field"><label>Repeat new 6-digit PIN</label>
+      <div class="pin-boxes pin6" id="masterResetPinConfirmBoxes" style="justify-content:flex-start;">
+        <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+        <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+        <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+        <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+        <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+        <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
+      </div>
+    </div>
     <button class="btn btn-primary" onclick="tryMasterReset()">Reset PIN</button>
     <div class="login-error" id="masterForgotError"></div>
   `;
   wireDigitBoxes('masterResetPinBoxes',null,null);
+  wireDigitBoxes('masterResetPinConfirmBoxes',null,tryMasterReset);
 }
 async function tryMasterReset(){
   const a1 = document.getElementById('mfp1').value;
   const a2 = document.getElementById('mfp2').value;
   const newPin = [...document.querySelectorAll('#masterResetPinBoxes input')].map(i=>i.value).join('');
+  const confirmPin = [...document.querySelectorAll('#masterResetPinConfirmBoxes input')].map(i=>i.value).join('');
   if(newPin.length!==6){ document.getElementById('masterForgotError').textContent='Enter a 6-digit PIN'; return; }
+  if(confirmPin.length!==6){ document.getElementById('masterForgotError').textContent='Repeat your new 6-digit PIN'; return; }
+  if(newPin!==confirmPin){ document.getElementById('masterForgotError').textContent="The new PINs don't match"; return; }
   const {data} = await sb.rpc('reset_admin_pin', {p_answer1:a1, p_answer2:a2, p_new_pin6:newPin});
   if(data){
     const email = STATE.email || (await sb.auth.getUser()).data.user?.email;
