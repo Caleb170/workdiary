@@ -1336,13 +1336,11 @@ body {
     <div id="otpStep" class="hidden otp-verification">
       <div class="otp-icon">✦</div>
       <div class="otp-heading">Check your email</div>
-      <div class="otp-copy">Enter the 8-digit code we sent you. It should arrive within a few seconds.</div>
+      <div class="otp-copy">Enter the 6-digit code we sent you. It should arrive within a few seconds.</div>
       <div class="otp-code-wrap">
         <div class="otp-code-label">VERIFICATION CODE</div>
         <div class="pin-boxes otp-boxes" id="otpBoxes">
           <input maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code">
-          <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
-          <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
           <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
           <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
           <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
@@ -2283,13 +2281,13 @@ async function sendOtp(){
   if(error){ showEmailError(error.message); return; }
   document.getElementById('emailStep').classList.add('hidden');
   document.getElementById('otpStep').classList.remove('hidden');
-  document.getElementById('emailSub').textContent = `We sent an 8-digit code to ${email}`;
+  document.getElementById('emailSub').textContent = `We sent a 6-digit code to ${email}`;
   document.querySelectorAll('#otpBoxes input')[0].focus();
 }
 async function verifyOtp(){
   const email = document.getElementById('emailInput').value.trim().toLowerCase();
   const token = [...document.querySelectorAll('#otpBoxes input')].map(i=>i.value).join('');
-  if(token.length!==8) return;
+  if(token.length!==6) return;
   setEmailBusy(true);
   const {data, error} = await sb.auth.verifyOtp({ email, token, type:'email' });
   setEmailBusy(false);
@@ -5700,6 +5698,18 @@ button:disabled{opacity:.38!important;filter:saturate(.3);box-shadow:none!import
 }
 @media(hover:none){
   button:hover,.btn:hover,.day-card:hover,.fab:hover{transform:none!important}
+}
+</style>
+
+<style id="workquest-no-bottom-strip">
+/* Final mobile viewport rule: no footer border and no duplicated safe-area band. */
+@media(max-width:899px){
+  html,body{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;margin:0!important;padding:0!important;background:var(--bg)!important;overflow:hidden!important}
+  #app-screen:not(.hidden){position:fixed!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;background:var(--bg)!important}
+  #app-screen:not(.hidden) .tabs{height:58px!important;min-height:58px!important;margin:0!important;padding:4px 8px!important;border:0!important;border-top:0!important;outline:0!important;background:var(--bg)!important;box-shadow:none!important}
+  #app-screen:not(.hidden) .workspace{margin:0!important;border:0!important;outline:0!important;background-color:var(--bg)!important}
+  #fabAdd.fab{bottom:68px!important}
+  #toast{bottom:66px!important}
 }
 </style>
 
