@@ -4075,7 +4075,7 @@ async function removeSharedPerson(id){
 async function sendShareInvite(id){
   const person=sharingPeople().find(item=>item.id===id);if(!person)return;
   if(person.status==='active'){toast('This invitation has already been accepted');return;}
-  try{const issued=await wqRequest(()=>sb.rpc('send_share_invite',{p_member_id:id}),'Prepare invitation',10000);const data=issued.data||{};const link=`${location.origin}${location.pathname}?share_invite=${encodeURIComponent(data.token)}`;const result=await wqWithTimeout(sb.auth.signInWithOtp({email:data.email,options:{emailRedirectTo:link,shouldCreateUser:true}}),15000,'Send invitation email');if(result.error)throw result.error;person.token=data.token;toast('Supabase sent the invitation email');}catch(error){toast(error.message||'Could not send invitation');}
+  try{const result=await wqWithTimeout(sb.functions.invoke('send-share-invite',{body:{memberId:id,appUrl:`${location.origin}${location.pathname}`,inviterName:STATE.activeProfileName||'A WorkQuest user'}}),15000,'Send invitation email');if(result.error)throw new Error(result.error.message||'Could not send invitation');person.token=result.data?.token||person.token;toast('Sent successfully');}catch(error){toast(error.message||'Could not send invitation');}
 }
 async function toggleSharePause(id,paused){try{await wqRequest(()=>sb.rpc('set_share_paused',{p_member_id:id,p_paused:paused}),'Update sharing pause',10000);const person=sharingPeople().find(x=>x.id===id);if(person)person.paused=paused;closeModal();openShareHub();toast(paused?'Sharing paused':'Sharing resumed');}catch(error){toast(error.message||'Could not update sharing');}}
 async function toggleShiftShare(shiftId,personId,button){
