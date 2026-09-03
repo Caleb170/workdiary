@@ -2861,6 +2861,15 @@ function wireDigitBoxes(containerId, btnId, onComplete){
       if(e.key==='Backspace' && !box.value && i>0) boxes[i-1].focus();
       if(e.key==='Enter' && onComplete) onComplete();
     });
+    box.addEventListener('paste',(event)=>{
+      const digits=(event.clipboardData?.getData('text')||'').replace(/\D/g,'').slice(0,boxes.length);
+      if(digits.length<2)return;
+      event.preventDefault();
+      boxes.forEach((input,index)=>{input.value=digits[index]||'';});
+      const next=boxes[Math.min(digits.length,boxes.length)-1];next?.focus();
+      if(btnId){const btn=document.getElementById(btnId);if(btn)btn.disabled=boxes.some(input=>!input.value);}
+      if(digits.length===boxes.length&&onComplete)onComplete();
+    });
   });
 }
 
