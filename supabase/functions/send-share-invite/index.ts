@@ -47,9 +47,14 @@ Deno.serve(async request => {
         html: `<!doctype html><html><body style="margin:0;background:#f4f5f7;font-family:Arial,sans-serif;color:#17191f"><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:32px 16px"><table role="presentation" width="100%" style="max-width:520px;background:#fff;border-radius:24px;overflow:hidden;box-shadow:0 16px 50px rgba(20,24,40,.12)"><tr><td style="height:8px;background:linear-gradient(90deg,#5b6fe0,#34d399)"></td></tr><tr><td style="padding:36px"><div style="font-size:12px;font-weight:800;letter-spacing:.18em;color:#5b6fe0">HOURFOLIO</div><h1 style="margin:14px 0 12px;font-size:32px;line-height:1.1">A calendar was shared with you</h1><p style="margin:0 0 12px;font-size:16px;line-height:1.6">Hi ${recipientName},</p><p style="margin:0 0 24px;font-size:16px;line-height:1.6"><strong>${senderName}</strong> invited you to a private shared work calendar.</p><a href="${escapeHtml(invitationUrl)}" style="display:block;padding:16px 22px;background:#17191f;color:#fff;text-decoration:none;text-align:center;border-radius:14px;font-weight:800">View invitation</a><p style="margin:24px 0 0;font-size:13px;line-height:1.5;color:#687080">You control whether earnings are visible and can pause or end sharing at any time.</p></td></tr></table></td></tr></table></body></html>`,
       }),
     });
-    if (!response.ok) throw new Error(`Email provider rejected the message (${response.status})`);
+    if (!response.ok) {
+      const providerError = await response.text();
+      console.error("Resend rejected invitation email", response.status, providerError);
+      throw new Error(`Email provider rejected the message (${response.status})`);
+    }
     return new Response(JSON.stringify({ ok: true, token: invite.token }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
+    console.error("Invitation email failed", error instanceof Error ? error.message : error);
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Could not send invitation" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });

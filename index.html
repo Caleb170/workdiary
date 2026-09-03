@@ -4078,7 +4078,7 @@ async function removeSharedPerson(id){
 async function sendShareInvite(id){
   const person=sharingPeople().find(item=>item.id===id);if(!person)return;
   if(person.status==='active'){toast('This invitation has already been accepted');return;}
-  try{const result=await wqWithTimeout(sb.functions.invoke('send-share-invite',{body:{memberId:id,appUrl:`${location.origin}${location.pathname}`,inviterName:STATE.activeProfileName||'A Hourfolio user'}}),15000,'Send invitation email');if(result.error)throw new Error(result.error.message||'Could not send invitation');person.token=result.data?.token||person.token;toast('Sent successfully');}catch(error){toast(error.message||'Could not send invitation');}
+  try{const result=await wqWithTimeout(sb.functions.invoke('send-share-invite',{body:{memberId:id,appUrl:`${location.origin}${location.pathname}`,inviterName:STATE.activeProfileName||'A Hourfolio user'}}),15000,'Send invitation email');if(result.error){let message=result.error.message||'Could not send invitation';try{const payload=await result.error.context?.json();message=payload?.error||message;}catch(_){}throw new Error(message);}person.token=result.data?.token||person.token;toast('Sent successfully');}catch(error){toast(error.message||'Could not send invitation');}
 }
 async function toggleSharePause(id,paused){try{await wqRequest(()=>sb.rpc('set_share_paused',{p_member_id:id,p_paused:paused}),'Update sharing pause',10000);const person=sharingPeople().find(x=>x.id===id);if(person)person.paused=paused;closeModal();openShareHub();toast(paused?'Sharing paused':'Sharing resumed');}catch(error){toast(error.message||'Could not update sharing');}}
 async function toggleShiftShare(shiftId,personId,button){
