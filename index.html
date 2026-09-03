@@ -1296,42 +1296,29 @@ body {
 <body>
 
 <div id="landing-screen">
-  <div class="landing-orbit landing-orbit-a"></div>
-  <div class="landing-orbit landing-orbit-b"></div>
-  <div class="landing-wrap appstore-hero">
-    <div class="store-topline"><span class="store-live-dot"></span><span>HOURFOLIO</span><span class="store-topline-rule"></span><span>YOUR WORK. YOUR WAY.</span></div>
-    <div class="landing-brand">Hourfolio</div>
-    <p class="landing-tag">The beautifully simple way to track every shift, every dollar and every milestone.</p>
-
-    <div class="hero-stage">
-      <div class="hero-glow"></div>
-      <div class="hero-card hero-card-left"><span class="hero-card-kicker">LIVE</span><strong>Shift tracked</strong><small>Coles · 6:00 AM–2:00 PM</small><b>$135.43</b></div>
-      <div class="hero-card hero-card-right"><span class="hero-mini-icon">↗</span><strong>Weekly pay</strong><small>On track this week</small><b>$412.60</b></div>
-      <div class="phone-frame premium-phone">
-        <div class="phone-camera"></div><div class="phone-notch"></div>
-        <div class="phone-screen">
-          <div class="phone-statusbar"><span>9:41</span><span>● ◉ ▪</span></div>
-          <div class="phone-track" id="phoneTrack"></div>
-          <div class="phone-tabbar" id="phoneTabbar"></div>
-          <div class="phone-home-indicator"></div>
-        </div>
-      </div>
+  <div class="landing-wrap hourfolio-welcome">
+    <div class="welcome-bar"><div class="welcome-mark">H</div><strong>Hourfolio</strong><span>Private by design</span></div>
+    <div class="welcome-copy">
+      <div class="welcome-eyebrow">YOUR TIME, MADE CLEAR</div>
+      <h1>Every hour.<br><em>All adding up.</em></h1>
+      <p>Track shifts, understand your pay and share the right calendar—without handing over your private account.</p>
     </div>
-
-    <div class="store-feature-row">
-      <div><strong>01</strong><span>Track</span></div><i></i><div><strong>02</strong><span>Understand</span></div><i></i><div><strong>03</strong><span>Stay ahead</span></div>
+    <div class="welcome-preview" aria-label="Example weekly summary">
+      <div class="preview-head"><span>This week</span><b>On track</b></div>
+      <strong class="preview-money">$642.80</strong><small>24.5 hours across 4 shifts</small>
+      <div class="preview-bars"><i style="height:42%"></i><i style="height:72%"></i><i style="height:54%"></i><i class="hot" style="height:92%"></i><i style="height:65%"></i><i style="height:22%"></i><i style="height:12%"></i></div>
+      <div class="preview-days"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
     </div>
-    <div class="phone-dots" id="phoneDots"></div>
-    <div class="landing-slide-caption" id="landingSlideCaption">A quick look around Hourfolio</div>
-    <button class="login-btn landing-cta" type="button" onclick="startHourfolio()"><span>Get started</span><span class="cta-arrow">→</span></button>
-    <div class="landing-note">Free to get started · Designed for everyday work</div>
+    <div class="welcome-points"><span>✓ Pay-aware shifts</span><span>✓ Private sharing</span><span>✓ Built for mobile</span></div>
+    <button class="login-btn landing-cta" type="button" onclick="startHourfolio()"><span>Continue</span><span class="cta-arrow">→</span></button>
+    <div class="landing-note">Free to start · Your data stays yours</div>
   </div>
 </div>
 
 <div id="email-screen" class="hidden">
   <div class="landing-wrap">
     <button class="back-btn" onclick="showScreen('landing')">‹ Back</button>
-    <div class="login-title" style="font-size:26px;">Welcome back</div>
+    <div class="login-title" id="emailTitle" style="font-size:26px;">Let’s get you set up</div>
     <div class="login-sub" id="emailSub">Enter your email to continue</div>
     <div id="emailStep">
       <div class="field" style="width:100%;max-width:320px;"><input type="email" id="emailInput" placeholder="you@example.com" autocomplete="email"></div>
@@ -1665,6 +1652,23 @@ body {
 #modalRoot{position:relative;z-index:2000;pointer-events:auto;}
 #modalRoot .modal-backdrop{position:fixed;z-index:2000;pointer-events:auto;}
 #modalRoot .modal{pointer-events:auto;}
+</style>
+<style id="hourfolio-mobile-front-door-v2">
+/* Calm, native-feeling first-run experience. */
+#landing-screen{display:flex!important;align-items:stretch!important;padding:max(18px,env(safe-area-inset-top)) 18px max(18px,env(safe-area-inset-bottom))!important;background:#f4f1ea!important;color:#11151d!important;overflow:auto!important}
+#landing-screen:before,#landing-screen:after{display:none!important}
+#landing-screen .hourfolio-welcome{min-height:calc(100svh - max(36px,env(safe-area-inset-top)) - max(36px,env(safe-area-inset-bottom)));max-width:440px!important;margin:auto;align-items:stretch!important;text-align:left!important;justify-content:center}
+.welcome-bar{display:flex;align-items:center;gap:10px;font-size:15px;color:#11151d}.welcome-bar>span{margin-left:auto;font-size:10px;font-weight:750;color:#69717e}.welcome-mark{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:#151b28;color:#fff;font-weight:850;box-shadow:0 8px 22px rgba(19,26,40,.18)}
+.welcome-copy{padding:clamp(28px,5vh,46px) 0 20px}.welcome-eyebrow{color:#5267d9;font-size:10px;letter-spacing:.19em;font-weight:900;margin-bottom:12px}.welcome-copy h1{margin:0;color:#10141c;font-size:clamp(44px,13vw,64px);line-height:.91;letter-spacing:-.065em}.welcome-copy h1 em{font-style:normal;color:#5267d9}.welcome-copy p{margin:18px 0 0;max-width:390px;color:#58616e;font-size:15px;line-height:1.55}
+.welcome-preview{position:relative;padding:20px;border-radius:25px;background:#151b28;color:#fff;box-shadow:0 24px 60px rgba(19,27,42,.24);overflow:hidden}.welcome-preview:after{content:"";position:absolute;width:170px;height:170px;border-radius:50%;right:-65px;top:-80px;background:#5267d9;filter:blur(4px);opacity:.38}.preview-head{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#aeb8cc}.preview-head b{padding:6px 9px;border-radius:99px;background:rgba(76,214,157,.14);color:#66d8ad;font-size:9px}.preview-money{position:relative;z-index:1;display:block;margin-top:9px;font-size:34px;letter-spacing:-.045em}.welcome-preview>small{position:relative;z-index:1;color:#8f9aaf;font-size:10px}.preview-bars{height:72px;margin-top:15px;display:flex;align-items:end;gap:7px}.preview-bars i{flex:1;min-height:8px;border-radius:6px;background:#3b465b}.preview-bars i.hot{background:#667cf0;box-shadow:0 0 22px rgba(102,124,240,.55)}.preview-days{display:flex;gap:7px;margin-top:7px}.preview-days span{flex:1;text-align:center;font-size:8px;color:#727e94}
+.welcome-points{display:flex;justify-content:space-between;gap:8px;padding:18px 2px 13px;color:#515a68;font-size:9.5px;font-weight:750}.hourfolio-welcome .landing-cta{width:100%!important;max-width:none!important;height:56px!important;border-radius:17px!important;background:#5267d9!important;color:#fff!important;box-shadow:0 14px 34px rgba(82,103,217,.27)!important}.hourfolio-welcome .cta-arrow{color:#fff!important}.hourfolio-welcome .landing-note{text-align:center;color:#777f89!important}
+/* Navigation belongs in the top-leading corner, outside the content card. */
+#email-screen .back-btn,#profile-screen .back-btn,#pin-screen .back-btn{position:fixed!important;top:max(12px,env(safe-area-inset-top))!important;left:12px!important;z-index:20!important;min-width:44px!important;min-height:44px!important;margin:0!important;padding:0 12px!important;background:color-mix(in srgb,var(--card) 88%,transparent)!important;border-radius:14px!important;box-shadow:0 7px 22px rgba(0,0,0,.09)!important}
+/* Eight digits must remain fully legible on small iPhones. */
+.otp-code-wrap{width:100%!important}.otp-boxes{display:grid!important;grid-template-columns:repeat(8,minmax(0,1fr))!important;width:100%!important;max-width:360px!important;gap:5px!important}.otp-boxes input{box-sizing:border-box!important;width:100%!important;min-width:0!important;height:54px!important;padding:0!important;font-size:22px!important;text-align:center!important}
+@media(max-width:370px){.otp-boxes{gap:3px!important}.otp-boxes input{height:50px!important;font-size:20px!important;border-radius:10px!important}.welcome-points{font-size:8.5px}.welcome-copy h1{font-size:43px}}
+.shared-calendar-split{display:grid;grid-template-rows:1fr 1fr;gap:2px;margin-top:4px}.shared-calendar-lane{min-height:13px;padding:2px 3px;border-radius:5px;background:var(--card-2);display:flex;align-items:center;gap:2px;overflow:hidden}.shared-calendar-lane b{font-size:6px;line-height:1;color:var(--text-faint);margin-right:auto}.shared-calendar-lane i{width:5px;height:5px;border-radius:50%;flex:0 0 5px}.shared-calendar-lane.empty{opacity:.48}
+.install-choice{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}.install-choice button{min-height:48px;border:0;border-radius:14px;background:var(--card-2);color:var(--text);font-weight:800}.install-choice button.active{background:var(--accent);color:var(--on-accent)}.install-steps{display:grid;gap:10px;margin:16px 0}.install-step{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:center;text-align:left}.install-step span{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:var(--card-2);font-weight:850}.install-step p{margin:0;color:var(--text-dim);font-size:12px;line-height:1.45}
 </style>
 <script>
 document.documentElement.setAttribute('data-theme', localStorage.getItem('wq_theme') || 'light');
@@ -2112,6 +2116,7 @@ async function enterApp(){
   const tutorialRoot=document.getElementById('wqTutorialRoot');
   if(tutorialRoot){ tutorialRoot.classList.add('hidden'); tutorialRoot.innerHTML=''; }
   localStorage.removeItem('wq_pending_quick_tutorial');
+  window.setTimeout(scheduleInstallGuide,900);
 
   const generation=++_wqSyncGeneration;
   const syncTask=STATE.role==='admin'?loadAdminData(generation):loadViewerData(generation);
@@ -2119,6 +2124,17 @@ async function enterApp(){
 }
 
 const WQ_TUTORIAL_STEPS=[{icon:'▤',title:'Your Diary',text:'Log shifts and keep each day organised at a glance.'},{icon:'▦',title:'Your Calendar',text:'See your work pattern across the month and spot worked, planned and holiday days.'},{icon:'⌁',title:'Timeline & earnings',text:'Follow your earnings history, including salary and payday information.'},{icon:'＋',title:'Add Shift & settings',text:'Use + Add shift for new work. Pay Rates manages jobs, pay frequency, salary, bonuses and preferences.'}];let _wqTutorialIndex=0;function showQuickTutorial(){if(localStorage.getItem('wq_quick_tutorial_done')==='1'){localStorage.removeItem('wq_pending_quick_tutorial');return;}_wqTutorialIndex=0;renderQuickTutorial()}function renderQuickTutorial(){const root=document.getElementById('wqTutorialRoot');if(!root)return;const x=WQ_TUTORIAL_STEPS[_wqTutorialIndex];root.innerHTML=`<div class="wq-tutorial-backdrop"><div class="wq-tutorial-card" role="dialog" aria-modal="true"><div class="wq-tutorial-top"><span class="wq-tutorial-eyebrow">QUICK TOUR</span><span class="wq-tutorial-count">${_wqTutorialIndex+1} / ${WQ_TUTORIAL_STEPS.length}</span></div><div class="wq-tutorial-progress">${WQ_TUTORIAL_STEPS.map((_,i)=>`<span class="${i<=_wqTutorialIndex?'active':''}"></span>`).join('')}</div><div class="wq-tutorial-visual"><div class="wq-tutorial-icon">${x.icon}</div><div class="wq-tutorial-orb"></div><div class="wq-tutorial-lines"><span></span><span></span><span></span></div></div><h3>${x.title}</h3><p>${x.text}</p><div class="wq-tutorial-actions"><button class="wq-tutorial-skip" onclick="skipQuickTutorial()">Skip</button><button class="btn btn-primary" onclick="nextQuickTutorial()">${_wqTutorialIndex===3?'Got it':'Next'} <span aria-hidden="true">→</span></button></div></div></div>`;root.classList.remove('hidden')}function nextQuickTutorial(){if(_wqTutorialIndex===3){finishQuickTutorial();return}_wqTutorialIndex++;renderQuickTutorial()}function skipQuickTutorial(){finishQuickTutorial()}function finishQuickTutorial(){localStorage.setItem('wq_quick_tutorial_done','1');localStorage.removeItem('wq_pending_quick_tutorial');const r=document.getElementById('wqTutorialRoot');if(r){r.classList.add('hidden');r.innerHTML=''}}
+
+let _hourfolioInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();_hourfolioInstallPrompt=event;});
+function hourfolioIsInstalled(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;}
+function scheduleInstallGuide(){if(hourfolioIsInstalled()||localStorage.getItem('hourfolio_install_guide_seen')==='1')return;showInstallGuide(/android/i.test(navigator.userAgent)?'android':'iphone');}
+function showInstallGuide(platform='iphone'){
+  const iphone=platform==='iphone';
+  openModal(`<button class="modal-close" onclick="dismissInstallGuide()">×</button><div class="eyebrow">MAKE IT FEEL LIKE AN APP</div><h3>Add Hourfolio to your Home Screen</h3><p class="muted small">Open it full-screen with its own icon—no App Store download needed.</p><div class="install-choice"><button class="${iphone?'active':''}" onclick="showInstallGuide('iphone')">iPhone</button><button class="${iphone?'':'active'}" onclick="showInstallGuide('android')">Android</button></div><div class="install-steps">${iphone?'<div class="install-step"><span>1</span><p>Open Hourfolio in <strong>Safari</strong>.</p></div><div class="install-step"><span>2</span><p>Tap the <strong>Share</strong> button, then scroll down.</p></div><div class="install-step"><span>3</span><p>Choose <strong>Add to Home Screen</strong>, then tap Add.</p></div>':'<div class="install-step"><span>1</span><p>Open Hourfolio in <strong>Chrome</strong>.</p></div><div class="install-step"><span>2</span><p>Tap the <strong>⋮ menu</strong> in the top-right.</p></div><div class="install-step"><span>3</span><p>Choose <strong>Install app</strong> or <strong>Add to Home screen</strong>.</p></div>'}</div>${!iphone&&_hourfolioInstallPrompt?'<button class="btn btn-primary btn-block" onclick="installHourfolioNow()">Install Hourfolio</button>':''}<button class="btn btn-block" onclick="dismissInstallGuide()">Maybe later</button>`);
+}
+async function installHourfolioNow(){if(!_hourfolioInstallPrompt)return;_hourfolioInstallPrompt.prompt();await _hourfolioInstallPrompt.userChoice;_hourfolioInstallPrompt=null;dismissInstallGuide();}
+function dismissInstallGuide(){localStorage.setItem('hourfolio_install_guide_seen','1');closeModal();}
 
 function resetAppState(){
   stopSafeAuthRefresh();
@@ -2199,6 +2215,7 @@ function startHourfolio(){
   document.getElementById('emailStep')?.classList.remove('hidden');
   document.getElementById('otpStep')?.classList.add('hidden');
   showEmailError('');
+  document.getElementById('emailTitle').textContent=localStorage.getItem('wq_last_email')?'Welcome back':'Let’s get you set up';
   showScreen('email');
   requestAnimationFrame(()=>document.getElementById('emailInput')?.focus({preventScroll:true}));
 }
@@ -2261,6 +2278,7 @@ async function continueFromEmail(){
   if(error){ console.error(error); showEmailError('Could not check that email: '+error.message); return; }
 
   if(data && data.exists && data.setup_complete){
+    document.getElementById('emailTitle').textContent='Welcome back';
     // Fully set-up account -> straight to PIN entry, never send a code.
     _pinActivationMode = false;
     _pinRecoveryMode = false;
@@ -2273,6 +2291,7 @@ async function continueFromEmail(){
     showScreen('master-pin');
     document.querySelectorAll('#masterPinBoxes input')[0].focus();
   } else {
+    document.getElementById('emailTitle').textContent='Glad you’re checking us out';
     // Brand new email, or an account that started setup but never finished
     // (e.g. verified email but never created a PIN) -> (re)send the code.
     _newSignupMode = true;
@@ -2301,6 +2320,7 @@ async function verifyOtp(){
   setEmailBusy(false);
   if(error){ showEmailError('Incorrect or expired code. Check all 8 digits and try again.'); return; }
   STATE.authUid = data.user.id; STATE.email = data.user.email;
+  await acceptPendingShareInvite();
   if(_pinRecoveryMode){
     _pinRecoveryMode = false;
     await afterRecoveryEmailVerified();
@@ -2376,6 +2396,21 @@ async function afterRecoveryEmailVerified(){
   if(!data || !data.has_security){ showEmailError('No recovery questions are set up for this account.'); return; }
   openMasterForgotModal();
 }
+async function acceptPendingShareInvite(){
+  const token=localStorage.getItem('wq_pending_share_invite');
+  if(!token)return null;
+  try{
+    const result=await wqRequest(()=>sb.rpc('accept_share_invite',{p_token:token}),'Accept invitation',12000);
+    localStorage.removeItem('wq_pending_share_invite');
+    history.replaceState({},document.title,location.pathname);
+    localStorage.setItem('wq_share_invite_accepted','1');
+    return result.data||true;
+  }catch(error){
+    console.warn('Share invitation could not be accepted yet:',error);
+    toast(error.message||'Sign in with the email that received this invitation');
+    return null;
+  }
+}
 
 /* ---- Step 2: 6-digit account-level master PIN (the "real" quick-access gate) ---- */
 async function afterEmailVerified(){
@@ -2412,6 +2447,7 @@ async function submitMasterPin(){
     const {data, error} = await sb.auth.signInWithPassword({email, password:authPasswordForPin(email,pin)});
     if(!error && data.user){
       STATE.authUid=data.user.id; STATE.email=data.user.email;
+      await acceptPendingShareInvite();
       document.getElementById('masterPinError').textContent='';
       await loadProfiles();
       return;
@@ -2479,10 +2515,29 @@ function openMasterForgotModal(){
   openModal(`
     <button class="modal-close" onclick="closeModal()">×</button>
     <h3>Forgot your PIN?</h3>
-    <p class="muted small">Answer both security questions to reset your 6-digit PIN.</p>
+    <p class="muted small">Answer both security questions, or verify the account email if you can’t remember them.</p>
     <div id="masterForgotQs"><p class="muted small">Loading…</p></div>
+    <button class="btn btn-block" style="margin-top:10px" onclick="recoverPinByEmail()">I can’t remember my answers</button>
   `);
   loadMasterForgotQuestions();
+}
+async function recoverPinByEmail(){
+  closeModal();
+  const email=STATE.email||document.getElementById('emailInput').value.trim().toLowerCase();
+  if(!email){backToEmailLogin();return;}
+  _pinRecoveryMode=true;_newSignupMode=false;
+  document.getElementById('emailInput').value=email;
+  document.getElementById('emailTitle').textContent='Verify it’s really you';
+  document.getElementById('emailStep').classList.add('hidden');
+  document.getElementById('otpStep').classList.remove('hidden');
+  document.getElementById('emailSub').textContent=`We sent an 8-digit recovery code to ${email}`;
+  showScreen('email');setEmailBusy(true);
+  const {error}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:false}});
+  setEmailBusy(false);
+  if(error){showEmailError('Could not send the recovery code. '+error.message);return;}
+  document.querySelectorAll('#otpBoxes input').forEach(i=>i.value='');
+  document.getElementById('verifyOtpBtn').disabled=true;
+  document.querySelector('#otpBoxes input')?.focus();
 }
 async function loadMasterForgotQuestions(){
   const {data} = await sb.rpc('get_security_questions');
@@ -2575,15 +2630,15 @@ async function loadProfiles(){
 function renderProfileGrid(){
   const grid = document.getElementById('profileGrid');
   const admin = STATE.profiles.find(p=>p.role==='admin');
-  const viewers = STATE.profiles.filter(p=>p.role==='viewer').slice(0,4);
+  const viewers = STATE.profiles.filter(p=>p.role==='viewer').slice(0,1);
   let html = '';
   if(admin) html += profileTileHtml(admin);
   viewers.forEach(viewer=>{html+=profileTileHtml(viewer);});
-  if(viewers.length<4){
+  if(viewers.length<1){
     html += `<button class="profile-tile add" onclick="startViewerSetup()">
         <div class="profile-avatar">+</div>
-        <div class="profile-name">Person ${viewers.length+1}</div>
-        <div class="profile-role">Add shared profile</div>
+        <div class="profile-name">Viewer</div>
+        <div class="profile-role">Add viewer profile</div>
       </button>`;
   }
   grid.innerHTML = html;
@@ -2830,7 +2885,7 @@ async function loadAdminData(generation=_wqSyncGeneration){
 }
 
 function normaliseShareMember(row){
-  return {id:row.id,name:row.display_name||row.name||'Shared calendar',email:row.invited_email||row.email||'',color:safeJobColor(row.colour||row.color,row.display_name||row.name),showDayAmount:!!(row.show_day_amount??row.requested_day??row.showDayAmount),showWeekAmount:!!(row.show_week_amount??row.requested_week??row.showWeekAmount),approvedDay:!!(row.member_approved_day??row.approved_day),approvedWeek:!!(row.member_approved_week??row.approved_week),paused:!!(row.paused!==undefined?row.paused:(row.owner_paused||row.member_paused)),token:row.invite_token||row.token||'',status:row.status||'invited'};
+  return {id:row.id,ownerId:row.owner_id||null,memberUserId:row.member_user_id||null,name:row.display_name||row.name||'Shared calendar',email:row.invited_email||row.email||'',color:safeJobColor(row.colour||row.color,row.display_name||row.name),showDayAmount:!!(row.show_day_amount??row.requested_day??row.showDayAmount),showWeekAmount:!!(row.show_week_amount??row.requested_week??row.showWeekAmount),approvedDay:!!(row.member_approved_day??row.approved_day),approvedWeek:!!(row.member_approved_week??row.approved_week),paused:!!(row.paused!==undefined?row.paused:(row.owner_paused||row.member_paused)),token:row.invite_token||row.token||'',status:row.status||'invited'};
 }
 async function loadSecureSharingAdmin(){
   const [membersResult,assignmentsResult,incomingResult,challengesResult]=await Promise.all([
@@ -3404,14 +3459,23 @@ document.addEventListener('click', (e)=>{
    ========================================================================= */
 let calCursor = getTodaySydney().slice(0,7); // 'YYYY-MM'
 function sharingPeople(){return Array.isArray(STATE.sharing?.people)?STATE.sharing.people:[];}
-function shiftsForCalendarDate(iso){
-  if(String(STATE.selectedCalendarPerson).startsWith('incoming:'))return (STATE.incomingCalendars[STATE.selectedCalendarPerson.slice(9)]||[]).filter(s=>s.date===iso);
-  const shifts=STATE.role==='admin'?shiftsOnDate(iso):STATE.shifts.filter(s=>s.date===iso);
-  if(STATE.role!=='admin'||STATE.selectedCalendarPerson==='all')return shifts;
-  const assigned=STATE.sharing?.assignments||{};
-  return shifts.filter(shift=>(assigned[shift.id]||[]).includes(STATE.selectedCalendarPerson));
+function incomingCalendarForSelected(){
+  const selected=String(STATE.selectedCalendarPerson||'all');
+  if(selected.startsWith('incoming:'))return (STATE.incomingShares||[]).find(x=>x.id===selected.slice(9))||null;
+  const outgoing=sharingPeople().find(x=>x.id===selected);
+  return outgoing?.memberUserId?(STATE.incomingShares||[]).find(x=>x.ownerId===outgoing.memberUserId)||null:null;
 }
-async function selectCalendarPerson(id){STATE.selectedCalendarPerson=id;if(String(id).startsWith('incoming:')){const memberId=id.slice(9);if(!STATE.incomingCalendars[memberId]){try{const result=await wqRequest(()=>sb.rpc('get_shared_calendar',{p_member_id:memberId}),'Open shared calendar',12000);const payload=result.data||{};STATE.incomingCalendars[memberId]=(payload.shifts||[]).map(x=>({id:x.id,date:x.date,employerName:x.employer||'Shared shift',employerColor:safeJobColor(x.employer_color,x.employer),start:x.start_time,end:x.end_time,hours:Number(x.hours)||0,totalPay:x.total_pay==null?null:Number(x.total_pay),locked:{totalPay:x.total_pay==null?0:Number(x.total_pay)},sharedIncoming:true}));}catch(error){toast(error.message||'Could not open shared calendar');}}}render();}
+function calendarSplitForDate(iso){
+  if(STATE.role!=='admin'||STATE.selectedCalendarPerson==='all')return null;
+  const other=incomingCalendarForSelected();
+  return {mine:shiftsOnDate(iso),theirs:other?(STATE.incomingCalendars[other.id]||[]).filter(s=>s.date===iso):[],other};
+}
+function shiftsForCalendarDate(iso){
+  const shifts=STATE.role==='admin'?shiftsOnDate(iso):STATE.shifts.filter(s=>s.date===iso);
+  const split=calendarSplitForDate(iso);
+  return split?[...split.mine,...split.theirs]:shifts;
+}
+async function selectCalendarPerson(id){STATE.selectedCalendarPerson=id;const other=incomingCalendarForSelected();const memberId=String(id).startsWith('incoming:')?String(id).slice(9):other?.id;if(memberId&&!STATE.incomingCalendars[memberId]){try{const result=await wqRequest(()=>sb.rpc('get_shared_calendar',{p_member_id:memberId}),'Open shared calendar',12000);const payload=result.data||{};STATE.incomingCalendars[memberId]=(payload.shifts||[]).map(x=>({id:x.id,date:x.date,employerName:x.employer||'Shared shift',employerColor:safeJobColor(x.employer_color,x.employer),start:x.start_time,end:x.end_time,hours:Number(x.hours)||0,totalPay:x.total_pay==null?null:Number(x.total_pay),locked:{totalPay:x.total_pay==null?0:Number(x.total_pay)},sharedIncoming:true}));}catch(error){toast(error.message||'Could not open shared calendar');}}render();}
 function renderCalendarPeopleBar(){
   if(STATE.role!=='admin')return '';
   const people=sharingPeople(),incoming=STATE.incomingShares||[];
@@ -3449,7 +3513,11 @@ function renderCalendar(){
     else if(shifts.length && isFuture) cls += ' future';
     else if(shifts.length) cls += ' worked';
     let inner = `<span class="d">${d}</span>`;
-    if(holiday){ inner += `<span class="na">N/A</span>`; }
+    const split=calendarSplitForDate(iso);
+    if(split){
+      const mineColours=[...new Set(split.mine.map(shiftJobColor))].slice(0,3),theirColours=[...new Set(split.theirs.map(shiftJobColor))].slice(0,3);
+      inner+=`<span class="shared-calendar-split"><span class="shared-calendar-lane ${mineColours.length?'':'empty'}"><b>YOU</b>${mineColours.map(c=>`<i style="background:${c}"></i>`).join('')}</span><span class="shared-calendar-lane ${theirColours.length?'':'empty'}"><b>${escapeHtml((split.other?.name||'THEM').slice(0,5).toUpperCase())}</b>${theirColours.map(c=>`<i style="background:${c}"></i>`).join('')}</span></span>`;
+    } else if(holiday){ inner += `<span class="na">N/A</span>`; }
     else if(STATE.role==='admin' && shifts.length){ inner += `<span class="amt">$${shifts.reduce((sum,s)=>sum+(s.locked?.totalPay||0),0).toFixed(0)}</span>`; }
     else if(shifts.length&&STATE.activeSharePerson?.showDayAmount){inner+=`<span class="amt">$${shifts.reduce((sum,s)=>sum+Number(s.totalPay||0),0).toFixed(0)}</span>`;}
     else if(shifts.length){ inner += `<span class="dot"></span>`; }
@@ -5145,14 +5213,14 @@ document.addEventListener('keydown',event=>{
     if(session){
       STATE.authUid=session.user.id; STATE.email=session.user.email;
       localStorage.setItem('wq_last_email',session.user.email||'');
-      const pendingInvite=localStorage.getItem('wq_pending_share_invite');
-      if(pendingInvite){try{await wqRequest(()=>sb.rpc('accept_share_invite',{p_token:pendingInvite}),'Accept invitation',12000);localStorage.removeItem('wq_pending_share_invite');history.replaceState({},document.title,location.pathname);localStorage.setItem('wq_share_invite_accepted','1');}catch(error){console.warn('Invitation is waiting for the matching account:',error);}}
+      await acceptPendingShareInvite();
       if(await tryTrustedDevice(session))return;
       await wqWithTimeout(afterEmailVerified(),15000,'Account verification');
     } else {
       const rememberedEmail=localStorage.getItem('wq_last_email')||'';
       if(rememberedEmail){
         document.getElementById('emailInput').value=rememberedEmail;
+        document.getElementById('emailTitle').textContent='Welcome back';
         document.getElementById('emailSub').textContent='Your account is remembered on this device';
         showScreen('email');
       }else{
