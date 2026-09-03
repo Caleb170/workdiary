@@ -1670,7 +1670,7 @@ body {
 /* Eight digits must remain fully legible on small iPhones. */
 .otp-code-wrap{width:100%!important}.otp-boxes{display:grid!important;grid-template-columns:repeat(8,minmax(0,1fr))!important;width:100%!important;max-width:360px!important;gap:5px!important}.otp-boxes input{box-sizing:border-box!important;width:100%!important;min-width:0!important;height:54px!important;padding:0!important;font-size:22px!important;text-align:center!important}
 @media(max-width:370px){.otp-boxes{gap:3px!important}.otp-boxes input{height:50px!important;font-size:20px!important;border-radius:10px!important}.welcome-points{font-size:8.5px}.welcome-copy h1{font-size:43px}}
-.shared-calendar-split{display:grid;grid-template-rows:1fr 1fr;gap:2px;margin-top:4px}.shared-calendar-lane{min-height:13px;padding:2px 3px;border-radius:5px;background:var(--card-2);display:flex;align-items:center;gap:2px;overflow:hidden}.shared-calendar-lane b{font-size:6px;line-height:1;color:var(--text-faint);margin-right:auto}.shared-calendar-lane i{width:5px;height:5px;border-radius:50%;flex:0 0 5px}.shared-calendar-lane.empty{opacity:.48}
+.shared-calendar-split{display:block;margin-top:8px}.shared-calendar-lane{display:block;min-height:0;padding:0;background:none;border-radius:0}.shared-calendar-lane b,.shared-calendar-lane i{display:none}.shared-calendar-edge{position:absolute;left:7px;right:7px;height:3px;border-radius:99px;background:var(--person-colour);opacity:.96}.shared-calendar-edge.top{top:4px}.shared-calendar-edge.bottom{bottom:4px}.shared-calendar-edge.empty{background:var(--line-soft);opacity:.55}.shared-calendar-cell .d{position:relative;z-index:1}.shared-calendar-cell{padding-top:9px!important;padding-bottom:9px!important}.calendar-work-bar{position:absolute;left:9px;right:9px;bottom:6px;height:3px;border-radius:99px;background:var(--job-colour)}.shared-day-list{display:grid;gap:14px;margin-top:18px}.shared-day-person{padding:14px;border-radius:18px;background:var(--card-2)}.shared-day-person-head{display:grid;grid-template-columns:9px 1fr auto;align-items:center;gap:9px;margin-bottom:10px}.shared-day-person-head i{width:9px;height:9px;border-radius:99px}.shared-day-person-head strong{font-size:13px}.shared-day-person-head span{min-width:24px;padding:3px 7px;border-radius:99px;background:var(--card);color:var(--text-faint);font-size:10px;font-weight:800;text-align:center}.shared-day-shift{position:relative;grid-template-columns:4px minmax(0,1fr) auto!important;gap:10px!important;margin-top:7px;padding:11px!important;border:0!important;border-radius:13px;background:var(--card)}.shared-shift-line{width:4px;align-self:stretch;border-radius:99px}.shared-day-empty{padding:13px;border-radius:12px;background:var(--card);color:var(--text-faint);font-size:11px;text-align:center}
 .install-choice{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}.install-choice button{min-height:48px;border:0;border-radius:14px;background:var(--card-2);color:var(--text);font-weight:800}.install-choice button.active{background:var(--accent);color:var(--on-accent)}.install-steps{display:grid;gap:10px;margin:16px 0}.install-step{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:center;text-align:left}.install-step span{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:var(--card-2);font-weight:850}.install-step p{margin:0;color:var(--text-dim);font-size:12px;line-height:1.45}
 </style>
 <script>
@@ -3528,17 +3528,17 @@ function renderCalendar(){
     let inner = `<span class="d">${d}</span>`;
     const split=calendarSplitForDate(iso);
     if(split){
-      const mineColours=[...new Set(split.mine.map(shiftJobColor))].slice(0,3),theirColours=[...new Set(split.theirs.map(shiftJobColor))].slice(0,3);
-      inner+=`<span class="shared-calendar-split"><span class="shared-calendar-lane ${mineColours.length?'':'empty'}"><b>YOU</b>${mineColours.map(c=>`<i style="background:${c}"></i>`).join('')}</span><span class="shared-calendar-lane ${theirColours.length?'':'empty'}"><b>${escapeHtml((split.other?.name||'THEM').slice(0,5).toUpperCase())}</b>${theirColours.map(c=>`<i style="background:${c}"></i>`).join('')}</span></span>`;
+      const mineColour='var(--accent)';
+      const theirColour=safeJobColor(split.other?.color,split.other?.name||'Shared person');
+      inner+=`<span class="shared-calendar-split" aria-label="${split.mine.length?'Your shift':'No shift for you'}; ${split.theirs.length?escapeHtml(split.other?.name||'the other person')+' shift':'no shift for the other person'}"><i class="shared-calendar-edge top ${split.mine.length?'':'empty'}" style="--person-colour:${mineColour}"></i><i class="shared-calendar-edge bottom ${split.theirs.length?'':'empty'}" style="--person-colour:${theirColour}"></i></span>`;
     } else if(holiday){ inner += `<span class="na">N/A</span>`; }
     else if(STATE.role==='admin' && shifts.length){ inner += `<span class="amt">$${shifts.reduce((sum,s)=>sum+(s.locked?.totalPay||0),0).toFixed(0)}</span>`; }
     else if(shifts.length&&STATE.activeSharePerson?.showDayAmount){inner+=`<span class="amt">$${shifts.reduce((sum,s)=>sum+Number(s.totalPay||0),0).toFixed(0)}</span>`;}
-    else if(shifts.length){ inner += `<span class="dot"></span>`; }
+    else if(shifts.length){ inner += `<span class="sr-only">Shift recorded</span>`; }
     if(isPH && !holiday){ inner += `<span style="display:block;font-size:8.5px;font-weight:700;color:var(--accent);margin-top:2px;">PH</span>`; }
     const jobColours=[...new Set(shifts.map(shiftJobColor))].slice(0,4);
-    if(jobColours.length) inner += `<span class="cal-job-dots" aria-hidden="true">${jobColours.map(colour=>`<i style="background:${colour}"></i>`).join('')}</span>`;
-    const jobBorder=jobColours.length?` style="border:2px solid ${jobColours[0]}!important"`:'';
-    html += `<div class="${cls}${jobColours.length?' has-job-colour':''}"${jobBorder}><button onclick="openDayModal('${iso}')">${inner}</button></div>`;
+    if(!split&&jobColours.length) inner += `<span class="calendar-work-bar" style="--job-colour:${jobColours[0]}" aria-hidden="true"></span>`;
+    html += `<div class="${cls}${split?' shared-calendar-cell':''}"><button onclick="openDayModal('${iso}')">${inner}</button></div>`;
   }
   html += `</div>
   <div class="cal-legend">
@@ -3556,6 +3556,16 @@ function navCalMonth(dir){
   render();
 }
 function openDayModal(iso){
+  const split=calendarSplitForDate(iso);
+  if(split){
+    const myName=STATE.activeProfileName||'You';
+    const theirName=split.other?.name||'Shared person';
+    const renderMine=s=>{const emp=getEmployer(s.employerId);return `<div class="shift-row shared-day-shift"><div class="shared-shift-line" style="background:${emp?.color||shiftJobColor(s)}"></div><div><div class="shift-emp">${emp?jobIconHtml(emp.icon):jobIconHtml('💼')} ${escapeHtml(emp?.name||s.employerName||'Shift')}</div><div class="shift-time">${s.start} → ${s.end} · ${Number(s.locked?.paidHours??s.hours??0).toFixed(2)} hrs</div></div><div class="shift-amt money">$${Number(s.locked?.totalPay??s.totalPay??0).toFixed(2)}</div></div>`;};
+    const renderTheirs=s=>`<div class="shift-row shared-day-shift"><div class="shared-shift-line" style="background:${shiftJobColor(s)}"></div><div><div class="shift-emp">${escapeHtml(s.employerName||'Shared shift')}</div><div class="shift-time">${s.start} → ${s.end} · ${Number(s.hours||0).toFixed(2)} hrs</div></div>${s.totalPay==null?'':`<div class="shift-amt money">$${Number(s.totalPay).toFixed(2)}</div>`}</div>`;
+    const section=(name,colour,items,renderer)=>`<section class="shared-day-person"><div class="shared-day-person-head"><i style="background:${colour}"></i><strong>${escapeHtml(name)} shifts</strong><span>${items.length}</span></div>${items.length?items.map(renderer).join(''):'<div class="shared-day-empty">No shift for this person</div>'}</section>`;
+    openModal(`<button class="modal-close" onclick="closeModal()">×</button><div class="eyebrow">SHARED DAY</div><h3>${DOW_LONG[dowIndex(iso)]} ${formatAUShort(iso)}</h3><div class="shared-day-list">${section(myName,'var(--accent)',split.mine,renderMine)}${section(theirName,safeJobColor(split.other?.color,theirName),split.theirs,renderTheirs)}</div><div class="row" style="margin-top:14px;"><button class="btn btn-primary btn-block" onclick="closeModal();openAddShiftModal();selectMiniCalDate('sDate','${iso}');">+ Add my shift</button></div>`);
+    return;
+  }
   const shifts = shiftsForCalendarDate(iso);
   let body = shifts.length ? shifts.map(s=>{
     if(STATE.role==='admin'){
