@@ -3,14 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>WorkQuest</title>
-<meta name="description" content="A private work diary for shifts, earnings, paydays, tax estimates and budgets.">
+<title>Hourfolio — Shift & Pay Tracker</title>
+<meta name="application-name" content="Hourfolio">
+<meta name="description" content="Hourfolio is a private shift, hours and pay tracker with shared calendars, earnings insights and achievements.">
+<meta property="og:title" content="Hourfolio — Shift & Pay Tracker">
+<meta property="og:description" content="Track shifts, understand your pay and share selected calendars privately.">
 <meta name="color-scheme" content="light dark">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0B0D12">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="WorkQuest">
+<meta name="apple-mobile-web-app-title" content="Hourfolio">
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='17' fill='%235b6fe0'/%3E%3Cpath d='M14 19l8 28h8l4-15 4 15h8l8-28h-8l-4 17-4-17h-8l-4 17-4-17z' fill='white'/%3E%3C/svg%3E" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -176,7 +179,7 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
 .lockout-box{background:var(--rust-dim);color:var(--rust);border-radius:12px;padding:12px 16px;font-size:13px;font-weight:600;margin-top:14px;max-width:320px;}
 
 
-/* WorkQuest setup screen */
+/* Hourfolio setup screen */
 .setup-shell{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px 18px;box-sizing:border-box;}
 .setup-card{width:100%;max-width:500px;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:30px;box-sizing:border-box;box-shadow:0 24px 70px rgba(0,0,0,.24);}
 .setup-progress{display:flex;align-items:center;justify-content:center;margin-bottom:24px;}
@@ -502,7 +505,7 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
 
 
 /* =====================================================================
-   WORKQUEST PREMIUM POLISH — additive UI layer
+   HOURFOLIO PREMIUM POLISH — additive UI layer
    Keeps the AppStore-Premium walkthrough architecture untouched.
    ===================================================================== */
 .job-icon-ui{width:20px;height:20px;display:inline-grid;place-items:center;vertical-align:-5px;flex:0 0 auto}
@@ -567,7 +570,7 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
 }
 </style>
 <style>
-/* WorkQuest auth polish */
+/* Hourfolio auth polish */
 #master-pin-screen .setup-shell, #master-setup-screen .setup-shell { padding:24px 16px 48px; }
 #master-pin-screen .setup-card, #master-setup-screen .setup-card { max-width:560px; border:1px solid rgba(255,255,255,.08); box-shadow:0 24px 70px rgba(0,0,0,.28); border-radius:28px; }
 .pin-boxes.pin6 { gap:9px !important; justify-content:center !important; }
@@ -582,7 +585,7 @@ label{font-size:12px;font-weight:600;color:var(--text-dim);display:block;margin-
 
 <style>
 /* =========================================================================
-   WORKQUEST PREMIUM UI SYSTEM — visual-only overrides
+   HOURFOLIO PREMIUM UI SYSTEM — visual-only overrides
    Keeps all existing markup, IDs, handlers and application logic intact.
    ========================================================================= */
 :root{
@@ -799,7 +802,7 @@ label{font-size:11px;letter-spacing:.06em;color:var(--text-dim);margin-bottom:7p
 
 <style id="workquest-polish-pass">
 /* =========================================================
-   WORKQUEST POLISH PASS
+   HOURFOLIO POLISH PASS
    Visual-only layer. No JS, data, auth, or feature behavior changed.
    ========================================================= */
 :root{--wq-ease:cubic-bezier(.22,1,.36,1);--wq-focus:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent);}
@@ -909,7 +912,7 @@ label{line-height:1.25;}
 #landing-screen .phone-track{will-change:transform;}
 #landing-screen .phone-track>*{background:#f8f9fc;}
 
-/* Profile picker: cinematic streaming-service feel, still WorkQuest-branded */
+/* Profile picker: cinematic streaming-service feel, still Hourfolio-branded */
 #profile-screen{background:radial-gradient(circle at 50% 20%,rgba(91,111,224,.10),transparent 42%),var(--bg);}
 #profile-screen .landing-wrap{max-width:760px;}
 #profile-screen .profile-grid{gap:26px 22px;margin:32px 0 12px;}
@@ -1067,7 +1070,7 @@ input,select,textarea,button{max-width:100%}
   #pin-screen .pin-boxes.pin4 input{flex-basis:43px !important;width:43px !important;height:52px !important;}
 }
 
-/* Add Job: clearly disabled until required fields are valid, then WorkQuest green. */
+/* Add Job: clearly disabled until required fields are valid, then Hourfolio green. */
 #saveNewJobBtn{
   transition:background .18s ease,color .18s ease,border-color .18s ease,box-shadow .18s ease,transform .16s ease,opacity .18s ease;
 }
@@ -1102,7 +1105,7 @@ input,select,textarea,button{max-width:100%}
 
 <style id="workquest-intro-tutorial-hero-pass">
 /* ================================================================
-   WORKQUEST INTRO + QUICK TOUR — premium presentation pass
+   HOURFOLIO INTRO + QUICK TOUR — premium presentation pass
    Visual-only. Existing carousel, handlers and application logic remain.
    ================================================================ */
 #landing-screen{
@@ -1197,7 +1200,7 @@ input,select,textarea,button{max-width:100%}
 
 
 <style id="workquest-fullscreen-lock">
-/* WorkQuest: app-like full-screen shell */
+/* Hourfolio: app-like full-screen shell */
 html, body {
   width: 100%;
   height: 100%;
@@ -1296,8 +1299,8 @@ body {
   <div class="landing-orbit landing-orbit-a"></div>
   <div class="landing-orbit landing-orbit-b"></div>
   <div class="landing-wrap appstore-hero">
-    <div class="store-topline"><span class="store-live-dot"></span><span>WORKQUEST</span><span class="store-topline-rule"></span><span>YOUR WORK. YOUR WAY.</span></div>
-    <div class="landing-brand">WorkQuest</div>
+    <div class="store-topline"><span class="store-live-dot"></span><span>HOURFOLIO</span><span class="store-topline-rule"></span><span>YOUR WORK. YOUR WAY.</span></div>
+    <div class="landing-brand">Hourfolio</div>
     <p class="landing-tag">The beautifully simple way to track every shift, every dollar and every milestone.</p>
 
     <div class="hero-stage">
@@ -1319,8 +1322,8 @@ body {
       <div><strong>01</strong><span>Track</span></div><i></i><div><strong>02</strong><span>Understand</span></div><i></i><div><strong>03</strong><span>Stay ahead</span></div>
     </div>
     <div class="phone-dots" id="phoneDots"></div>
-    <div class="landing-slide-caption" id="landingSlideCaption">A quick look around WorkQuest</div>
-    <button class="login-btn landing-cta" type="button" onclick="startWorkQuest()"><span>Get started</span><span class="cta-arrow">→</span></button>
+    <div class="landing-slide-caption" id="landingSlideCaption">A quick look around Hourfolio</div>
+    <button class="login-btn landing-cta" type="button" onclick="startHourfolio()"><span>Get started</span><span class="cta-arrow">→</span></button>
     <div class="landing-note">Free to get started · Designed for everyday work</div>
   </div>
 </div>
@@ -1367,7 +1370,7 @@ body {
 <div id="master-pin-screen" class="hidden">
   <div class="landing-wrap">
     <div class="login-title" style="font-size:22px;" id="masterPinTitle">Enter your PIN</div>
-    <div class="login-sub" id="masterPinSub">Your 6-digit WorkQuest PIN</div>
+    <div class="login-sub" id="masterPinSub">Your 6-digit Hourfolio PIN</div>
     <div class="pin-boxes pin6" id="masterPinBoxes">
       <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
       <input maxlength="1" inputmode="numeric" pattern="[0-9]*">
@@ -1391,7 +1394,7 @@ body {
         <span class="setup-step active">1</span><span class="setup-line"></span><span class="setup-step active">2</span><span class="setup-line"></span><span class="setup-step active">3</span>
       </div>
       <div class="setup-icon">W</div>
-      <div class="login-title setup-title">Secure your WorkQuest account</div>
+      <div class="login-title setup-title">Secure your Hourfolio account</div>
       <div class="login-sub setup-sub">Create a 6 digit PIN and two security questions. You will use these to protect your account.</div>
 
       <div class="setup-section">
@@ -1449,7 +1452,7 @@ body {
         </div>
       </div>
 
-      <button class="login-btn setup-save" onclick="finishMasterSetup()">Create my WorkQuest account</button>
+      <button class="login-btn setup-save" onclick="finishMasterSetup()">Create my Hourfolio account</button>
       <div class="login-error" id="masterSetupError"></div>
       <div class="setup-footer">You can change your PIN later from your account settings.</div>
     </div>
@@ -1495,7 +1498,7 @@ body {
       </div>
       <div class="setup-icon profile-setup-icon">W</div>
       <div class="login-title setup-title" id="setupTitle">Set up your Admin profile</div>
-      <div class="login-sub setup-sub" id="setupSubtitle">This is the name that will appear on your WorkQuest account.</div>
+      <div class="login-sub setup-sub" id="setupSubtitle">This is the name that will appear on your Hourfolio account.</div>
 
       <div class="profile-setup-section">
         <div class="profile-setup-kicker">ADMIN PROFILE</div>
@@ -1535,7 +1538,7 @@ body {
       <div class="complete-mark">✓</div>
       <div class="complete-eyebrow">SETUP COMPLETE</div>
       <div class="login-title setup-title">Your Admin profile is ready</div>
-      <div class="login-sub setup-sub">Your WorkQuest account is set up. You can log in now or create a Viewer profile for someone else.</div>
+      <div class="login-sub setup-sub">Your Hourfolio account is set up. You can log in now or create a Viewer profile for someone else.</div>
 
       <div class="complete-actions">
         <button class="login-btn setup-save" onclick="continueToLogin()">Continue to login</button>
@@ -1548,12 +1551,12 @@ body {
 </div>
 
 <div id="app-screen" class="hidden">
-  <aside class="topbar" aria-label="WorkQuest navigation">
+  <aside class="topbar" aria-label="Hourfolio navigation">
     <div class="topbar-row">
       <div class="brand-lockup">
         <div class="brand-mark" aria-hidden="true"><span>W</span></div>
         <div class="brand-copy">
-          <div class="brand">WorkQuest</div>
+          <div class="brand">Hourfolio</div>
           <div class="profile-line"><span id="activeProfileName">My workspace</span><span class="role-badge" id="roleBadge"></span></div>
         </div>
       </div>
@@ -1621,7 +1624,7 @@ body {
 <div id="mobileMenu" class="mobile-menu-backdrop hidden" onclick="if(event.target===this)closeMobileMenu()">
   <aside class="mobile-menu-sheet" role="dialog" aria-modal="true" aria-labelledby="mobileMenuTitle">
     <div class="mobile-menu-head">
-      <div><div class="view-kicker">WORKQUEST</div><h2 id="mobileMenuTitle">Menu</h2></div>
+      <div><div class="view-kicker">HOURFOLIO</div><h2 id="mobileMenuTitle">Menu</h2></div>
       <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">×</button>
     </div>
 
@@ -1701,7 +1704,7 @@ button,a,input,select,textarea{touch-action:manipulation}button{cursor:pointer}b
    ========================================================================= */
 const SUPABASE_URL = 'https://amppadqaygmfqtcsiesn.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_O03dMgtLJEdG5RnmGPt2ng_dh2uQj8r';
-// Keep the signed-in Supabase account on this device. The WorkQuest master PIN
+// Keep the signed-in Supabase account on this device. The Hourfolio master PIN
 // and profile PIN remain the quick local gates, so returning users do not need
 // to repeat the email verification flow on every visit.
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
@@ -1715,7 +1718,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   }
 });
 
-/* ---- Startup/network safety: never leave WorkQuest on an infinite loading state ---- */
+/* ---- Startup/network safety: never leave Hourfolio on an infinite loading state ---- */
 const WQ_SYNC_TIMEOUT_MS=12000;
 let _wqSyncGeneration=0, _wqSyncInFlight=null, _wqRenderQueued=false, _wqRendering=false;
 let _wqAuthRefreshTimer=null, _wqAuthRefreshInFlight=false;
@@ -1753,11 +1756,11 @@ async function wqRequest(build,label='Supabase request',ms=WQ_SYNC_TIMEOUT_MS){
 }
 function wqScheduleRender(reason='update'){
   if(_wqRenderQueued)return;_wqRenderQueued=true;
-  const run=()=>{_wqRenderQueued=false;if(_wqRendering)return;try{_wqRendering=true;render();}catch(e){console.error(`WorkQuest render failed (${reason}):`,e);wqShowStartupError(e);}finally{_wqRendering=false;}};
+  const run=()=>{_wqRenderQueued=false;if(_wqRendering)return;try{_wqRendering=true;render();}catch(e){console.error(`Hourfolio render failed (${reason}):`,e);wqShowStartupError(e);}finally{_wqRendering=false;}};
   if(typeof requestIdleCallback==='function')requestIdleCallback(run,{timeout:120});else setTimeout(run,0);
 }
 function wqShowStartupError(err){
-  console.error('WorkQuest startup/sync error:', err);
+  console.error('Hourfolio startup/sync error:', err);
   const msg=err?.message||String(err)||'Unable to connect to Supabase.';
   setSync('error','Sync error');
   const existing=document.getElementById('wqStartupError');
@@ -1779,7 +1782,7 @@ async function retryAdminSync(){
     if(STATE.role==='admin'){
       await loadAdminData(++_wqSyncGeneration);
     }else{
-      await wqWithTimeout(loadViewerData(),30000,'WorkQuest Viewer sync');
+      await wqWithTimeout(loadViewerData(),30000,'Hourfolio Viewer sync');
       setupNotifyChannel(STATE.uid,true);
     }
     setSync('saved','Synced');
@@ -2072,7 +2075,7 @@ async function enterApp(){
     const el=document.getElementById(id); if(el) el.classList.add('hidden');
   });
   const app=document.getElementById('app-screen');
-  if(!app) throw new Error('WorkQuest app shell is missing.');
+  if(!app) throw new Error('Hourfolio app shell is missing.');
   app.classList.remove('hidden');
   app.style.pointerEvents='auto';
   document.getElementById('roleBadge').textContent = STATE.role==='admin' ? 'Admin' : 'Viewer';
@@ -2084,7 +2087,7 @@ async function enterApp(){
     t.classList.toggle('active',active);
     t.setAttribute('aria-selected',String(active));
   });
-  document.title='Diary — WorkQuest';
+  document.title='Diary — Hourfolio';
   syncMobileMenuActiveTab();
   if(STATE.role==='viewer'){
     ['settings','timeline','tax','budget'].forEach(t=>{ const el=document.querySelector(`[data-tab="${t}"]`); if(el) el.classList.add('hidden'); });
@@ -2192,7 +2195,7 @@ function showScreen(name){
   screen.classList.remove('hidden');
   wqPolishActionButtons(screen);
 }
-function startWorkQuest(){
+function startHourfolio(){
   document.getElementById('emailStep')?.classList.remove('hidden');
   document.getElementById('otpStep')?.classList.add('hidden');
   showEmailError('');
@@ -2266,7 +2269,7 @@ async function continueFromEmail(){
     document.getElementById('masterPinLockoutBox').classList.add('hidden');
     document.querySelectorAll('#masterPinBoxes input').forEach(i=>i.value='');
     document.getElementById('masterPinTitle').textContent = 'Enter your PIN';
-    document.getElementById('masterPinSub').textContent = 'Your 6-digit WorkQuest PIN';
+    document.getElementById('masterPinSub').textContent = 'Your 6-digit Hourfolio PIN';
     showScreen('master-pin');
     document.querySelectorAll('#masterPinBoxes input')[0].focus();
   } else {
@@ -2562,7 +2565,7 @@ async function loadProfiles(){
     renderProfileGrid();
     showScreen('profile');
   }catch(err){
-    console.error('WorkQuest profile sync failed:',err);
+    console.error('Hourfolio profile sync failed:',err);
     const msg=err?.message||String(err);
     const el=document.getElementById('profileError');
     if(el) el.textContent='Could not load profiles: '+msg;
@@ -2610,7 +2613,7 @@ function openPinGate(profile){
   if(profile.isNew){
     const isAdmin = profile.role==='admin';
     document.getElementById('setupTitle').textContent = isAdmin ? 'Set up your Admin profile' : 'Set up a Viewer profile';
-    document.getElementById('setupSubtitle').textContent = isAdmin ? 'This is the name that will appear on your WorkQuest account.' : 'Give the Viewer profile a name and a 4 digit PIN.';
+    document.getElementById('setupSubtitle').textContent = isAdmin ? 'This is the name that will appear on your Hourfolio account.' : 'Give the Viewer profile a name and a 4 digit PIN.';
     document.getElementById('setupNameInput').value = '';
     document.getElementById('setupNameInput').placeholder = isAdmin ? 'e.g. Caleb' : "Viewer's name";
     document.querySelector('.profile-setup-kicker').textContent = isAdmin ? 'ADMIN PROFILE' : 'VIEWER PROFILE';
@@ -2873,11 +2876,11 @@ async function loadViewerData(generation=_wqSyncGeneration){
   }catch(error){console.warn('Shared calendar selection unavailable:',error);}
 }
 
-function safeJobColor(value,seed='WorkQuest'){
+function safeJobColor(value,seed='Hourfolio'){
   const colour=String(value||'').trim();
   if(/^#[0-9a-f]{6}$/i.test(colour)) return colour;
   const palette=['#5B6FE0','#E4572E','#B77A12','#A05ACC','#27899A','#C84148'];
-  let hash=0;for(const char of String(seed||'WorkQuest'))hash=((hash<<5)-hash+char.charCodeAt(0))|0;
+  let hash=0;for(const char of String(seed||'Hourfolio'))hash=((hash<<5)-hash+char.charCodeAt(0))|0;
   return palette[Math.abs(hash)%palette.length];
 }
 function shiftJobColor(shift){
@@ -2900,7 +2903,7 @@ function rowToShift(row){
    ========================================================================= */
 let _realtimeRefreshTimer=null;
 function queueRealtimeRefresh(){clearTimeout(_realtimeRefreshTimer);_realtimeRefreshTimer=setTimeout(async()=>{if(STATE.role!=='admin'||!STATE.uid||_wqSyncInFlight)return;try{await loadAdminData();wqScheduleRender('realtime');setSync('saved','Synced ✓');}catch(e){console.warn('Realtime refresh failed:',e);}},500);}
-function subscribeRealtimeAdmin(){if(!STATE.uid)return null;if(realtimeChannel){try{sb.removeChannel(realtimeChannel);}catch(e){}realtimeChannel=null;}realtimeChannel=sb.channel('wq-admin-'+STATE.uid).on('postgres_changes',{event:'*',schema:'public',table:'shifts',filter:`owner_id=eq.${STATE.uid}`},queueRealtimeRefresh).on('postgres_changes',{event:'*',schema:'public',table:'employers',filter:`owner_id=eq.${STATE.uid}`},queueRealtimeRefresh).subscribe(status=>console.info('WorkQuest realtime:',status));return realtimeChannel;}
+function subscribeRealtimeAdmin(){if(!STATE.uid)return null;if(realtimeChannel){try{sb.removeChannel(realtimeChannel);}catch(e){}realtimeChannel=null;}realtimeChannel=sb.channel('wq-admin-'+STATE.uid).on('postgres_changes',{event:'*',schema:'public',table:'shifts',filter:`owner_id=eq.${STATE.uid}`},queueRealtimeRefresh).on('postgres_changes',{event:'*',schema:'public',table:'employers',filter:`owner_id=eq.${STATE.uid}`},queueRealtimeRefresh).subscribe(status=>console.info('Hourfolio realtime:',status));return realtimeChannel;}
 function handleRealtimeShiftChange(){queueRealtimeRefresh();}
 function setSync(state,text){
   const dot=document.getElementById('syncDot'), t=document.getElementById('syncText');
@@ -2970,8 +2973,8 @@ function switchTab(tab){
     t.classList.toggle('active',active);
     t.setAttribute('aria-selected',String(active));
   });
-  const label={diary:'Diary',calendar:'Calendar',timeline:'Timeline',tax:'Tax',budget:'Budget',settings:'Pay & settings',achievements:'Achievements'}[tab]||'WorkQuest';
-  document.title=`${label} — WorkQuest`;
+  const label={diary:'Diary',calendar:'Calendar',timeline:'Timeline',tax:'Tax',budget:'Budget',settings:'Pay & settings',achievements:'Achievements'}[tab]||'Hourfolio';
+  document.title=`${label} — Hourfolio`;
   syncMobileMenuActiveTab();
   render();
 }
@@ -3009,7 +3012,7 @@ function wqEnhanceRenderedView(el){
     budget:['Budget planner','Turn your real earnings into a plan you can keep.'],
     settings:['Pay & settings','Manage jobs, rates, holidays, profiles and exports.'],
     achievements:['Achievements','Celebrate streaks, milestones and weekly challenges.'],
-  }[STATE.activeTab]||['WorkQuest','Your work, clearly organised.'];
+  }[STATE.activeTab]||['Hourfolio','Your work, clearly organised.'];
   el.dataset.view=STATE.activeTab;
   const quickAdd=STATE.role==='admin'&&STATE.activeTab==='diary'
     ? '<button class="btn btn-primary view-primary-action" onclick="openAddShiftModal()">+ Add shift</button>' : '';
@@ -3131,7 +3134,7 @@ async function showPendingViewerShiftNotifications(){
     root.innerHTML=`<div class="viewer-notice-screen" role="dialog" aria-modal="true" aria-labelledby="viewerNoticeTitle">
       <div class="viewer-notice-glow"></div>
       <div class="viewer-notice-mark">✦</div>
-      <div class="viewer-notice-kicker">WORKQUEST UPDATE</div>
+      <div class="viewer-notice-kicker">HOURFOLIO UPDATE</div>
       <h2 id="viewerNoticeTitle">${events.length===1?'Your diary changed':events.length+' diary updates'}</h2>
       <p>Here’s what happened since you last opened this profile.</p>
       <div class="viewer-notice-list">${events.slice(-6).reverse().map(event=>`<div class="viewer-notice-item"><span>${escapeHtml(event.icon||'📅')}</span><div><strong>${escapeHtml(event.title||'A shift changed')}</strong><small>${escapeHtml(event.message||'Your shared diary was updated')}</small></div></div>`).join('')}</div>
@@ -3804,7 +3807,7 @@ async function exportFyPdf(){
   const doc = new jsPDF();
   let y = 20;
   doc.setFont('helvetica','bold'); doc.setFontSize(18);
-  doc.text(`WorkQuest — ${fy.key} Summary`, 14, y); y+=7;
+  doc.text(`Hourfolio — ${fy.key} Summary`, 14, y); y+=7;
   doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(120);
   doc.text(`${fy.start} to ${fy.end}  ·  Generated ${today}`, 14, y); y+=10;
   doc.setTextColor(0);
@@ -3854,9 +3857,9 @@ async function exportFyPdf(){
     y+=5.5;
   }
   doc.setFontSize(8); doc.setTextColor(150);
-  doc.text('Figures are estimates generated by WorkQuest for personal record-keeping. Confirm with the ATO or a tax agent before lodging.', 14, 290);
+  doc.text('Figures are estimates generated by Hourfolio for personal record-keeping. Confirm with the ATO or a tax agent before lodging.', 14, 290);
 
-  doc.save(`WorkQuest-${fy.key}-summary.pdf`);
+  doc.save(`Hourfolio-${fy.key}-summary.pdf`);
   toast('PDF downloaded');
 }
 
@@ -3870,7 +3873,7 @@ function exportWeekIcs(){
   if(!weekShifts.length){ toast('No shifts this week to export'); return; }
   const pad=n=>String(n).padStart(2,'0');
   const toIcsDate=(iso,hm)=>{ const [h,m]=hm.split(':'); return iso.replace(/-/g,'')+'T'+pad(h)+pad(m)+'00'; };
-  let ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//WorkQuest//EN\r\n';
+  let ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Hourfolio//EN\r\n';
   for(const s of weekShifts){
     const emp = getEmployer(s.employerId);
     const dtStart = toIcsDate(s.date, s.start);
@@ -4075,7 +4078,7 @@ async function removeSharedPerson(id){
 async function sendShareInvite(id){
   const person=sharingPeople().find(item=>item.id===id);if(!person)return;
   if(person.status==='active'){toast('This invitation has already been accepted');return;}
-  try{const result=await wqWithTimeout(sb.functions.invoke('send-share-invite',{body:{memberId:id,appUrl:`${location.origin}${location.pathname}`,inviterName:STATE.activeProfileName||'A WorkQuest user'}}),15000,'Send invitation email');if(result.error)throw new Error(result.error.message||'Could not send invitation');person.token=result.data?.token||person.token;toast('Sent successfully');}catch(error){toast(error.message||'Could not send invitation');}
+  try{const result=await wqWithTimeout(sb.functions.invoke('send-share-invite',{body:{memberId:id,appUrl:`${location.origin}${location.pathname}`,inviterName:STATE.activeProfileName||'A Hourfolio user'}}),15000,'Send invitation email');if(result.error)throw new Error(result.error.message||'Could not send invitation');person.token=result.data?.token||person.token;toast('Sent successfully');}catch(error){toast(error.message||'Could not send invitation');}
 }
 async function toggleSharePause(id,paused){try{await wqRequest(()=>sb.rpc('set_share_paused',{p_member_id:id,p_paused:paused}),'Update sharing pause',10000);const person=sharingPeople().find(x=>x.id===id);if(person)person.paused=paused;closeModal();openShareHub();toast(paused?'Sharing paused':'Sharing resumed');}catch(error){toast(error.message||'Could not update sharing');}}
 async function toggleShiftShare(shiftId,personId,button){
@@ -4155,7 +4158,7 @@ function renderSettings(){
       </div>`;
     }
   }
-  html += `<h2 style="margin:26px 0 4px;">Profile names</h2><p class="muted small" style="margin-bottom:12px;">Change the names shown on your WorkQuest profile picker without changing the account role or PIN.</p>`;
+  html += `<h2 style="margin:26px 0 4px;">Profile names</h2><p class="muted small" style="margin-bottom:12px;">Change the names shown on your Hourfolio profile picker without changing the account role or PIN.</p>`;
   if((STATE.profiles||[]).length){
     html += `<div class="card card-pad" style="margin-bottom:16px;">`;
     for(const prof of STATE.profiles.filter(p=>p.role==='admin'||p.role==='viewer')){
@@ -4268,7 +4271,7 @@ function openEditProfileNameModal(profileId){
     <button class="modal-close" onclick="closeModal()">×</button>
     <div class="eyebrow">PROFILE</div>
     <h3 style="margin-top:5px;">Change ${roleLabel} name</h3>
-    <p class="muted small">This name appears on the profile picker and throughout WorkQuest.</p>
+    <p class="muted small">This name appears on the profile picker and throughout Hourfolio.</p>
     <div class="field" style="margin-top:16px;">
       <label for="profileNameEdit">Display name</label>
       <input id="profileNameEdit" type="text" maxlength="40" value="${escapeHtml(profile.display_name||'')}" autocomplete="name" placeholder="Enter a name">
@@ -5157,9 +5160,9 @@ document.addEventListener('keydown',event=>{
       }
     }
   }catch(err){
-    console.error('WorkQuest init failed:',err);
+    console.error('Hourfolio init failed:',err);
     showScreen('landing');
-    showEmailError('WorkQuest could not connect to Supabase: '+(err?.message||err));
+    showEmailError('Hourfolio could not connect to Supabase: '+(err?.message||err));
   }
 })();
 
@@ -5502,7 +5505,7 @@ body {
 </style>
 
 <style id="workquest-true-viewport-fix">
-/* V9: make each WorkQuest view an actual viewport layer.
+/* V9: make each Hourfolio view an actual viewport layer.
    Using fixed inset:0 avoids 100vh/100dvh rounding and leaves no body strip. */
 html {
   width:100% !important;
@@ -5573,7 +5576,7 @@ body {
   overflow-x:hidden !important;
 }
 
-/* Logged-in WorkQuest is also a true viewport layer, with scrolling inside it. */
+/* Logged-in Hourfolio is also a true viewport layer, with scrolling inside it. */
 #app-screen:not(.hidden) {
   position:fixed !important;
   inset:0 !important;
@@ -5591,7 +5594,7 @@ body {
 
 <style id="workquest-2026-redesign">
 /* =========================================================================
-   WORKQUEST 2026 — edge-to-edge responsive workspace
+   HOURFOLIO 2026 — edge-to-edge responsive workspace
    ========================================================================= */
 :root{
   --bg:#090b11;--bg-2:#10131b;--card:#161b26;--card-2:#202738;

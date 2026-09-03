@@ -1,6 +1,6 @@
 {
-  "name": "WorkQuest",
-  "short_name": "WorkQuest",
+  "name": "Hourfolio — Shift & Pay Tracker",
+  "short_name": "Hourfolio",
   "description": "Your work diary and earnings tracker",
   "start_url": "./index.html",
   "scope": "./",
