@@ -1317,6 +1317,20 @@ body {
   </div>
 </div>
 
+<div id="invite-screen" class="hidden invite-welcome-screen">
+  <div class="invite-welcome-card">
+    <div class="invite-brand"><span>H</span><strong>Hourfolio</strong></div>
+    <div class="invite-people" aria-hidden="true"><span id="inviteFromInitial">H</span><i></i><span id="inviteToInitial">Y</span></div>
+    <div class="invite-kicker">PRIVATE CALENDAR INVITATION</div>
+    <h1><span id="inviteFromName">Someone</span> wants to share their work calendar with you</h1>
+    <p>See each other’s shifts in one clear calendar. Pay information stays private unless you both choose to share it.</p>
+    <div class="invite-promises"><span>✓ Separate accounts</span><span>✓ You control your privacy</span><span>✓ Leave whenever you want</span></div>
+    <button class="login-btn invite-accept-btn" onclick="continueShareInvitation()">Continue to invitation <span>→</span></button>
+    <button class="link-btn" onclick="declineShareInvitation()">Not now</button>
+    <small>New to Hourfolio? You can create your free account on the next screen.</small>
+  </div>
+</div>
+
 <div id="email-screen" class="hidden">
   <div class="landing-wrap">
     <button class="back-btn" onclick="showScreen('landing')" aria-label="Back">‹</button>
@@ -2078,7 +2092,7 @@ function dayTotal(iso){ return shiftsOnDate(iso).reduce((sum,s)=>sum+(s.locked?.
 async function enterApp(){
   // Enter the shell first. Nothing in the Supabase sync path is allowed to
   // control whether the Admin UI is interactive.
-  ['landing-screen','email-screen','master-pin-screen','master-setup-screen','profile-screen','pin-screen','pin-setup-screen','setup-complete-screen'].forEach(id=>{
+  ['landing-screen','invite-screen','email-screen','master-pin-screen','master-setup-screen','profile-screen','pin-screen','pin-setup-screen','setup-complete-screen'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.add('hidden');
   });
   const app=document.getElementById('app-screen');
@@ -2205,7 +2219,7 @@ async function tryTrustedDevice(session){
    ========================================================================= */
 function showScreen(name){
   const map = {
-    landing:'landing-screen', email:'email-screen',
+    landing:'landing-screen', invite:'invite-screen', email:'email-screen',
     'master-pin':'master-pin-screen', 'master-setup':'master-setup-screen',
     profile:'profile-screen', pin:'pin-screen', 'pin-setup':'pin-setup-screen', 'setup-complete':'setup-complete-screen',
   };
@@ -2214,6 +2228,32 @@ function showScreen(name){
   screen.classList.remove('hidden');
   wqPolishActionButtons(screen);
 }
+let _shareInvitePreview={from:'Someone',to:'You'};
+function showShareInvitation(fromName,toName){
+  _shareInvitePreview={from:String(fromName||'Someone').slice(0,50),to:String(toName||'You').slice(0,50)};
+  document.getElementById('inviteFromName').textContent=_shareInvitePreview.from;
+  document.getElementById('inviteFromInitial').textContent=(_shareInvitePreview.from[0]||'H').toUpperCase();
+  document.getElementById('inviteToInitial').textContent=(_shareInvitePreview.to[0]||'Y').toUpperCase();
+  showScreen('invite');
+}
+async function continueShareInvitation(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(session){
+    STATE.authUid=session.user.id;STATE.email=session.user.email||'';
+    const accepted=await acceptPendingShareInvite();
+    if(!accepted)return;
+    if(await tryTrustedDevice(session))return;
+    await afterEmailVerified();
+    return;
+  }
+  document.getElementById('emailTitle').textContent=`Join ${_shareInvitePreview.from} on Hourfolio`;
+  document.getElementById('emailSub').textContent='Sign in or create your free account using the email that received this invitation.';
+  document.getElementById('emailStep').classList.remove('hidden');
+  document.getElementById('otpStep').classList.add('hidden');
+  showScreen('email');
+  requestAnimationFrame(()=>document.getElementById('emailInput')?.focus({preventScroll:true}));
+}
+function declineShareInvitation(){localStorage.removeItem('wq_pending_share_invite');history.replaceState({},document.title,location.pathname);showScreen('landing');}
 function startHourfolio(){
   document.getElementById('emailStep')?.classList.remove('hidden');
   document.getElementById('otpStep')?.classList.add('hidden');
@@ -5220,7 +5260,8 @@ document.addEventListener('keydown',event=>{
    ========================================================================= */
 (async function init(){
   try{
-    const inviteToken=new URLSearchParams(location.search).get('share_invite');
+    const inviteParams=new URLSearchParams(location.search);
+    const inviteToken=inviteParams.get('share_invite');
     if(inviteToken)localStorage.setItem('wq_pending_share_invite',inviteToken);
     wqPolishActionButtons(document);
     initDemoCarousel();
@@ -5233,10 +5274,10 @@ document.addEventListener('keydown',event=>{
     wireDigitBoxes('setupPinConfirmBoxes', null, null);
     const {data:{session},error}=await wqWithTimeout(sb.auth.getSession(),10000,'Supabase session check');
     if(error) throw error;
+    if(inviteToken){showShareInvitation(inviteParams.get('from')||'Someone',inviteParams.get('to')||'You');return;}
     if(session){
       STATE.authUid=session.user.id; STATE.email=session.user.email;
       localStorage.setItem('wq_last_email',session.user.email||'');
-      await acceptPendingShareInvite();
       if(await tryTrustedDevice(session))return;
       await wqWithTimeout(afterEmailVerified(),15000,'Account verification');
     } else {
@@ -5994,6 +6035,7 @@ button:disabled{opacity:.38!important;filter:saturate(.3);box-shadow:none!import
 /* Final cascade: keep the welcome screen warm, edge-to-edge and fully rounded. */
 html[data-theme="light"] #landing-screen:not(.hidden),#landing-screen:not(.hidden){box-sizing:border-box!important;background:radial-gradient(520px 360px at 90% 8%,rgba(82,103,217,.13),transparent 68%),#f4f1ea!important;color:#11151d!important}
 #landing-screen .hourfolio-welcome{box-sizing:border-box!important;width:100%!important;border-radius:0!important;overflow:visible!important}
+.invite-welcome-screen{box-sizing:border-box;min-height:100svh;padding:max(22px,env(safe-area-inset-top)) 16px max(22px,env(safe-area-inset-bottom));display:grid;place-items:center;background:radial-gradient(420px 300px at 50% 12%,rgba(22,160,109,.14),transparent 72%),#f4f5f2}.invite-welcome-card{box-sizing:border-box;width:100%;max-width:460px;padding:28px;border-radius:30px;background:#fff;color:#101722;box-shadow:0 24px 70px rgba(16,23,34,.13);text-align:left}.invite-brand{display:flex;align-items:center;gap:10px;margin-bottom:34px}.invite-brand>span{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;background:#16a06d;color:#fff;font-family:Georgia,serif;font-size:22px;font-weight:800}.invite-brand strong{font-family:Georgia,serif;font-size:22px;letter-spacing:-.04em}.invite-people{display:flex;align-items:center;justify-content:center;margin:3px 0 28px}.invite-people span{width:68px;height:68px;border:5px solid #fff;border-radius:23px;display:grid;place-items:center;background:#101722;color:#fff;font-size:22px;font-weight:900;box-shadow:0 12px 28px rgba(16,23,34,.16)}.invite-people span:last-child{margin-left:-8px;background:#16a06d}.invite-people i{width:56px;height:3px;margin:0 -7px;background:linear-gradient(90deg,#101722,#16a06d)}.invite-kicker{color:#16865f;font-size:10px;font-weight:900;letter-spacing:.18em}.invite-welcome-card h1{margin:12px 0;font-family:Georgia,serif;font-size:34px;line-height:1.08;letter-spacing:-.045em}.invite-welcome-card>p{margin:0;color:#667080;font-size:15px;line-height:1.55}.invite-promises{display:grid;gap:9px;margin:22px 0;padding:16px;border-radius:17px;background:#f3f6f4;color:#3f4a55;font-size:12px;font-weight:750}.invite-accept-btn{width:100%!important;max-width:none!important;background:#16a06d!important;color:#fff!important;display:flex!important;align-items:center;justify-content:space-between;padding-inline:20px!important}.invite-welcome-card>.link-btn{display:block;margin:12px auto 5px}.invite-welcome-card>small{display:block;margin-top:17px;color:#8a93a1;font-size:11px;line-height:1.5;text-align:center}@media(max-width:420px){.invite-welcome-card{padding:23px 20px;border-radius:25px}.invite-welcome-card h1{font-size:30px}.invite-brand{margin-bottom:27px}}
 .welcome-preview.welcome-slider{box-sizing:border-box!important;width:100%!important;min-height:226px;border-radius:26px!important;overflow:hidden!important;padding:0!important;background:#151b28!important}
 .welcome-slider-track{display:flex;width:100%;height:226px;animation:hourfolioSlides 13.5s cubic-bezier(.65,0,.35,1) infinite}.welcome-slider-track section{box-sizing:border-box;position:relative;flex:0 0 100%;width:100%;padding:20px;color:#fff;overflow:hidden}.welcome-slider-track section:after{content:"";position:absolute;width:180px;height:180px;border-radius:50%;right:-78px;top:-92px;background:#5267d9;opacity:.32;z-index:0}.welcome-slider-track section>*{position:relative;z-index:1}.preview-head b.blue{color:#aebaff;background:rgba(102,124,240,.17)}.preview-title{display:block;margin:15px 0 6px;font-size:22px;letter-spacing:-.035em}.preview-shift-icon{width:49px;height:49px;margin-top:24px;border-radius:16px;display:grid;place-items:center;background:#5267d9;font-size:24px;box-shadow:0 12px 28px rgba(82,103,217,.35)}.preview-shift-row{display:flex;align-items:center;justify-content:space-between;margin-top:25px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.07);font-size:10px}.preview-shift-row b{font-size:13px;color:#fff}.preview-people{display:flex;align-items:center;margin:26px 0 8px}.preview-people i{width:45px;height:45px;border-radius:15px;display:grid;place-items:center;background:#5267d9;font-style:normal;font-weight:900}.preview-people i:last-child{background:#42bd91}.preview-people span{width:54px;height:2px;background:linear-gradient(90deg,#5267d9,#42bd91)}.welcome-slider-dots{position:absolute!important;z-index:4!important;right:18px;bottom:14px;display:flex;gap:5px}.welcome-slider-dots i{width:5px;height:5px;border-radius:99px;background:rgba(255,255,255,.3)}.welcome-slider-dots i:first-child{width:16px;background:#fff}
 @keyframes hourfolioSlides{0%,27%{transform:translateX(0)}33%,60%{transform:translateX(-100%)}66%,93%{transform:translateX(-200%)}100%{transform:translateX(0)}}
