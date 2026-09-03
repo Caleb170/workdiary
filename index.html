@@ -1296,24 +1296,25 @@ body {
 <body>
 
 <div id="landing-screen">
-  <div class="landing-wrap hourfolio-welcome">
-    <div class="welcome-bar"><div class="welcome-mark">H</div><strong>Hourfolio</strong><span>Private by design</span></div>
-    <div class="welcome-copy">
-      <div class="welcome-eyebrow">YOUR TIME, MADE CLEAR</div>
-      <h1>Every hour.<br><em>All adding up.</em></h1>
-      <p>Track shifts, understand your pay and share the right calendar—without handing over your private account.</p>
-    </div>
-    <div class="welcome-preview welcome-slider" aria-label="Hourfolio feature preview">
-      <div class="welcome-slider-track">
-        <section><div class="preview-head"><span>This week</span><b>On track</b></div><strong class="preview-money">$642.80</strong><small>24.5 hours across 4 shifts</small><div class="preview-bars"><i style="height:42%"></i><i style="height:72%"></i><i style="height:54%"></i><i class="hot" style="height:92%"></i><i style="height:65%"></i><i style="height:22%"></i><i style="height:12%"></i></div><div class="preview-days"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div></section>
-        <section><div class="preview-head"><span>Next shift</span><b class="blue">Tomorrow</b></div><div class="preview-shift-icon">↗</div><strong class="preview-title">Ready when you are.</strong><small>9:00 AM–5:00 PM · 7.5 paid hours</small><div class="preview-shift-row"><span>Expected pay</span><b>$218.44</b></div></section>
-        <section><div class="preview-head"><span>Shared calendar</span><b>Private</b></div><div class="preview-people"><i>Y</i><span></span><i>M</i></div><strong class="preview-title">Together, on your terms.</strong><small>Share shifts while keeping earnings private until both people agree.</small><div class="preview-shift-row"><span>Calendar connected</span><b>✓</b></div></section>
+  <div class="landing-wrap hourfolio-launch">
+    <header class="launch-brand"><div class="launch-mark">H</div><strong>Hourfolio</strong><span><i></i> Private by design</span></header>
+    <main class="launch-main">
+      <div class="launch-kicker">SHIFT &amp; PAY TRACKING, REFINED</div>
+      <h1>Your work.<br><em>Worth seeing.</em></h1>
+      <p>Every shift, hour and dollar—beautifully clear in one private place.</p>
+      <div class="launch-product" aria-label="Example Hourfolio weekly overview">
+        <div class="launch-product-top"><div><small>THIS WEEK</small><strong>$642.80</strong></div><span>+12.4%</span></div>
+        <div class="launch-chart"><i style="height:35%"></i><i style="height:63%"></i><i style="height:48%"></i><i class="active" style="height:91%"></i><i style="height:72%"></i><i style="height:28%"></i><i style="height:16%"></i></div>
+        <div class="launch-days"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+        <div class="launch-shift"><div class="launch-shift-icon">↗</div><div><small>NEXT SHIFT</small><strong>Tomorrow · 9:00–5:00</strong></div><b>$218</b></div>
+        <div class="launch-share"><span class="launch-avatar one">Y</span><span class="launch-avatar two">M</span><div><strong>Calendars connected</strong><small>Pay stays private</small></div><b>✓</b></div>
       </div>
-      <div class="welcome-slider-dots"><i></i><i></i><i></i></div>
-    </div>
-    <div class="welcome-points"><span>✓ Pay-aware shifts</span><span>✓ Private sharing</span><span>✓ Built for mobile</span></div>
-    <button class="login-btn landing-cta" type="button" onclick="startHourfolio()"><span>Continue</span><span class="cta-arrow">→</span></button>
-    <div class="landing-note">Free to start · Your data stays yours</div>
+    </main>
+    <footer class="launch-actions">
+      <div class="launch-benefits"><span><b>✓</b> Pay-aware</span><span><b>✓</b> Private sharing</span><span><b>✓</b> Made for mobile</span></div>
+      <button class="login-btn launch-cta" type="button" onclick="startHourfolio()"><span>Continue</span><span>→</span></button>
+      <div class="launch-note">Free to start · No card needed</div>
+    </footer>
   </div>
 </div>
 
@@ -6044,6 +6045,19 @@ html[data-theme="light"] #landing-screen:not(.hidden),#landing-screen:not(.hidde
 #email-screen .back-btn,#profile-screen .back-btn,#pin-screen .back-btn{position:fixed!important;box-sizing:border-box!important;top:max(10px,env(safe-area-inset-top))!important;left:12px!important;width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important;padding:0!important;margin:0!important;display:grid!important;place-items:center!important;border-radius:50%!important;font-size:30px!important;line-height:1!important;color:var(--text)!important;background:var(--card)!important;box-shadow:0 8px 25px rgba(20,25,35,.12)!important;z-index:999!important}
 @media(max-width:560px){#landing-screen:not(.hidden){padding:max(16px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom))!important}.welcome-copy{padding:24px 0 17px!important}.welcome-preview.welcome-slider{min-height:214px}.welcome-slider-track{height:214px}.welcome-points{padding-top:13px}.hourfolio-welcome .landing-cta{position:relative!important}}
 @media(prefers-reduced-motion:reduce){.welcome-slider-track{animation:none!important}}
+</style>
+
+<style id="hourfolio-launch-v3">
+#landing-screen:not(.hidden){box-sizing:border-box!important;display:block!important;min-height:100svh!important;height:100svh!important;padding:0!important;overflow:hidden!important;background:#fff!important;color:#0d1118!important}
+#landing-screen .hourfolio-launch{box-sizing:border-box;width:100%;max-width:480px;height:100%;min-height:0;margin:0 auto;padding:max(17px,env(safe-area-inset-top)) 18px max(14px,env(safe-area-inset-bottom));display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:0;text-align:left;background:#fff;color:#0d1118}
+.launch-brand{display:flex;align-items:center;gap:10px;min-height:42px}.launch-mark{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:#111722;color:#fff;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:800;box-shadow:0 9px 22px rgba(17,23,34,.16)}.launch-brand>strong{font-family:Georgia,'Times New Roman',serif;font-size:21px;letter-spacing:-.045em}.launch-brand>span{display:flex;align-items:center;gap:6px;margin-left:auto;color:#68717e;font-size:9px;font-weight:800;letter-spacing:.02em}.launch-brand>span i{width:6px;height:6px;border-radius:50%;background:#19a873;box-shadow:0 0 0 4px rgba(25,168,115,.1)}
+.launch-main{min-height:0;display:flex;flex-direction:column;justify-content:center;padding:18px 0 13px}.launch-kicker{margin-bottom:8px;color:#16865f;font-size:9px;font-weight:900;letter-spacing:.17em}.launch-main>h1{margin:0;font-family:Georgia,'Times New Roman',serif;font-size:clamp(43px,12vw,57px);line-height:.91;letter-spacing:-.065em;color:#0d1118}.launch-main>h1 em{font-style:normal;color:#168f65}.launch-main>p{max-width:390px;margin:12px 0 16px;color:#596371;font-size:14px;line-height:1.45}
+.launch-product{position:relative;box-sizing:border-box;min-height:244px;padding:18px;border-radius:26px;overflow:hidden;background:#111722;color:#fff;box-shadow:0 23px 55px rgba(15,22,34,.22),inset 0 1px 0 rgba(255,255,255,.08)}.launch-product:after{content:"";position:absolute;width:190px;height:190px;border-radius:50%;right:-83px;top:-96px;background:#16a06d;opacity:.2;filter:blur(2px);pointer-events:none}.launch-product-top{position:relative;z-index:1;display:flex;align-items:start;justify-content:space-between}.launch-product-top small,.launch-shift small{display:block;color:#8793a6;font-size:8px;font-weight:850;letter-spacing:.13em}.launch-product-top strong{display:block;margin-top:3px;font-size:28px;line-height:1;letter-spacing:-.045em}.launch-product-top>span{padding:6px 9px;border-radius:99px;background:rgba(39,196,139,.14);color:#5de0af;font-size:9px;font-weight:850}
+.launch-chart{height:54px;margin-top:13px;display:flex;align-items:end;gap:6px}.launch-chart i{flex:1;min-height:5px;border-radius:5px 5px 2px 2px;background:#333e51}.launch-chart i.active{background:linear-gradient(180deg,#63e0b3,#20a876);box-shadow:0 0 20px rgba(51,210,153,.35)}.launch-days{display:flex;gap:6px;margin-top:6px}.launch-days span{flex:1;text-align:center;color:#667186;font-size:7px;font-weight:750}.launch-shift{display:grid;grid-template-columns:35px 1fr auto;align-items:center;gap:9px;margin-top:13px;padding:10px 11px;border-radius:14px;background:rgba(255,255,255,.065)}.launch-shift-icon{width:35px;height:35px;border-radius:11px;display:grid;place-items:center;background:#586edf;color:#fff;font-size:17px}.launch-shift strong{display:block;margin-top:3px;font-size:10px}.launch-shift>b{color:#69deb4;font-size:12px}.launch-share{position:absolute;z-index:2;right:12px;bottom:11px;display:none;align-items:center;padding:8px 10px;border-radius:14px;background:#fff;color:#17202a;box-shadow:0 10px 30px rgba(0,0,0,.25)}.launch-avatar{width:25px;height:25px;border:2px solid #fff;border-radius:8px;display:grid;place-items:center;background:#586edf;color:#fff;font-size:8px;font-weight:900}.launch-avatar.two{margin-left:-6px;background:#20a876}.launch-share>div{margin-left:7px}.launch-share strong,.launch-share small{display:block}.launch-share strong{font-size:8px}.launch-share small{margin-top:1px;color:#75808d;font-size:6px}.launch-share>b{margin-left:12px;color:#179568}
+.launch-actions{padding-top:2px}.launch-benefits{display:flex;justify-content:space-between;gap:6px;margin-bottom:10px;color:#5c6572;font-size:8.5px;font-weight:750;white-space:nowrap}.launch-benefits b{color:#169568}.launch-cta{box-sizing:border-box;width:100%!important;max-width:none!important;height:55px!important;margin:0!important;padding:0 20px!important;border:0!important;border-radius:17px!important;display:flex!important;align-items:center;justify-content:space-between;background:#111722!important;color:#fff!important;font-size:15px!important;font-weight:850!important;box-shadow:0 13px 30px rgba(17,23,34,.2)!important}.launch-cta span:last-child{width:31px;height:31px;border-radius:10px;display:grid;place-items:center;background:#1aa572;font-size:18px}.launch-note{padding-top:8px;text-align:center;color:#8a929d;font-size:9px}
+@media(min-width:700px){#landing-screen:not(.hidden){overflow:auto!important}.launch-product{min-height:260px}.launch-share{display:flex}.launch-main{padding-block:24px}.launch-main>p{font-size:15px}}
+@media(max-height:690px){#landing-screen .hourfolio-launch{padding-top:max(12px,env(safe-area-inset-top));padding-bottom:max(10px,env(safe-area-inset-bottom))}.launch-main{padding:10px 0 7px}.launch-main>h1{font-size:42px}.launch-main>p{margin:8px 0 10px;font-size:12px}.launch-product{min-height:220px;padding:15px}.launch-chart{height:43px;margin-top:9px}.launch-shift{margin-top:9px}.launch-benefits{margin-bottom:7px}.launch-cta{height:51px!important}.launch-note{padding-top:5px}}
+@media(max-height:590px){.launch-kicker,.launch-benefits{display:none}.launch-main>h1{font-size:38px}.launch-product{min-height:194px}.launch-chart{height:38px}.launch-main>p{font-size:11px}.launch-product-top strong{font-size:24px}}
 </style>
 
 </body>
