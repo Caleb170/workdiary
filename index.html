@@ -6153,5 +6153,25 @@ html[data-theme="light"] #landing-screen:not(.hidden),#landing-screen:not(.hidde
 }
 </style>
 
+<style id="hourfolio-iphone-screenshot-fix">
+@media(max-width:600px){
+  html,body,#landing-screen:not(.hidden){background:#f7f6f1!important;background-color:#f7f6f1!important}
+  #landing-screen:not(.hidden){position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;min-height:100dvh!important;overflow:hidden!important}
+  #landing-screen .hourfolio-launch{box-sizing:border-box!important;display:grid!important;align-items:stretch!important;text-align:left!important;width:100%!important;min-width:0!important;max-width:430px!important;height:100dvh!important;margin:0 auto!important;padding:max(12px,env(safe-area-inset-top)) 18px max(10px,env(safe-area-inset-bottom))!important;background:#f7f6f1!important}
+  .launch-brand,.launch-main,.launch-actions,.launch-showcase,.launch-track,.launch-slide{box-sizing:border-box!important;min-width:0!important;max-width:100%!important}
+  .launch-main{align-self:stretch!important;width:100%!important;top:0!important;padding:5px 0 6px!important;overflow:hidden!important}
+  .launch-main>h1{width:100%!important;font-size:45px!important;line-height:.9!important}
+  .launch-main>p{width:100%!important;max-width:340px!important;margin:7px 0 10px!important}
+  .launch-showcase{align-self:start!important;width:94%!important;margin:0 auto!important;overflow:hidden!important}
+  .launch-track{width:100%!important}
+  .launch-slide{flex:0 0 100%!important;width:100%!important;overflow:hidden!important}
+  .launch-actions{align-self:end!important;width:100%!important;overflow:hidden!important}
+  .launch-benefits{box-sizing:border-box!important;width:100%!important;justify-content:space-between!important;overflow:hidden!important}
+  .launch-benefits span{min-width:0!important;white-space:nowrap!important}
+  .launch-cta{width:100%!important;max-width:100%!important}
+  .launch-note{width:100%!important;white-space:normal!important}
+}
+</style>
+
 </body>
 </html>
