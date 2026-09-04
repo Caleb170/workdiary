@@ -1331,6 +1331,11 @@ body {
         <div class="launch-swipe-cue"><span>☝</span> Swipe to explore</div>
         <div class="launch-pagination" id="launchPagination" aria-label="Choose feature"></div>
       </div>
+      <div class="launch-explainer" aria-live="polite">
+        <span id="launchExplainNumber">01</span>
+        <div><strong id="launchExplainTitle">Your whole week, instantly.</strong><p id="launchExplainText">See hours, earnings and your next shift without doing the maths.</p></div>
+        <i>→</i>
+      </div>
     </main>
     <footer class="launch-actions">
       <div class="launch-benefits"><span><b>✓</b> Pay-aware</span><span><b>✓</b> Private sharing</span><span><b>✓</b> Made for mobile</span></div>
@@ -2334,11 +2339,22 @@ function initLaunchShowcase(){
   if(!showcase||!track||!pagination||showcase.dataset.ready==='1')return;
   showcase.dataset.ready='1';
   const slides=[...track.children],count=slides.length;
+  const explainNumber=document.getElementById('launchExplainNumber'),explainTitle=document.getElementById('launchExplainTitle'),explainText=document.getElementById('launchExplainText');
+  const explanations=[
+    ['Your whole week, instantly.','See hours, earnings and your next shift without doing the maths.'],
+    ['A calendar that actually speaks.','Colour makes worked days, upcoming shifts and shared schedules easy to scan.'],
+    ['Know what payday should look like.','Hourfolio turns your saved rates, loadings and allowances into a clear estimate.'],
+    ['Sharing without oversharing.','Connect calendars while keeping earnings hidden until both people agree.'],
+    ['Small wins that keep adding up.','Build streaks, complete weekly goals and make your progress visible.']
+  ];
   pagination.innerHTML=slides.map((slide,index)=>`<button type="button" aria-label="Show feature ${index+1}" onclick="setLaunchSlide(${index},true)"></button>`).join('');
   const paint=()=>{
     track.style.transform=`translateX(-${_launchSlide*100}%)`;
     [...pagination.children].forEach((dot,index)=>{dot.classList.toggle('active',index===_launchSlide);dot.setAttribute('aria-current',index===_launchSlide?'true':'false');});
     slides.forEach((slide,index)=>slide.setAttribute('aria-hidden',String(index!==_launchSlide)));
+    if(explainNumber)explainNumber.textContent=String(_launchSlide+1).padStart(2,'0');
+    if(explainTitle)explainTitle.textContent=explanations[_launchSlide][0];
+    if(explainText)explainText.textContent=explanations[_launchSlide][1];
   };
   window.setLaunchSlide=(index,manual=false)=>{_launchSlide=(Number(index)+count)%count;paint();if(manual)restartLaunchAutoplay();};
   const start=()=>{if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;clearInterval(_launchAutoplay);_launchAutoplay=setInterval(()=>setLaunchSlide(_launchSlide+1),2350);};
@@ -6171,6 +6187,12 @@ html[data-theme="light"] #landing-screen:not(.hidden),#landing-screen:not(.hidde
   .launch-cta{width:100%!important;max-width:100%!important}
   .launch-note{width:100%!important;white-space:normal!important}
 }
+</style>
+
+<style id="hourfolio-launch-explainer-fix">
+.share-slide h2,.goal-slide h2{color:#ffffff!important;text-shadow:none!important}.share-slide>p{color:#c7cfda!important}.launch-slide-label{color:#d5dbe4!important}.launch-product-top small,.launch-shift small,.launch-pay-total small,.goal-slide>small,.launch-calendar-note small{color:#aeb8c8!important}
+.launch-explainer{box-sizing:border-box;width:94%;min-width:0;margin:10px auto 0;padding:11px 12px;border:1px solid #e4e8e5;border-radius:16px;display:grid;grid-template-columns:32px minmax(0,1fr) 20px;align-items:center;gap:10px;background:#fff;color:#111722;box-shadow:0 8px 22px rgba(19,27,39,.07)}.launch-explainer>span{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:#e7f7f0;color:#168f65;font-size:10px;font-weight:900}.launch-explainer strong,.launch-explainer p{display:block;margin:0}.launch-explainer strong{font-size:11px;line-height:1.25}.launch-explainer p{margin-top:2px;color:#687280;font-size:9px;line-height:1.35}.launch-explainer>i{color:#179568;font-size:16px;font-style:normal;text-align:right}
+@media(max-width:370px),(max-height:640px){.launch-explainer{margin-top:6px;padding:8px 9px}.launch-explainer p{display:none}.launch-explainer strong{font-size:10px}}
 </style>
 
 </body>
