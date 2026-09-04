@@ -1302,12 +1302,34 @@ body {
       <div class="launch-kicker">SHIFT &amp; PAY TRACKING, REFINED</div>
       <h1>Your work.<br><em>Worth seeing.</em></h1>
       <p>Every shift, hour and dollar—beautifully clear in one private place.</p>
-      <div class="launch-product" aria-label="Example Hourfolio weekly overview">
-        <div class="launch-product-top"><div><small>THIS WEEK</small><strong>$642.80</strong></div><span>+12.4%</span></div>
-        <div class="launch-chart"><i style="height:35%"></i><i style="height:63%"></i><i style="height:48%"></i><i class="active" style="height:91%"></i><i style="height:72%"></i><i style="height:28%"></i><i style="height:16%"></i></div>
-        <div class="launch-days"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
-        <div class="launch-shift"><div class="launch-shift-icon">↗</div><div><small>NEXT SHIFT</small><strong>Tomorrow · 9:00–5:00</strong></div><b>$218</b></div>
-        <div class="launch-share"><span class="launch-avatar one">Y</span><span class="launch-avatar two">M</span><div><strong>Calendars connected</strong><small>Pay stays private</small></div><b>✓</b></div>
+      <div class="launch-showcase" id="launchShowcase" tabindex="0" aria-roledescription="carousel" aria-label="Explore Hourfolio features">
+        <div class="launch-track" id="launchTrack">
+          <section class="launch-product launch-slide" aria-label="Weekly earnings overview">
+            <div class="launch-slide-label"><span>01</span>Know your week</div>
+            <div class="launch-product-top"><div><small>THIS WEEK</small><strong>$642.80</strong></div><span>+12.4%</span></div>
+            <div class="launch-chart"><i style="height:35%"></i><i style="height:63%"></i><i style="height:48%"></i><i class="active" style="height:91%"></i><i style="height:72%"></i><i style="height:28%"></i><i style="height:16%"></i></div>
+            <div class="launch-days"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+            <div class="launch-shift"><div class="launch-shift-icon">↗</div><div><small>NEXT SHIFT</small><strong>Tomorrow · 9:00–5:00</strong></div><b>$218</b></div>
+          </section>
+          <section class="launch-product launch-slide calendar-slide" aria-label="Colour coded calendar">
+            <div class="launch-slide-label"><span>02</span>See every shift</div><div class="launch-month"><strong>September</strong><span>‹ &nbsp; ›</span></div>
+            <div class="launch-mini-days"><b>M</b><b>T</b><b>W</b><b>T</b><b>F</b><b>S</b><b>S</b><i>1</i><i>2</i><i class="worked">3</i><i class="worked">4</i><i>5</i><i>6</i><i>7</i><i>8</i><i class="worked">9</i><i>10</i><i>11</i><i class="worked today">12</i><i>13</i><i>14</i><i>15</i><i>16</i><i class="worked">17</i><i class="worked">18</i><i>19</i><i>20</i><i>21</i><i>22</i><i>23</i><i class="worked">24</i><i>25</i><i>26</i><i>27</i><i>28</i></div>
+            <div class="launch-calendar-note"><span></span><div><small>FRIDAY 12</small><strong>Retail · 8:30–4:30</strong></div><b>$224</b></div>
+          </section>
+          <section class="launch-product launch-slide pay-slide" aria-label="Clear pay breakdown">
+            <div class="launch-slide-label"><span>03</span>Understand your pay</div><div class="launch-pay-total"><small>ESTIMATED PAY</small><strong>$1,284.60</strong><span>Fortnightly</span></div>
+            <div class="launch-pay-row"><span>Ordinary hours <small>38.0 hrs</small></span><b>$1,064.00</b></div><div class="launch-pay-row"><span>Saturday loading <small>5.5 hrs</small></span><b>$192.50</b></div><div class="launch-pay-row"><span>Allowance</span><b>$28.10</b></div>
+            <div class="launch-pay-safe">Calculated from your saved rates <b>✓</b></div>
+          </section>
+          <section class="launch-product launch-slide share-slide" aria-label="Private shared calendars">
+            <div class="launch-slide-label"><span>04</span>Share on your terms</div><div class="launch-connection"><span>Y</span><i></i><span>M</span></div><h2>Together, still private.</h2><p>Share shifts first. Earnings only appear when both people agree.</p><div class="launch-privacy-row"><span>Daily earnings</span><b>Hidden</b></div><div class="launch-privacy-row"><span>Calendar</span><b class="on">Connected ✓</b></div>
+          </section>
+          <section class="launch-product launch-slide goal-slide" aria-label="Achievements and weekly goals">
+            <div class="launch-slide-label"><span>05</span>Make progress visible</div><div class="launch-trophy">✦</div><small>WEEKLY GOAL</small><h2>Four-shift streak</h2><div class="launch-goal-ring"><span>4<small>/ 4</small></span></div><div class="launch-goal-complete">Achievement unlocked <b>+250</b></div>
+          </section>
+        </div>
+        <div class="launch-swipe-cue"><span>☝</span> Swipe to explore</div>
+        <div class="launch-pagination" id="launchPagination" aria-label="Choose feature"></div>
       </div>
     </main>
     <footer class="launch-actions">
@@ -2304,6 +2326,30 @@ function initDemoCarousel(){
     dots.querySelectorAll('.demo-dot').forEach((d,i)=>d.classList.toggle('active', i===idx));
     if(caption) caption.textContent=captions[idx];
   }, 3200);
+}
+
+let _launchSlide=0,_launchAutoplay=null,_launchResume=null;
+function initLaunchShowcase(){
+  const showcase=document.getElementById('launchShowcase'),track=document.getElementById('launchTrack'),pagination=document.getElementById('launchPagination');
+  if(!showcase||!track||!pagination||showcase.dataset.ready==='1')return;
+  showcase.dataset.ready='1';
+  const slides=[...track.children],count=slides.length;
+  pagination.innerHTML=slides.map((slide,index)=>`<button type="button" aria-label="Show feature ${index+1}" onclick="setLaunchSlide(${index},true)"></button>`).join('');
+  const paint=()=>{
+    track.style.transform=`translateX(-${_launchSlide*100}%)`;
+    [...pagination.children].forEach((dot,index)=>{dot.classList.toggle('active',index===_launchSlide);dot.setAttribute('aria-current',index===_launchSlide?'true':'false');});
+    slides.forEach((slide,index)=>slide.setAttribute('aria-hidden',String(index!==_launchSlide)));
+  };
+  window.setLaunchSlide=(index,manual=false)=>{_launchSlide=(Number(index)+count)%count;paint();if(manual)restartLaunchAutoplay();};
+  const start=()=>{if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;clearInterval(_launchAutoplay);_launchAutoplay=setInterval(()=>setLaunchSlide(_launchSlide+1),2350);};
+  window.restartLaunchAutoplay=()=>{clearInterval(_launchAutoplay);clearTimeout(_launchResume);_launchResume=setTimeout(start,4500);};
+  let startX=0,lastX=0,dragging=false;
+  showcase.addEventListener('pointerdown',event=>{if(event.target.closest('.launch-pagination'))return;dragging=true;startX=lastX=event.clientX;showcase.classList.add('is-dragging');track.style.transition='none';showcase.setPointerCapture?.(event.pointerId);clearInterval(_launchAutoplay);});
+  showcase.addEventListener('pointermove',event=>{if(!dragging)return;lastX=event.clientX;track.style.transform=`translateX(calc(-${_launchSlide*100}% + ${lastX-startX}px))`;});
+  const release=event=>{if(!dragging)return;dragging=false;showcase.classList.remove('is-dragging');track.style.transition='';const moved=lastX-startX;if(Math.abs(moved)>42)setLaunchSlide(_launchSlide+(moved<0?1:-1),true);else{paint();restartLaunchAutoplay();}showcase.releasePointerCapture?.(event.pointerId);};
+  showcase.addEventListener('pointerup',release);showcase.addEventListener('pointercancel',release);
+  showcase.addEventListener('keydown',event=>{if(event.key==='ArrowRight')setLaunchSlide(_launchSlide+1,true);if(event.key==='ArrowLeft')setLaunchSlide(_launchSlide-1,true);});
+  paint();start();
 }
 
 /* ---- Email login: PIN first, email OTP only for new-account setup or recovery ---- */
@@ -5266,6 +5312,7 @@ document.addEventListener('keydown',event=>{
     if(inviteToken)localStorage.setItem('wq_pending_share_invite',inviteToken);
     wqPolishActionButtons(document);
     initDemoCarousel();
+    initLaunchShowcase();
     wireDigitBoxes('otpBoxes','verifyOtpBtn', verifyOtp);
     wireDigitBoxes('masterPinBoxes', null, submitMasterPin);
     wireDigitBoxes('masterSetupPinBoxes', null, null);
@@ -6055,6 +6102,11 @@ html[data-theme="light"] #landing-screen:not(.hidden),#landing-screen:not(.hidde
 .launch-product{position:relative;box-sizing:border-box;min-height:244px;padding:18px;border-radius:26px;overflow:hidden;background:#111722;color:#fff;box-shadow:0 23px 55px rgba(15,22,34,.22),inset 0 1px 0 rgba(255,255,255,.08)}.launch-product:after{content:"";position:absolute;width:190px;height:190px;border-radius:50%;right:-83px;top:-96px;background:#16a06d;opacity:.2;filter:blur(2px);pointer-events:none}.launch-product-top{position:relative;z-index:1;display:flex;align-items:start;justify-content:space-between}.launch-product-top small,.launch-shift small{display:block;color:#8793a6;font-size:8px;font-weight:850;letter-spacing:.13em}.launch-product-top strong{display:block;margin-top:3px;font-size:28px;line-height:1;letter-spacing:-.045em}.launch-product-top>span{padding:6px 9px;border-radius:99px;background:rgba(39,196,139,.14);color:#5de0af;font-size:9px;font-weight:850}
 .launch-chart{height:54px;margin-top:13px;display:flex;align-items:end;gap:6px}.launch-chart i{flex:1;min-height:5px;border-radius:5px 5px 2px 2px;background:#333e51}.launch-chart i.active{background:linear-gradient(180deg,#63e0b3,#20a876);box-shadow:0 0 20px rgba(51,210,153,.35)}.launch-days{display:flex;gap:6px;margin-top:6px}.launch-days span{flex:1;text-align:center;color:#667186;font-size:7px;font-weight:750}.launch-shift{display:grid;grid-template-columns:35px 1fr auto;align-items:center;gap:9px;margin-top:13px;padding:10px 11px;border-radius:14px;background:rgba(255,255,255,.065)}.launch-shift-icon{width:35px;height:35px;border-radius:11px;display:grid;place-items:center;background:#586edf;color:#fff;font-size:17px}.launch-shift strong{display:block;margin-top:3px;font-size:10px}.launch-shift>b{color:#69deb4;font-size:12px}.launch-share{position:absolute;z-index:2;right:12px;bottom:11px;display:none;align-items:center;padding:8px 10px;border-radius:14px;background:#fff;color:#17202a;box-shadow:0 10px 30px rgba(0,0,0,.25)}.launch-avatar{width:25px;height:25px;border:2px solid #fff;border-radius:8px;display:grid;place-items:center;background:#586edf;color:#fff;font-size:8px;font-weight:900}.launch-avatar.two{margin-left:-6px;background:#20a876}.launch-share>div{margin-left:7px}.launch-share strong,.launch-share small{display:block}.launch-share strong{font-size:8px}.launch-share small{margin-top:1px;color:#75808d;font-size:6px}.launch-share>b{margin-left:12px;color:#179568}
 .launch-actions{padding-top:2px}.launch-benefits{display:flex;justify-content:space-between;gap:6px;margin-bottom:10px;color:#5c6572;font-size:8.5px;font-weight:750;white-space:nowrap}.launch-benefits b{color:#169568}.launch-cta{box-sizing:border-box;width:100%!important;max-width:none!important;height:55px!important;margin:0!important;padding:0 20px!important;border:0!important;border-radius:17px!important;display:flex!important;align-items:center;justify-content:space-between;background:#111722!important;color:#fff!important;font-size:15px!important;font-weight:850!important;box-shadow:0 13px 30px rgba(17,23,34,.2)!important}.launch-cta span:last-child{width:31px;height:31px;border-radius:10px;display:grid;place-items:center;background:#1aa572;font-size:18px}.launch-note{padding-top:8px;text-align:center;color:#8a929d;font-size:9px}
+.launch-showcase{position:relative;overflow:hidden;border-radius:27px;box-shadow:0 23px 55px rgba(15,22,34,.22);touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:grab}.launch-showcase.is-dragging{cursor:grabbing}.launch-track{display:flex;will-change:transform;transition:transform .52s cubic-bezier(.22,.75,.25,1)}.launch-slide{box-sizing:border-box;flex:0 0 100%;width:100%;min-height:257px!important;border-radius:0!important;box-shadow:none!important}.launch-slide-label{position:relative;z-index:2;display:flex;align-items:center;gap:7px;margin-bottom:12px;color:#aab4c4;font-size:11px;font-weight:800}.launch-slide-label span{width:25px;height:25px;border-radius:8px;display:grid;place-items:center;background:rgba(255,255,255,.08);color:#62dfb1;font-size:10px}.launch-swipe-cue{position:absolute;z-index:5;top:13px;right:13px;display:flex;align-items:center;gap:5px;padding:6px 8px;border-radius:99px;background:rgba(255,255,255,.1);backdrop-filter:blur(8px);color:#d5dbe5;font-size:10px;font-weight:750;pointer-events:none}.launch-swipe-cue span{display:inline-block;animation:launchFinger 1.25s ease-in-out infinite}.launch-pagination{position:absolute;z-index:6;left:50%;bottom:9px;transform:translateX(-50%);display:flex;gap:5px}.launch-pagination button{width:6px;height:6px;min-width:0;min-height:0;padding:0;border:0;border-radius:99px;background:rgba(255,255,255,.28);transition:width .25s ease,background .25s ease}.launch-pagination button.active{width:20px;background:#64e0b2}
+.launch-month{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}.launch-month strong{font-family:Georgia,serif;font-size:21px}.launch-month span{color:#8995a8;font-size:15px}.launch-mini-days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}.launch-mini-days b{padding-bottom:3px;color:#69768b;font-size:9px;text-align:center}.launch-mini-days i{height:20px;border-radius:6px;display:grid;place-items:center;color:#a5afbf;font-size:9px;font-style:normal}.launch-mini-days i.worked{background:rgba(32,168,118,.18);color:#73e0b9;font-weight:850}.launch-mini-days i.today{box-shadow:inset 0 0 0 1px #67dfb3}.launch-calendar-note{display:grid;grid-template-columns:4px 1fr auto;align-items:center;gap:9px;margin-top:9px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.07)}.launch-calendar-note>span{width:4px;align-self:stretch;border-radius:9px;background:#5f75e7}.launch-calendar-note small,.launch-pay-total small,.goal-slide>small{display:block;color:#8490a3;font-size:9px;font-weight:800;letter-spacing:.1em}.launch-calendar-note strong{font-size:10px}.launch-calendar-note b{color:#66dfb3;font-size:11px}
+.launch-pay-total{position:relative;padding:12px 14px;margin-bottom:9px;border-radius:15px;background:linear-gradient(135deg,rgba(31,169,119,.18),rgba(255,255,255,.055))}.launch-pay-total strong{display:block;margin-top:4px;font-size:29px;letter-spacing:-.04em}.launch-pay-total span{position:absolute;right:13px;top:13px;color:#63deb1;font-size:10px;font-weight:800}.launch-pay-row{display:flex;align-items:center;justify-content:space-between;padding:8px 3px;border-bottom:1px solid rgba(255,255,255,.07);color:#d8dde6;font-size:11px}.launch-pay-row span small{display:inline;margin-left:4px;color:#758196}.launch-pay-row b{font-size:11px}.launch-pay-safe{display:flex;justify-content:space-between;margin-top:9px;color:#8792a4;font-size:10px}.launch-pay-safe b{color:#62dfb1}
+.launch-connection{display:flex;align-items:center;justify-content:center;margin:18px 0 12px}.launch-connection span{width:52px;height:52px;border:3px solid #111722;border-radius:17px;display:grid;place-items:center;background:#5b70e0;font-size:17px;font-weight:900}.launch-connection span:last-child{background:#20a876}.launch-connection i{width:65px;height:3px;background:linear-gradient(90deg,#5b70e0,#20a876)}.share-slide h2,.goal-slide h2{margin:0;text-align:center;font-family:Georgia,serif;font-size:23px;letter-spacing:-.035em}.share-slide>p{margin:7px auto 12px;max-width:300px;color:#929daf;font-size:11px;line-height:1.45;text-align:center}.launch-privacy-row{display:flex;justify-content:space-between;padding:8px 10px;margin-top:5px;border-radius:10px;background:rgba(255,255,255,.06);color:#b3bcc9;font-size:10px}.launch-privacy-row b{color:#f2b46d}.launch-privacy-row b.on{color:#64dfb2}
+.goal-slide{text-align:center}.launch-trophy{width:45px;height:45px;margin:5px auto 8px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(145deg,#ffd36a,#f39a47);color:#111722;font-size:21px;box-shadow:0 10px 25px rgba(243,154,71,.25)}.launch-goal-ring{width:66px;height:66px;margin:8px auto;border-radius:50%;display:grid;place-items:center;background:#61dfb1;box-shadow:inset 0 0 0 8px #111722}.launch-goal-ring span{width:49px;height:49px;border-radius:50%;display:grid;place-items:center;background:#1a2230;font-size:20px;font-weight:900}.launch-goal-ring small{font-size:9px;color:#8490a3}.launch-goal-complete{display:flex;justify-content:space-between;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.06);color:#afb8c5;font-size:10px}.launch-goal-complete b{color:#ffd06b}@keyframes launchFinger{0%,100%{transform:translateX(0) rotate(-8deg)}50%{transform:translateX(-7px) rotate(-8deg)}}@media(prefers-reduced-motion:reduce){.launch-swipe-cue span{animation:none!important}.launch-track{transition:none!important}}
 @media(min-width:700px){#landing-screen:not(.hidden){overflow:auto!important}.launch-product{min-height:260px}.launch-share{display:flex}.launch-main{padding-block:24px}.launch-main>p{font-size:15px}}
 @media(max-height:690px){#landing-screen .hourfolio-launch{padding-top:max(12px,env(safe-area-inset-top));padding-bottom:max(10px,env(safe-area-inset-bottom))}.launch-main{padding:10px 0 7px}.launch-main>h1{font-size:42px}.launch-main>p{margin:8px 0 10px;font-size:12px}.launch-product{min-height:220px;padding:15px}.launch-chart{height:43px;margin-top:9px}.launch-shift{margin-top:9px}.launch-benefits{margin-bottom:7px}.launch-cta{height:51px!important}.launch-note{padding-top:5px}}
 @media(max-height:590px){.launch-kicker,.launch-benefits{display:none}.launch-main>h1{font-size:38px}.launch-product{min-height:194px}.launch-chart{height:38px}.launch-main>p{font-size:11px}.launch-product-top strong{font-size:24px}}
