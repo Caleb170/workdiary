@@ -23,8 +23,8 @@ Deno.serve(async request => {
     const fromEmail = Deno.env.get("HOURFOLIO_FROM_EMAIL");
     if (!resendKey || !fromEmail) throw new Error("Invitation email service is not configured yet");
 
-    const { memberId, appUrl, inviterName } = await request.json();
-    if (!memberId || !/^https:\/\//.test(String(appUrl || ""))) throw new Error("Invalid invitation request");
+    const { memberId, inviterName } = await request.json();
+    if (!memberId) throw new Error("Invalid invitation request");
 
     const client = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authorization } },
@@ -35,7 +35,8 @@ Deno.serve(async request => {
 
     const recipientName = escapeHtml(invite.name);
     const senderName = escapeHtml(inviterName || "A Hourfolio user");
-    const invitationUrl = `https://hourfolio.site/?share_invite=${encodeURIComponent(invite.token)}&from=${encodeURIComponent(String(inviterName || "Someone").slice(0, 50))}&to=${encodeURIComponent(String(invite.name || "You").slice(0, 50))}`;
+    const appUrl = (Deno.env.get("HOURFOLIO_APP_URL") || "https://hourfolio.site").replace(/\/$/, "");
+    const invitationUrl = `${appUrl}/?share_invite=${encodeURIComponent(invite.token)}&from=${encodeURIComponent(String(inviterName || "Someone").slice(0, 50))}&to=${encodeURIComponent(String(invite.name || "You").slice(0, 50))}`;
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },

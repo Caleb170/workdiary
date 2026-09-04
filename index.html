@@ -801,7 +801,7 @@ label{font-size:11px;letter-spacing:.06em;color:var(--text-dim);margin-bottom:7p
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}}
 </style>
 
-<style id="workquest-polish-pass">
+<style id="hourfolio-polish-pass">
 /* =========================================================
    HOURFOLIO POLISH PASS
    Visual-only layer. No JS, data, auth, or feature behavior changed.
@@ -1104,7 +1104,7 @@ input,select,textarea,button{max-width:100%}
 </style>
 <style>:root{--wq-safe-top:env(safe-area-inset-top,0px);--wq-safe-bottom:env(safe-area-inset-bottom,0px)}body{padding-bottom:max(0px,var(--wq-safe-bottom))}.topbar{padding-top:max(12px,var(--wq-safe-top))}.modal{padding-top:max(18px,var(--wq-safe-top));padding-bottom:max(18px,var(--wq-safe-bottom))}.modal-close{margin-top:calc(-1 * min(10px,var(--wq-safe-top)))}#fancyNotifyRoot{padding-top:max(14px,var(--wq-safe-top))!important}.fab{bottom:max(18px,calc(18px + var(--wq-safe-bottom)))}#toast{bottom:max(86px,calc(86px + var(--wq-safe-bottom)))}.salary-frequency-card{background:var(--bg-2);border:1px solid var(--line-soft);border-radius:14px;padding:12px 13px;margin-top:10px}.salary-frequency-note{font-size:11.5px;line-height:17px;color:var(--text-dim);margin-top:7px}.wq-tutorial-backdrop{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;padding:calc(18px + var(--wq-safe-top)) 16px calc(18px + var(--wq-safe-bottom));background:rgba(4,6,10,.72);backdrop-filter:blur(16px)}.wq-tutorial-card{width:min(420px,100%);max-height:min(720px,calc(100svh - var(--wq-safe-top) - var(--wq-safe-bottom) - 36px));overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:26px;padding:24px;box-shadow:0 30px 90px rgba(0,0,0,.42)}.wq-tutorial-progress{display:flex;gap:6px;margin-bottom:18px}.wq-tutorial-progress span{height:4px;flex:1;border-radius:99px;background:var(--line)}.wq-tutorial-progress span.active{background:var(--accent)}.wq-tutorial-icon{width:56px;height:56px;border-radius:18px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 14%,var(--card-2));color:var(--accent);font-size:27px;margin-bottom:18px}.wq-tutorial-card h3{font-size:25px;margin:0 0 8px}.wq-tutorial-card p{font-size:13.5px;line-height:21px;color:var(--text-dim);margin:0 0 22px}.wq-tutorial-actions{display:flex;gap:8px;align-items:center}.wq-tutorial-actions .btn{flex:1;justify-content:center;min-height:46px}.wq-tutorial-skip{border:none;background:none;color:var(--text-faint);font-size:12px;font-weight:700;padding:10px}@media(max-width:560px){#app-screen{padding-left:12px;padding-right:12px}.topbar{margin-left:-12px;margin-right:-12px;padding-left:12px;padding-right:12px}.icon-btn,.theme-toggle{width:36px;height:36px}.sync-pill{max-width:84px}.sync-pill span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tab{font-size:12.5px}.card-pad{padding:15px}.day-card{padding:13px 14px}.shift-row{align-items:flex-start;flex-wrap:wrap}.shift-actions{margin-left:auto}}@media(max-width:380px){#app-screen{padding-left:10px;padding-right:10px}.topbar{margin-left:-10px;margin-right:-10px;padding-left:10px;padding-right:10px}.sync-pill{display:none}.field-row{grid-template-columns:1fr}.modal{padding-left:16px;padding-right:16px}}</style>
 
-<style id="workquest-intro-tutorial-hero-pass">
+<style id="hourfolio-intro-tutorial-hero-pass">
 /* ================================================================
    HOURFOLIO INTRO + QUICK TOUR — premium presentation pass
    Visual-only. Existing carousel, handlers and application logic remain.
@@ -1200,7 +1200,7 @@ input,select,textarea,button{max-width:100%}
 </style>
 
 
-<style id="workquest-fullscreen-lock">
+<style id="hourfolio-fullscreen-lock">
 /* Hourfolio: app-like full-screen shell */
 html, body {
   width: 100%;
@@ -1841,7 +1841,7 @@ body {
 <script>
 document.documentElement.setAttribute('data-theme', localStorage.getItem('wq_theme') || 'light');
 </script>
-<style id="workquest-ui-refinement-pass">
+<style id="hourfolio-ui-refinement-pass">
 /* UI refinement: visual-only, existing application behavior preserved. */
 html{background:var(--bg);-webkit-text-size-adjust:100%;text-rendering:optimizeLegibility}
 body{margin:0;min-width:0;overscroll-behavior-x:none;-webkit-font-smoothing:antialiased}
@@ -2317,7 +2317,11 @@ async function enterApp(){
   syncTask.then(async()=>{if(generation!==_wqSyncGeneration)return;setSync('saved','Synced');wqScheduleRender('post-sync');document.getElementById('wqStartupError')?.remove();if(STATE.role==='viewer')await showPendingViewerShiftNotifications();if(STATE.role==='admin')await showPendingShareNotifications();}).catch(e=>{if(generation===_wqSyncGeneration)wqShowStartupError(e);});
 }
 
-const WQ_TUTORIAL_STEPS=[{icon:'▤',title:'Your Diary',text:'Log shifts and keep each day organised at a glance.'},{icon:'▦',title:'Your Calendar',text:'See your work pattern across the month and spot worked, planned and holiday days.'},{icon:'⌁',title:'Timeline & earnings',text:'Follow your earnings history, including salary and payday information.'},{icon:'＋',title:'Add Shift & settings',text:'Use + Add shift for new work. Pay Rates manages jobs, pay frequency, salary, bonuses and preferences.'}];let _wqTutorialIndex=0;function showQuickTutorial(){if(localStorage.getItem('wq_quick_tutorial_done')==='1'){localStorage.removeItem('wq_pending_quick_tutorial');return;}_wqTutorialIndex=0;renderQuickTutorial()}function renderQuickTutorial(){const root=document.getElementById('wqTutorialRoot');if(!root)return;const x=WQ_TUTORIAL_STEPS[_wqTutorialIndex];root.innerHTML=`<div class="wq-tutorial-backdrop"><div class="wq-tutorial-card" role="dialog" aria-modal="true"><div class="wq-tutorial-top"><span class="wq-tutorial-eyebrow">QUICK TOUR</span><span class="wq-tutorial-count">${_wqTutorialIndex+1} / ${WQ_TUTORIAL_STEPS.length}</span></div><div class="wq-tutorial-progress">${WQ_TUTORIAL_STEPS.map((_,i)=>`<span class="${i<=_wqTutorialIndex?'active':''}"></span>`).join('')}</div><div class="wq-tutorial-visual"><div class="wq-tutorial-icon">${x.icon}</div><div class="wq-tutorial-orb"></div><div class="wq-tutorial-lines"><span></span><span></span><span></span></div></div><h3>${x.title}</h3><p>${x.text}</p><div class="wq-tutorial-actions"><button class="wq-tutorial-skip" onclick="skipQuickTutorial()">Skip</button><button class="btn btn-primary" onclick="nextQuickTutorial()">${_wqTutorialIndex===3?'Got it':'Next'} <span aria-hidden="true">→</span></button></div></div></div>`;root.classList.remove('hidden')}function nextQuickTutorial(){if(_wqTutorialIndex===3){finishQuickTutorial();return}_wqTutorialIndex++;renderQuickTutorial()}function skipQuickTutorial(){finishQuickTutorial()}function finishQuickTutorial(){localStorage.setItem('wq_quick_tutorial_done','1');localStorage.removeItem('wq_pending_quick_tutorial');const r=document.getElementById('wqTutorialRoot');if(r){r.classList.add('hidden');r.innerHTML=''}}
+const WQ_TUTORIAL_STEPS=[{icon:'▤',title:'Your Diary',text:'Log shifts and keep each day organised at a glance.'},{icon:'▦',title:'Your Calendar',text:'See your work pattern across the month and spot worked, planned and holiday days.'},{icon:'⌁',title:'Timeline & earnings',text:'Follow pay periods, hours and earnings across the year.'},{icon:'＋',title:'Add Shift & settings',text:'Use + Add shift for new work. Pay Rates manages jobs, pay frequency, salary, bonuses and preferences.'}];
+let _wqTutorialIndex=0;
+function showQuickTutorial(){if(localStorage.getItem('wq_quick_tutorial_done')==='1'){localStorage.removeItem('wq_pending_quick_tutorial');return;}_wqTutorialIndex=0;renderQuickTutorial();}
+function skipQuickTutorial(){finishQuickTutorial();}
+function finishQuickTutorial(){localStorage.setItem('wq_quick_tutorial_done','1');localStorage.removeItem('wq_pending_quick_tutorial');const root=document.getElementById('wqTutorialRoot');if(root){root.classList.add('hidden');root.innerHTML='';}}
 
 const WQ_TUTORIAL_ACTIONS=[
   {label:'Open Diary',run:()=>document.querySelector('[data-tab="diary"]')?.click()},
@@ -2357,6 +2361,11 @@ function resetAppState(){
   document.getElementById('app-screen').classList.add('hidden');
   const banner = document.getElementById('onShiftBanner');
   if(banner){ banner.classList.add('hidden'); banner.innerHTML=''; }
+}
+function clearProfileData(){
+  STATE.employers=[];STATE.shifts=[];STATE.plannedShifts=[];STATE.holidays=[];STATE.budget={mode:'recommended',categories:[]};
+  STATE.sharing={people:[],assignments:{},challenges:[]};STATE.incomingShares=[];STATE.incomingCalendars={};STATE.incomingPersonalCalendars={};
+  STATE.personalEntries=[];STATE.personalAssignments={};STATE.togetherProposals=[];STATE.togetherLoaded=false;STATE.selectedCalendarPerson='all';STATE.activeSharePerson=null;
 }
 function logout(){
   // "Switch profile" — the master PIN already unlocked this session, so
@@ -2541,8 +2550,12 @@ function initLaunchShowcase(){
 }
 
 /* ---- Email login: PIN first, email OTP only for new-account setup or recovery ---- */
-function authPasswordForPin(email, pin){
-  return `WQ:${String(email||'').trim().toLowerCase()}:${pin}`;
+function legacyAuthPasswordForPin(email,pin){return `WQ:${String(email||'').trim().toLowerCase()}:${pin}`;}
+async function authPasswordForPin(email,pin){
+  const normalEmail=String(email||'').trim().toLowerCase(),encoder=new TextEncoder();
+  const key=await crypto.subtle.importKey('raw',encoder.encode(String(pin)),{name:'PBKDF2'},false,['deriveBits']);
+  const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt:encoder.encode(`Hourfolio:${normalEmail}:v2`),iterations:150000,hash:'SHA-256'},key,256);
+  return `HF2.${btoa(String.fromCharCode(...new Uint8Array(bits))).replace(/[+/=]/g,'x')}`;
 }
 async function continueFromEmail(){
   const email = document.getElementById('emailInput').value.trim().toLowerCase();
@@ -2722,7 +2735,13 @@ async function submitMasterPin(){
   const email = STATE.email || document.getElementById('emailInput').value.trim().toLowerCase();
 
   if(!_pinActivationMode){
-    const {data, error} = await sb.auth.signInWithPassword({email, password:authPasswordForPin(email,pin)});
+    const hardenedPassword=await authPasswordForPin(email,pin);
+    let {data, error} = await sb.auth.signInWithPassword({email,password:hardenedPassword});
+    if(error){
+      const legacy=await sb.auth.signInWithPassword({email,password:legacyAuthPasswordForPin(email,pin)});
+      data=legacy.data;error=legacy.error;
+      if(!error&&data.user)await sb.auth.updateUser({password:hardenedPassword});
+    }
     if(!error && data.user){
       STATE.authUid=data.user.id; STATE.email=data.user.email;
       await acceptPendingShareInvite();
@@ -2739,7 +2758,7 @@ async function submitMasterPin(){
   const {data, error} = await sb.rpc('verify_admin_pin', {p_pin6: pin});
   if(error){ console.error(error); document.getElementById('masterPinError').textContent = 'Something went wrong: '+error.message; return; }
   if(data.ok){
-    const {error:passErr}=await sb.auth.updateUser({password:authPasswordForPin(email,pin)});
+    const {error:passErr}=await sb.auth.updateUser({password:await authPasswordForPin(email,pin)});
     if(passErr){ document.getElementById('masterPinError').textContent='PIN verified, but PIN login could not be activated: '+passErr.message; return; }
     _pinActivationMode=false;
     document.getElementById('masterPinError').textContent='';
@@ -2782,7 +2801,7 @@ async function finishMasterSetup(){
   const {error} = await sb.rpc('setup_admin_pin', {p_pin6:pin, p_q1:q1, p_a1:a1, p_q2:q2, p_a2:a2});
   if(error){ console.error(error); err.textContent='Could not save: '+error.message; return; }
   const email = STATE.email || (await sb.auth.getUser()).data.user?.email;
-  const {error:passErr}=await sb.auth.updateUser({password:authPasswordForPin(email,pin)});
+  const {error:passErr}=await sb.auth.updateUser({password:await authPasswordForPin(email,pin)});
   if(passErr){ console.error(passErr); err.textContent='PIN saved, but login setup failed: '+passErr.message; return; }
   _pinActivationMode=false;
   _newSignupMode=false;
@@ -2862,7 +2881,7 @@ async function tryMasterReset(){
   const {data} = await sb.rpc('reset_admin_pin', {p_answer1:a1, p_answer2:a2, p_new_pin6:newPin});
   if(data){
     const email = STATE.email || (await sb.auth.getUser()).data.user?.email;
-    const {error:passErr}=await sb.auth.updateUser({password:authPasswordForPin(email,newPin)});
+    const {error:passErr}=await sb.auth.updateUser({password:await authPasswordForPin(email,newPin)});
     if(passErr){ document.getElementById('masterForgotError').textContent='PIN reset, but login password could not be updated: '+passErr.message; return; }
     closeModal();
     toast('PIN reset — you can log in with it now');
@@ -3109,6 +3128,7 @@ function createViewerFromOnboarding(){
 }
 
 async function enterProfile(profileId, role, displayName, token){
+  clearProfileData();
   STATE.role = role;
   STATE.uid = STATE.authUid;
   STATE.ownerId = STATE.authUid;
@@ -3165,7 +3185,7 @@ async function loadAdminData(generation=_wqSyncGeneration){
     STATE.employers=a.status==='fulfilled'?(a.value?.data||[]).map(rowToEmployer).filter(Boolean):(STATE.employers||[]);
     STATE.plannedShifts=c.status==='fulfilled'?(c.value?.data||[]).map(rowToPlanned).filter(Boolean):(STATE.plannedShifts||[]);
     try{const r=await wqRequest(()=>sb.from('settings').select('*').eq('owner_id',STATE.uid).limit(1),'Settings sync');const row=(r.data||[])[0];STATE.holidays=row?.data?.holidays||[];STATE.budget=row?.data?.budget||{mode:'recommended',categories:[]};STATE.sharing=row?.data?.sharing||{people:[],assignments:{},challenges:[]};STATE.personalEntries=row?.data?.personalEntries||[];}catch(e){console.warn('Settings sync skipped:',e);}
-    try{const [events,shares]=await Promise.all([wqRequest(()=>sb.from('personal_events').select('*').eq('owner_id',STATE.uid).order('event_date',{ascending:false}),'Personal planner',10000),wqRequest(()=>sb.rpc('get_my_personal_event_shares'),'Personal sharing',10000)]);if((events.data||[]).length)STATE.personalEntries=(events.data||[]).map(r=>({id:r.id,date:r.event_date,type:r.event_type,title:r.title,notes:r.details,time24:String(r.start_time).slice(0,5),endTime24:String(r.end_time).slice(0,5),time:formatClock12(String(r.start_time).slice(0,5)),endTime:formatClock12(String(r.end_time).slice(0,5)),color:r.colour,showOnCalendar:r.show_on_calendar,createdAt:r.created_at}));STATE.personalAssignments={};for(const x of shares.data||[])(STATE.personalAssignments[x.event_id]||(STATE.personalAssignments[x.event_id]=[])).push(x.member_id);}catch(e){console.warn('Personal planner sync skipped:',e);}
+    try{const [events,shares]=await Promise.all([wqRequest(()=>sb.from('personal_events').select('*').eq('owner_id',STATE.uid).order('event_date',{ascending:false}),'Personal planner',10000),wqRequest(()=>sb.rpc('get_my_personal_event_shares'),'Personal sharing',10000)]);STATE.personalEntries=(events.data||[]).map(r=>({id:r.id,date:r.event_date,type:r.event_type,title:r.title,notes:r.details,time24:String(r.start_time).slice(0,5),endTime24:String(r.end_time).slice(0,5),time:formatClock12(String(r.start_time).slice(0,5)),endTime:formatClock12(String(r.end_time).slice(0,5)),color:r.colour,showOnCalendar:r.show_on_calendar,createdAt:r.created_at}));STATE.personalAssignments={};for(const x of shares.data||[])(STATE.personalAssignments[x.event_id]||(STATE.personalAssignments[x.event_id]=[])).push(x.member_id);}catch(e){console.warn('Personal planner sync skipped:',e);}
     try{const r=await wqRequest(()=>sb.rpc('get_my_shared_plans'),'Together plans',10000);STATE.togetherProposals=(r.data||[]).map(x=>({...x,start:String(x.start_time).slice(0,5),end:String(x.end_time).slice(0,5)}));STATE.togetherLoaded=true;}catch(e){console.warn('Together plans sync skipped:',e);}
     try{const r=await wqRequest(()=>sb.from('profiles').select('id,display_name,permissions').eq('owner_id',STATE.uid).eq('role','viewer'),'Profile sync');STATE.viewerProfiles=r.data||[];STATE.localViewer=STATE.viewerProfiles[0]||null;}catch(e){console.warn('Viewer profile sync skipped:',e);}
     try{await loadSecureSharingAdmin();}catch(e){console.warn('Secure sharing sync skipped:',e);}
@@ -3197,9 +3217,12 @@ function rowToPlanned(row){
 }
 async function saveSettings(){
   setSync('saving','Saving…');
-  const row = {owner_id:STATE.uid, data:{holidays:STATE.holidays, budget:STATE.budget, sharing:STATE.sharing,personalEntries:STATE.personalEntries}};
+  const row = {owner_id:STATE.uid, data:{holidays:STATE.holidays,budget:STATE.budget,sharing:STATE.sharing}};
+  if(!navigator.onLine){offlineQueue=offlineQueue.filter(op=>!(op.type==='upsert'&&op.table==='settings'&&op.row?.owner_id===STATE.uid));offlineQueue.push({type:'upsert',table:'settings',row});persistQueue();setSync('error','Waiting to sync');return false;}
   const {error} = await sb.from('settings').upsert(row);
+  if(error){offlineQueue=offlineQueue.filter(op=>!(op.type==='upsert'&&op.table==='settings'&&op.row?.owner_id===STATE.uid));offlineQueue.push({type:'upsert',table:'settings',row});persistQueue();}
   setSync(error?'error':'saved', error?'⚠️ Unable to save':'Saved ✓');
+  return !error;
 }
 function isHoliday(iso){
   return STATE.holidays.some(h=>isoCompare(iso,h.start)>=0 && isoCompare(iso,h.end)<=0);
@@ -3267,8 +3290,10 @@ async function flushOfflineQueue(){
   const queue=[...offlineQueue]; offlineQueue=[]; persistQueue();
   for(const op of queue){
     try{
-      if(op.type==='upsert') await sb.from(op.table).upsert(op.row);
-      if(op.type==='delete') await sb.from(op.table).delete().eq('id', op.id);
+      let result=null;
+      if(op.type==='upsert') result=await sb.from(op.table).upsert(op.row);
+      if(op.type==='delete') result=await sb.from(op.table).delete().eq('id',op.id);
+      if(result?.error)throw result.error;
     }catch(e){ offlineQueue.push(op); }
   }
   persistQueue();
@@ -3279,7 +3304,6 @@ function persistQueue(){ localStorage.setItem('wq_offline_queue', JSON.stringify
 /* Queue-aware write: tries the network, falls back to offline queue */
 async function writeShift(row, isNew){
   setSync('saving','Saving…');
-  localStorage.setItem('wq_cache_shifts', JSON.stringify(STATE.shifts)); // local cache
   if(!navigator.onLine){
     offlineQueue.push({type:'upsert', table:'shifts', row});
     persistQueue();
@@ -3299,6 +3323,7 @@ async function deleteShiftRow(id){
   setSync('saving','Saving…');
   if(!navigator.onLine){ offlineQueue.push({type:'delete', table:'shifts', id}); persistQueue(); setSync('error','Waiting to sync'); return; }
   const {error} = await sb.from('shifts').delete().eq('id', id);
+  if(error){offlineQueue.push({type:'delete',table:'shifts',id});persistQueue();}
   setSync(error?'error':'saved', error?'⚠️ Unable to save':'Saved ✓');
   if(!error) notifyViewers('🗑️', 'Shift removed', 'A shift was deleted from the diary');
 }
@@ -4260,13 +4285,13 @@ function exportWeekIcs(){
     let endDate = s.date;
     if(timeToMinutes(s.end)<=timeToMinutes(s.start)) endDate = addDays(s.date,1);
     const dtEnd = toIcsDate(endDate, s.end);
-    ics += `BEGIN:VEVENT\r\nUID:${s.id}@workquest\r\nDTSTART:${dtStart}\r\nDTEND:${dtEnd}\r\nSUMMARY:${(emp?emp.name:'Shift')} shift\r\nDESCRIPTION:${s.start} to ${s.end}, ${s.locked.paidHours.toFixed(2)} hrs${s.notes?'\\n'+s.notes.replace(/\n/g,'\\n'):''}\r\nEND:VEVENT\r\n`;
+    ics += `BEGIN:VEVENT\r\nUID:${s.id}@hourfolio.site\r\nDTSTART:${dtStart}\r\nDTEND:${dtEnd}\r\nSUMMARY:${(emp?emp.name:'Shift')} shift\r\nDESCRIPTION:${s.start} to ${s.end}, ${s.locked.paidHours.toFixed(2)} hrs${s.notes?'\\n'+s.notes.replace(/\n/g,'\\n'):''}\r\nEND:VEVENT\r\n`;
   }
   ics += 'END:VCALENDAR\r\n';
   const blob = new Blob([ics], {type:'text/calendar'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = `workquest-week-${week.start}.ics`;
+  a.href = url; a.download = `hourfolio-week-${week.start}.ics`;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
   toast('Calendar file downloaded — open it to add to your calendar');
@@ -4322,8 +4347,22 @@ function openPersonalEntryModal(id=''){
   const connections=[...sharingPeople().filter(x=>x.status==='active'),...(STATE.incomingShares||[])],selected=STATE.personalAssignments?.[id]||[];
   openModal(`<button class="modal-close" onclick="closeModal()">×</button><div class="eyebrow">PERSONAL PLANNER</div><h3>${entry?'Edit plan':'Add something personal'}</h3><div class="field"><label>Type</label><select id="personalType">${[['appointment','✚ Appointment'],['reminder','◷ Reminder'],['event','◆ Event'],['task','✓ To-do'],['note','✦ Private note']].map(x=>`<option value="${x[0]}" ${(entry?.type||'appointment')===x[0]?'selected':''}>${x[1]}</option>`).join('')}</select></div><div class="field"><label>Title</label><input id="personalTitle" maxlength="70" value="${entry?escapeHtml(entry.title):''}" placeholder="e.g. Doctor appointment"></div><div class="field"><label>Date</label><input id="personalDate" type="date" value="${date}"></div><div class="field-row"><div class="field"><label>Starts</label>${timePickerHtml('personalTime',time)}</div><div class="field"><label>Ends</label>${timePickerHtml('personalEndTime',end)}</div></div><div class="field"><label>Details</label><textarea id="personalNotes" rows="4" placeholder="Location, what to bring, or anything to remember…">${entry?escapeHtml(entry.notes):''}</textarea></div><label class="personal-calendar-toggle"><input id="personalShowCalendar" type="checkbox" ${entry?.showOnCalendar!==false?'checked':''}><span><strong>Show on my Calendar</strong><small>Display beside shifts without affecting work or pay.</small></span><i></i></label>${connections.length?`<div class="personal-share-picker"><div><strong>Share to a calendar</strong><small>Only the people you select can see this plan.</small></div>${connections.map(x=>`<label><input type="checkbox" data-personal-share="${x.id}" ${selected.includes(x.id)?'checked':''}><span class="duo-avatar" style="--c1:${x.ownerColor};--c2:${x.memberColor}">${escapeHtml((x.ownerName||'1')[0])}${escapeHtml((x.memberName||'2')[0])}</span><strong>${escapeHtml(x.name)}</strong><i>✓</i></label>`).join('')}</div>`:''}<div class="field"><label>Colour</label><div class="personal-colours">${['#5267D9','#159B70','#E08A3E','#C75D73','#7A62C7','#2B8EA3'].map(c=>`<button class="${(entry?.color||'#5267D9')===c?'active':''}" style="background:${c}" data-colour="${c}" onclick="document.querySelectorAll('.personal-colours button').forEach(x=>x.classList.remove('active'));this.classList.add('active')"></button>`).join('')}</div></div><div class="row wrap"><button class="btn btn-primary" onclick="savePersonalEntry('${id}')">${entry?'Save changes':'Add to planner'}</button>${entry?`<button class="btn btn-danger" onclick="deletePersonalEntry('${id}')">Delete</button>`:''}<button class="btn" onclick="closeModal()">Cancel</button></div>`);
 }
-async function savePersonalEntry(id){const title=document.getElementById('personalTitle')?.value.trim(),notes=document.getElementById('personalNotes')?.value.trim();if(!title)return toast('Give this plan a title');const time24=document.getElementById('personalTime')?.value||'09:00',endTime24=document.getElementById('personalEndTime')?.value||'10:00',fmt=t=>`${to12(t).h12}:${String(to12(t).m).padStart(2,'0')} ${to12(t).ampm}`,item={id:id||uid('personal'),type:document.getElementById('personalType').value,date:document.getElementById('personalDate').value,time24,endTime24,time:fmt(time24),endTime:fmt(endTime24),title,notes,showOnCalendar:!!document.getElementById('personalShowCalendar').checked,color:document.querySelector('.personal-colours button.active')?.dataset.colour||'#5267D9',createdAt:new Date().toISOString()};const chosen=[...document.querySelectorAll('[data-personal-share]:checked')].map(x=>x.dataset.personalShare),index=STATE.personalEntries.findIndex(x=>x.id===id);if(index>=0)STATE.personalEntries[index]={...STATE.personalEntries[index],...item};else STATE.personalEntries.push(item);const previous=STATE.personalAssignments[item.id]||[],affected=[...new Set([...previous,...chosen])];STATE.personalAssignments[item.id]=chosen;closeModal();render();await sb.from('personal_events').upsert({id:item.id,owner_id:STATE.uid,event_date:item.date,event_type:item.type,title:item.title,details:item.notes,start_time:item.time24,end_time:item.endTime24,colour:item.color,show_on_calendar:item.showOnCalendar,updated_at:new Date().toISOString()});for(const memberId of affected){await sb.rpc('assign_personal_event_share',{p_member_id:memberId,p_event_id:item.id,p_shared:chosen.includes(memberId)});delete STATE.incomingCalendars[memberId];delete STATE.incomingPersonalCalendars[memberId];}await saveSettings();toast(chosen.length?`Saved and shared to ${chosen.length} calendar${chosen.length>1?'s':''}`:(id?'Plan updated':'Added to your planner'));}
-async function deletePersonalEntry(id){if(!confirm('Delete this personal plan?'))return;STATE.personalEntries=STATE.personalEntries.filter(x=>x.id!==id);delete STATE.personalAssignments[id];closeModal();render();await sb.from('personal_events').delete().eq('id',id).eq('owner_id',STATE.uid);await saveSettings();toast('Plan deleted');}
+async function savePersonalEntry(id){
+  const title=document.getElementById('personalTitle')?.value.trim(),notes=document.getElementById('personalNotes')?.value.trim();if(!title)return toast('Give this plan a title');
+  const time24=document.getElementById('personalTime')?.value||'09:00',endTime24=document.getElementById('personalEndTime')?.value||'10:00';if(timeToMinutes(endTime24)<=timeToMinutes(time24))return toast('Finish time must be after start time');
+  const fmt=t=>`${to12(t).h12}:${String(to12(t).m).padStart(2,'0')} ${to12(t).ampm}`,existing=(STATE.personalEntries||[]).find(x=>x.id===id),item={id:id||uid('personal'),type:document.getElementById('personalType').value,date:document.getElementById('personalDate').value,time24,endTime24,time:fmt(time24),endTime:fmt(endTime24),title,notes,showOnCalendar:!!document.getElementById('personalShowCalendar').checked,color:document.querySelector('.personal-colours button.active')?.dataset.colour||'#5267D9',createdAt:existing?.createdAt||new Date().toISOString()};
+  const chosen=[...document.querySelectorAll('[data-personal-share]:checked')].map(x=>x.dataset.personalShare),previous=STATE.personalAssignments[item.id]||[],affected=[...new Set([...previous,...chosen])];
+  try{
+    const saved=await sb.from('personal_events').upsert({id:item.id,owner_id:STATE.uid,event_date:item.date,event_type:item.type,title:item.title,details:item.notes,start_time:item.time24,end_time:item.endTime24,colour:item.color,show_on_calendar:item.showOnCalendar,updated_at:new Date().toISOString()});if(saved.error)throw saved.error;
+    for(const memberId of affected){const result=await sb.rpc('assign_personal_event_share',{p_member_id:memberId,p_event_id:item.id,p_shared:chosen.includes(memberId)});if(result.error)throw result.error;delete STATE.incomingCalendars[memberId];delete STATE.incomingPersonalCalendars[memberId];}
+    const index=STATE.personalEntries.findIndex(x=>x.id===id);if(index>=0)STATE.personalEntries[index]={...STATE.personalEntries[index],...item};else STATE.personalEntries.push(item);STATE.personalAssignments[item.id]=chosen;
+    closeModal();render();toast(chosen.length?`Saved and shared to ${chosen.length} calendar${chosen.length>1?'s':''}`:(id?'Plan updated':'Added to your planner'));
+  }catch(error){toast(error.message||'Could not save this plan');}
+}
+async function deletePersonalEntry(id){
+  if(!confirm('Delete this personal plan?'))return;
+  try{const result=await sb.from('personal_events').delete().eq('id',id).eq('owner_id',STATE.uid);if(result.error)throw result.error;STATE.personalEntries=STATE.personalEntries.filter(x=>x.id!==id);delete STATE.personalAssignments[id];closeModal();render();toast('Plan deleted');}catch(error){toast(error.message||'Could not delete this plan');}
+}
 
 function renderAdminDiary(){
   const week = weekForDate(STATE.weekStart);
@@ -4487,7 +4526,7 @@ async function removeSharedPerson(id){
 async function sendShareInvite(id){
   const person=sharingPeople().find(item=>item.id===id);if(!person)return;
   if(person.status==='active'){toast('This invitation has already been accepted');return;}
-  try{const result=await wqWithTimeout(sb.functions.invoke('send-share-invite',{body:{memberId:id,appUrl:`${location.origin}${location.pathname}`,inviterName:STATE.activeProfileName||'A Hourfolio user'}}),15000,'Send invitation email');if(result.error){let message=result.error.message||'Could not send invitation';try{const payload=await result.error.context?.json();message=payload?.error||message;}catch(_){}throw new Error(message);}person.token=result.data?.token||person.token;toast('Sent successfully');}catch(error){toast(error.message||'Could not send invitation');}
+  try{const result=await wqWithTimeout(sb.functions.invoke('send-share-invite',{body:{memberId:id,inviterName:STATE.activeProfileName||'A Hourfolio user'}}),15000,'Send invitation email');if(result.error){let message=result.error.message||'Could not send invitation';try{const payload=await result.error.context?.json();message=payload?.error||message;}catch(_){}throw new Error(message);}person.token=result.data?.token||person.token;toast('Sent successfully');}catch(error){toast(error.message||'Could not send invitation');}
 }
 async function toggleSharePause(id,paused){try{await wqRequest(()=>sb.rpc('set_share_paused',{p_member_id:id,p_paused:paused}),'Update sharing pause',10000);const person=sharingPeople().find(x=>x.id===id);if(person)person.paused=paused;closeModal();openShareHub();toast(paused?'Sharing paused':'Sharing resumed');}catch(error){toast(error.message||'Could not update sharing');}}
 async function toggleShiftShare(shiftId,personId,button){
@@ -4496,9 +4535,9 @@ async function toggleShiftShare(shiftId,personId,button){
 }
 async function notifySharedConnection(memberId,kind,shift){if(!shift)return;const emp=getEmployer(shift.employerId),date=`${DOW_LONG[dowIndex(shift.date)]} ${formatAUShort(shift.date)}`,verb=kind==='shift_removed'?'removed':kind==='shift_edited'?'edited':'shared';try{await sb.rpc('create_share_shift_notification',{p_member_id:memberId,p_kind:kind,p_title:`${STATE.activeProfileName||'Someone'} ${verb} a shift`,p_message:`${emp?.name||shift.employerName||'Work'} · ${date} · ${shift.start}–${shift.end}`,p_details:{date:shift.date,start:shift.start,end:shift.end,employer:emp?.name||shift.employerName||'Work'}});}catch(error){console.warn('Shared notification skipped:',error);}}
 async function showPendingShareNotifications(){
-  try{const result=await wqRequest(()=>sb.rpc('get_unseen_share_notifications'),'Shared calendar notifications',10000),events=result.data||[];if(!events.length)return;const ids=events.map(x=>x.id);openModal(`<div class="share-notification-head"><span>✦</span><div><div class="eyebrow">SHARED CALENDAR</div><h3>${events.length===1?'A new update':events.length+' new updates'}</h3></div></div><div class="share-notification-list">${events.slice(0,8).map(event=>`<div class="share-notification-item ${event.kind}"><span>${event.kind==='permission_request'?'$':event.kind==='permission_response'?'✓':'▦'}</span><div><strong>${escapeHtml(event.title)}</strong><p>${escapeHtml(event.message||'')}</p>${event.details?.date?`<small>${escapeHtml(event.details.date)} · ${escapeHtml(event.details.start||'')}–${escapeHtml(event.details.end||'')}</small>`:''}</div></div>`).join('')}</div><button class="btn btn-primary btn-block" onclick="dismissShareNotifications('${ids.join(',')}')">View my calendar</button>`);}catch(error){console.warn('Shared notifications skipped:',error);}
+  try{const result=await wqRequest(()=>sb.rpc('get_unseen_share_notifications'),'Shared calendar notifications',10000),events=result.data||[];if(!events.length)return;const ids=events.map(x=>x.id),hasPlans=events.some(x=>x.details?.proposal_id);openModal(`<div class="share-notification-head"><span>✦</span><div><div class="eyebrow">SHARED CALENDAR</div><h3>${events.length===1?'A new update':events.length+' new updates'}</h3></div></div><div class="share-notification-list">${events.slice(0,8).map(event=>`<div class="share-notification-item ${event.kind}"><span>${event.details?.proposal_id?'◇':event.kind==='permission_request'?'$':event.kind==='permission_response'?'✓':'▦'}</span><div><strong>${escapeHtml(event.title)}</strong><p>${escapeHtml(event.message||'')}</p>${event.details?.date?`<small>${escapeHtml(event.details.date)} · ${escapeHtml(event.details.start||'')}–${escapeHtml(event.details.end||'')}</small>`:''}</div></div>`).join('')}</div><button class="btn btn-primary btn-block" onclick="dismissShareNotifications('${ids.join(',')}','${hasPlans?'together':'calendar'}')">${hasPlans?'Review shared plans':'View my calendar'}</button>`);}catch(error){console.warn('Shared notifications skipped:',error);}
 }
-async function dismissShareNotifications(ids){const values=String(ids).split(',').map(Number).filter(Boolean);try{await sb.rpc('mark_share_notifications_seen',{p_ids:values});}catch(_){}closeModal();switchTab('calendar');}
+async function dismissShareNotifications(ids,destination='calendar'){const values=String(ids).split(',').map(Number).filter(Boolean);try{await sb.rpc('mark_share_notifications_seen',{p_ids:values});}catch(_){}closeModal();if(destination==='together')await openTogetherTab();else switchTab('calendar');}
 function openChallengeCreator(personId){
   const person=sharingPeople().find(item=>item.id===personId);if(!person)return;
   closeModal();openModal(`<button class="modal-close" onclick="closeModal();openShareHub()">×</button><div class="eyebrow">WEEKLY CHALLENGE</div><h3>Challenge ${escapeHtml(person.name)}</h3><div class="challenge-choice"><button class="active" data-challenge-type="shifts" onclick="selectChallengeType('shifts')">⚡ Shifts</button><button data-challenge-type="earnings" onclick="selectChallengeType('earnings')">💰 Earnings</button></div><div class="field"><label id="challengeTargetLabel">Target shifts this week</label><input id="challengeTarget" type="number" min="1" value="5"></div><button class="btn btn-primary btn-block" onclick="saveChallenge('${personId}')">Start challenge</button>`);
@@ -4521,13 +4560,14 @@ function minutesClock(min){return formatClock12(`${String(Math.floor(min/60)).pa
 function renderTogether(){
   const connections=togetherConnections();if(!connections.length)return `<div class="together-empty"><span>⌁</span><h2>Planning is better together</h2><p>Connect a calendar first, then Hourfolio can find free time without revealing private details.</p><button class="btn btn-primary" onclick="switchTab('settings');openShareHub()">Invite someone</button></div>`;
   let connection=selectedShareConnection();if(!connection){connection=connections[0];STATE.selectedCalendarPerson=connection.selectId;setTimeout(()=>chooseTogetherCalendar(connection.selectId),0);}const slots=connection?freeTimeMatches(connection):[],plans=(STATE.togetherProposals||[]).filter(x=>!connection||x.member_id===connection.id),pending=plans.filter(x=>x.status==='pending');
-  return `<div class="together-people">${connections.map(x=>`<button class="${connection?.id===x.id?'active':''}" onclick="chooseTogetherCalendar('${x.selectId}')"><span class="duo-avatar" style="--c1:${x.ownerColor};--c2:${x.memberColor}">${escapeHtml((x.ownerName||'1')[0])}${escapeHtml((x.memberName||'2')[0])}</span><strong>${escapeHtml(x.name)}</strong></button>`).join('')}</div><section class="together-hero"><div class="eyebrow">SMART AVAILABILITY</div><h2>Time that works for both.</h2><p>Hourfolio compares visible work and personal plans on this device. Private titles stay private.</p><button onclick="openSharedPlanModal('${connection?.id||''}')">＋ Propose a plan</button></section><div class="together-section-head"><div><div class="eyebrow">NEXT 10 DAYS</div><h3>Best free windows</h3></div><span>${slots.length} matches</span></div><div class="free-slot-grid">${slots.length?slots.map(s=>`<button onclick="openSharedPlanModal('${connection?.id||''}','${s.date}','${minutesClock(s.start)}','${minutesClock(s.end)}')"><div><strong>${offsetDateLabel(s.date)}</strong><small>${DOW_LONG[dowIndex(s.date)]}</small></div><span>${minutesClock(s.start)}–${minutesClock(s.end)}</span><i>Propose ›</i></button>`).join(''):'<div class="viewer-note">Open this shared calendar once so Hourfolio can compare both schedules.</div>'}</div><div class="together-section-head"><div><div class="eyebrow">SHARED PLANS</div><h3>Proposals and plans</h3></div><span>${pending.length} pending</span></div><div class="together-plans">${plans.length?plans.map(p=>`<article class="${p.status}"><span style="background:${p.colour||'#5267D9'}">${p.status==='accepted'?'✓':p.status==='declined'?'×':'?'}</span><div><strong>${escapeHtml(p.title)}</strong><small>${escapeHtml(String(p.plan_date))} · ${formatClock12(p.start)}–${formatClock12(p.end)}${p.location?' · '+escapeHtml(p.location):''}</small><b>${p.status}</b></div>${p.status==='pending'&&p.recipient_id===STATE.authUid?`<div><button onclick="respondTogetherPlan('${p.id}',true)">Accept</button><button onclick="respondTogetherPlan('${p.id}',false)">Decline</button></div>`:''}</article>`).join(''):'<div class="personal-empty"><span>◇</span><h3>No plans proposed yet</h3><p>Choose a free window or create your own suggestion.</p></div>'}</div>`;
+  return `<div class="together-people">${connections.map(x=>`<button class="${connection?.id===x.id?'active':''}" onclick="chooseTogetherCalendar('${x.selectId}')"><span class="duo-avatar" style="--c1:${x.ownerColor};--c2:${x.memberColor}">${escapeHtml((x.ownerName||'1')[0])}${escapeHtml((x.memberName||'2')[0])}</span><strong>${escapeHtml(x.name)}</strong></button>`).join('')}</div><section class="together-hero"><div class="eyebrow">SMART AVAILABILITY</div><h2>Time that works for both.</h2><p>Hourfolio compares visible work and personal plans on this device. Private titles stay private.</p><button onclick="openSharedPlanModal('${connection?.id||''}')">＋ Propose a plan</button></section><div class="together-section-head"><div><div class="eyebrow">NEXT 10 DAYS</div><h3>Best free windows</h3></div><span>${slots.length} matches</span></div><div class="free-slot-grid">${slots.length?slots.map(s=>`<button onclick="openSharedPlanModal('${connection?.id||''}','${s.date}','${minutesClock(s.start)}','${minutesClock(s.end)}')"><div><strong>${offsetDateLabel(s.date)}</strong><small>${DOW_LONG[dowIndex(s.date)]}</small></div><span>${minutesClock(s.start)}–${minutesClock(s.end)}</span><i>Propose ›</i></button>`).join(''):'<div class="viewer-note">Open this shared calendar once so Hourfolio can compare both schedules.</div>'}</div><div class="together-section-head"><div><div class="eyebrow">SHARED PLANS</div><h3>Proposals and plans</h3></div><span>${pending.length} pending</span></div><div class="together-plans">${plans.length?plans.map(p=>`<article class="${p.status}"><span style="background:${p.colour||'#5267D9'}">${p.status==='accepted'?'✓':p.status==='declined'||p.status==='cancelled'?'×':'?'}</span><div><strong>${escapeHtml(p.title)}</strong><small>${escapeHtml(String(p.plan_date))} · ${formatClock12(p.start)}–${formatClock12(p.end)}${p.location?' · '+escapeHtml(p.location):''}</small><b>${p.status}</b></div>${p.status==='pending'&&p.recipient_id===STATE.authUid?`<div><button onclick="respondTogetherPlan('${p.id}',true)">Accept</button><button onclick="respondTogetherPlan('${p.id}',false)">Decline</button></div>`:p.creator_id===STATE.authUid&&['pending','accepted'].includes(p.status)?`<div><button onclick="cancelTogetherPlan('${p.id}')">Cancel</button></div>`:''}</article>`).join(''):'<div class="personal-empty"><span>◇</span><h3>No plans proposed yet</h3><p>Choose a free window or create your own suggestion.</p></div>'}</div>`;
 }
 function offsetDateLabel(date){const diff=Math.round((dateFromISO(date)-dateFromISO(getTodaySydney()))/86400000);return diff===0?'Today':diff===1?'Tomorrow':`${Number(date.slice(8,10))} ${MONTH_SHORT[Number(date.slice(5,7))-1]}`;}
 function clockTo24(label){const m=String(label||'').match(/(\d+):(\d+)\s*(AM|PM)/i);return m?to24(Number(m[1]),Number(m[2]),m[3].toUpperCase()):'09:00';}
 function openSharedPlanModal(memberId,date=getTodaySydney(),startLabel='9:00 AM',endLabel='10:00 AM'){const start=clockTo24(startLabel),end=clockTo24(endLabel);openModal(`<button class="modal-close" onclick="closeModal()">×</button><div class="eyebrow">PROPOSE A PLAN</div><h3>Find a time together</h3><div class="field"><label>What are you planning?</label><input id="togetherTitle" placeholder="e.g. Dinner, gym, appointment"></div><div class="field"><label>Date</label><input id="togetherDate" type="date" value="${date}"></div><div class="field-row"><div class="field"><label>Starts</label>${timePickerHtml('togetherStart',start)}</div><div class="field"><label>Ends</label>${timePickerHtml('togetherEnd',end)}</div></div><div class="field"><label>Location (optional)</label><input id="togetherLocation" placeholder="Where?"></div><div class="field"><label>Message (optional)</label><textarea id="togetherNote" rows="3" placeholder="Add a note…"></textarea></div><div class="proposal-privacy"><span>◉</span><div><strong>Nothing is added yet</strong><small>The other person must accept this proposal first.</small></div></div><button class="btn btn-primary btn-block" onclick="saveTogetherPlan('${memberId}')">Send proposal</button>`);}
 async function saveTogetherPlan(memberId){const title=document.getElementById('togetherTitle')?.value.trim();if(!title)return toast('Enter a plan title');try{await wqRequest(()=>sb.rpc('create_shared_plan',{p_member_id:memberId,p_title:title,p_date:document.getElementById('togetherDate').value,p_start:document.getElementById('togetherStart').value,p_end:document.getElementById('togetherEnd').value,p_location:document.getElementById('togetherLocation').value,p_note:document.getElementById('togetherNote').value,p_colour:'#5267D9'}),'Send plan proposal',10000);STATE.togetherLoaded=false;closeModal();toast('Proposal sent');await openTogetherTab();}catch(error){toast(error.message||'Could not send proposal');}}
 async function respondTogetherPlan(id,accept){try{await wqRequest(()=>sb.rpc('respond_shared_plan',{p_plan_id:id,p_accept:accept}),'Respond to plan',10000);STATE.togetherLoaded=false;toast(accept?'Plan accepted':'Plan declined');await openTogetherTab();}catch(error){toast(error.message||'Could not respond');}}
+async function cancelTogetherPlan(id){if(!confirm('Cancel this shared plan?'))return;try{await wqRequest(()=>sb.rpc('cancel_shared_plan',{p_plan_id:id}),'Cancel shared plan',10000);STATE.togetherLoaded=false;toast('Plan cancelled');await openTogetherTab();}catch(error){toast(error.message||'Could not cancel this plan');}}
 
 function renderAchievements(){
   const stats=achievementStats();const badges=[{icon:'🌱',name:'First shift',note:'Record your first shift',on:stats.total>=1},{icon:'🔥',name:'On a roll',note:'Work 3 days in a row',on:stats.streak>=3},{icon:'⚡',name:'Power week',note:'Complete 5 shifts in a week',on:stats.week>=5},{icon:'🏆',name:'Century club',note:'Record 100 shifts',on:stats.total>=100},{icon:'💎',name:'Big week',note:'Earn $1,000 in one week',on:stats.weekCash>=1000},{icon:'🗓️',name:'Committed',note:'Record 30 shifts',on:stats.total>=30}];
@@ -5469,6 +5509,7 @@ async function cancelSeries(seriesId, fromDate){
   closeModal(); render();
   setSync('saving','Saving…');
   const {error} = await sb.from('shifts').delete().in('id', ids);
+  if(error){for(const id of ids)offlineQueue.push({type:'delete',table:'shifts',id});persistQueue();}
   setSync(error?'error':'saved', error?'⚠️ Unable to save':'Saved ✓');
   toast(`${ids.length} shift${ids.length>1?'s':''} cancelled`);
   if(!error) notifyViewers('🗑️', 'Shifts cancelled', `${ids.length} upcoming shift${ids.length>1?'s were':' was'} cancelled`);
@@ -5811,7 +5852,7 @@ try { Object.assign(window, {
 }); } catch(e) { console.error(e); }
 </script>
 
-<style id="workquest-pin-screen-size-fix">
+<style id="hourfolio-pin-screen-size-fix">
 /* Master PIN is a full-viewport auth screen: center the card in the available screen. */
 #master-pin-screen {
   display:flex !important;
@@ -5840,7 +5881,7 @@ try { Object.assign(window, {
   }
 }
 </style>
-<style id="workquest-final-layout-fix">
+<style id="hourfolio-final-layout-fix">
 /* Startup/auth screens stay locked; the signed-in app shell is the scroll container. */
 #app-screen:not(.hidden) {
   box-sizing: border-box !important;
@@ -5865,7 +5906,7 @@ try { Object.assign(window, {
 #modalRoot, #modalRoot .modal-backdrop { z-index: 3000 !important; }
 </style>
 
-<style id="workquest-full-height-v8">
+<style id="hourfolio-full-height-v8">
 /* Final viewport fill: every startup/auth screen reaches the real viewport edge.
    Safe-area padding is handled by the individual controls, not by the document body. */
 html, body {
@@ -5943,7 +5984,7 @@ body {
 }
 </style>
 
-<style id="workquest-true-viewport-fix">
+<style id="hourfolio-true-viewport-fix">
 /* V9: make each Hourfolio view an actual viewport layer.
    Using fixed inset:0 avoids 100vh/100dvh rounding and leaves no body strip. */
 html {
@@ -6031,7 +6072,7 @@ body {
 }
 </style>
 
-<style id="workquest-2026-redesign">
+<style id="hourfolio-2026-redesign">
 /* =========================================================================
    HOURFOLIO 2026 — edge-to-edge responsive workspace
    ========================================================================= */
@@ -6303,7 +6344,7 @@ button:disabled{opacity:.38!important;filter:saturate(.3);box-shadow:none!import
 }
 </style>
 
-<style id="workquest-no-bottom-strip">
+<style id="hourfolio-no-bottom-strip">
 /* Final mobile viewport rule: no footer border and no duplicated safe-area band. */
 @media(max-width:899px){
   [data-theme="light"] #app-screen:not(.hidden){--bg:#ffffff;--bg-2:#ffffff;--card:#ffffff;--card-2:#f3f5fa;--line:#e3e6ed;--line-soft:#eff1f5;--text:#101218;--text-dim:#545b69;--text-faint:#858c99}
@@ -6326,12 +6367,12 @@ button:disabled{opacity:.38!important;filter:saturate(.3);box-shadow:none!import
 }
 </style>
 
-<style id="workquest-secret-pin-mask">
+<style id="hourfolio-secret-pin-mask">
 /* PINs are passwords; verification codes remain readable. */
 .pin-boxes:not(.otp-boxes) input{-webkit-text-security:disc!important;text-security:disc!important;color:var(--text)!important;caret-color:var(--accent)}
 </style>
 
-<style id="workquest-sharing-achievements">
+<style id="hourfolio-sharing-achievements">
 .people-calendar-bar{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:10px;border:0;border-radius:20px;background:var(--card);box-shadow:var(--shadow-sm)}.people-calendar-scroll{display:flex;align-items:center;gap:7px;min-width:0;flex:1;overflow-x:auto;scrollbar-width:none}.people-calendar-scroll::-webkit-scrollbar{display:none}.person-chip{flex:0 0 auto;min-height:50px;padding:5px 10px 5px 6px;border:0;border-radius:15px;background:transparent;color:var(--text-dim);display:flex;align-items:center;gap:7px}.person-chip strong{font-size:10.5px;white-space:nowrap}.person-chip.active{background:var(--blue-dim);color:var(--text)}.person-avatar{width:36px;height:36px;flex:0 0 36px;border-radius:12px;display:grid;place-items:center;color:#fff;font-size:13px;font-weight:900;box-shadow:0 7px 16px rgba(0,0,0,.12)}.person-avatar.all{background:linear-gradient(145deg,var(--accent),#9868e9)}.person-avatar.add{background:var(--card-2);color:var(--accent);box-shadow:none}.share-hub-button{min-height:42px;padding:0 13px;border:0;border-radius:13px;background:linear-gradient(145deg,var(--accent),#8f67e5);color:#fff;font-size:10.5px;font-weight:800;white-space:nowrap}.shift-share-pills{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.mini-share{min-height:25px;padding:3px 8px;border:0;border-radius:8px;background:var(--card-2);color:var(--text-faint);font-size:9px;font-weight:800}.mini-share.on{background:var(--blue-dim);color:var(--accent)}
 .share-people-list{display:grid;gap:9px;margin:17px 0}.share-empty{padding:24px;border-radius:18px;background:var(--card);color:var(--text-faint);text-align:center;font-size:12px}.share-person-card{padding:14px;border:0;border-radius:18px;background:var(--card);box-shadow:var(--shadow-sm)}.share-person-top{display:grid;grid-template-columns:42px 1fr auto;align-items:center;gap:10px}.share-person-top>div{min-width:0}.share-person-top strong,.share-person-top small{display:block}.share-person-top small{margin-top:2px;color:var(--text-faint);font-size:10px;overflow:hidden;text-overflow:ellipsis}.share-remove{border:0;background:var(--rust-dim);color:var(--rust);border-radius:9px;padding:7px 9px;font-size:9px;font-weight:800}.share-permissions{display:flex;flex-wrap:wrap;gap:8px 14px;margin:13px 0}.share-permissions label{display:flex;align-items:center;gap:6px;font-size:10.5px;text-transform:none}.share-permissions input{width:16px;height:16px;min-height:16px}.share-person-actions{display:flex;gap:7px}.share-invite-form{padding:15px;border-radius:18px;background:var(--card-2)}.share-settings-summary{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;margin-bottom:20px}.share-settings-summary strong,.share-settings-summary small{display:block}.share-settings-summary small{margin-top:3px;color:var(--text-faint);font-size:10px}.share-avatar-stack{display:flex}.share-avatar-stack span{width:34px;height:34px;margin-left:-8px;border:3px solid var(--card);border-radius:12px;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:900}.share-avatar-stack span:first-child{margin-left:0}.challenge-choice{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:17px 0}.challenge-choice button{min-height:58px;border:0;border-radius:16px;background:var(--card);color:var(--text-dim);font-weight:800}.challenge-choice button.active{background:var(--blue-dim);color:var(--accent);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)}
 .duo-avatar{background:linear-gradient(135deg,var(--c1) 0 49%,#fff 49% 53%,var(--c2) 53% 100%)!important;letter-spacing:-2px;text-shadow:0 1px 4px rgba(0,0,0,.28)}
