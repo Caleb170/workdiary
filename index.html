@@ -2196,6 +2196,23 @@ async function enterApp(){
 
 const WQ_TUTORIAL_STEPS=[{icon:'▤',title:'Your Diary',text:'Log shifts and keep each day organised at a glance.'},{icon:'▦',title:'Your Calendar',text:'See your work pattern across the month and spot worked, planned and holiday days.'},{icon:'⌁',title:'Timeline & earnings',text:'Follow your earnings history, including salary and payday information.'},{icon:'＋',title:'Add Shift & settings',text:'Use + Add shift for new work. Pay Rates manages jobs, pay frequency, salary, bonuses and preferences.'}];let _wqTutorialIndex=0;function showQuickTutorial(){if(localStorage.getItem('wq_quick_tutorial_done')==='1'){localStorage.removeItem('wq_pending_quick_tutorial');return;}_wqTutorialIndex=0;renderQuickTutorial()}function renderQuickTutorial(){const root=document.getElementById('wqTutorialRoot');if(!root)return;const x=WQ_TUTORIAL_STEPS[_wqTutorialIndex];root.innerHTML=`<div class="wq-tutorial-backdrop"><div class="wq-tutorial-card" role="dialog" aria-modal="true"><div class="wq-tutorial-top"><span class="wq-tutorial-eyebrow">QUICK TOUR</span><span class="wq-tutorial-count">${_wqTutorialIndex+1} / ${WQ_TUTORIAL_STEPS.length}</span></div><div class="wq-tutorial-progress">${WQ_TUTORIAL_STEPS.map((_,i)=>`<span class="${i<=_wqTutorialIndex?'active':''}"></span>`).join('')}</div><div class="wq-tutorial-visual"><div class="wq-tutorial-icon">${x.icon}</div><div class="wq-tutorial-orb"></div><div class="wq-tutorial-lines"><span></span><span></span><span></span></div></div><h3>${x.title}</h3><p>${x.text}</p><div class="wq-tutorial-actions"><button class="wq-tutorial-skip" onclick="skipQuickTutorial()">Skip</button><button class="btn btn-primary" onclick="nextQuickTutorial()">${_wqTutorialIndex===3?'Got it':'Next'} <span aria-hidden="true">→</span></button></div></div></div>`;root.classList.remove('hidden')}function nextQuickTutorial(){if(_wqTutorialIndex===3){finishQuickTutorial();return}_wqTutorialIndex++;renderQuickTutorial()}function skipQuickTutorial(){finishQuickTutorial()}function finishQuickTutorial(){localStorage.setItem('wq_quick_tutorial_done','1');localStorage.removeItem('wq_pending_quick_tutorial');const r=document.getElementById('wqTutorialRoot');if(r){r.classList.add('hidden');r.innerHTML=''}}
 
+const WQ_TUTORIAL_ACTIONS=[
+  {label:'Open Diary',run:()=>document.querySelector('[data-tab="diary"]')?.click()},
+  {label:'Open Calendar',run:()=>document.querySelector('[data-tab="calendar"]')?.click()},
+  {label:'Open Timeline',run:()=>document.querySelector('[data-tab="timeline"]')?.click()},
+  {label:'Open the menu',run:()=>document.getElementById('mobileMenuBtn')?.click()}
+];
+function renderQuickTutorial(){
+  const root=document.getElementById('wqTutorialRoot');if(!root)return;const x=WQ_TUTORIAL_STEPS[_wqTutorialIndex],action=WQ_TUTORIAL_ACTIONS[_wqTutorialIndex];
+  root.innerHTML=`<div class="wq-tutorial-backdrop"><div class="wq-tutorial-card" role="dialog" aria-modal="true"><div class="wq-tutorial-top"><span class="wq-tutorial-eyebrow">INTERACTIVE TOUR</span><span class="wq-tutorial-count">${_wqTutorialIndex+1} / ${WQ_TUTORIAL_STEPS.length}</span></div><div class="wq-tutorial-progress">${WQ_TUTORIAL_STEPS.map((_,i)=>`<span class="${i<=_wqTutorialIndex?'active':''}"></span>`).join('')}</div><div class="wq-tutorial-visual"><div class="wq-tutorial-icon">${x.icon}</div><div class="wq-tutorial-orb"></div><div class="wq-tutorial-lines"><span></span><span></span><span></span></div></div><h3>${x.title}</h3><p>${x.text} Tap below to open the real section and see where it lives.</p><div class="wq-tutorial-actions"><button class="wq-tutorial-skip" onclick="skipQuickTutorial()">Skip</button><button class="btn btn-primary" onclick="tryQuickTutorialStep()">${action.label} <span aria-hidden="true">→</span></button></div></div></div>`;root.classList.remove('hidden');
+}
+function tryQuickTutorialStep(){
+  const action=WQ_TUTORIAL_ACTIONS[_wqTutorialIndex],last=_wqTutorialIndex===WQ_TUTORIAL_STEPS.length-1,root=document.getElementById('wqTutorialRoot');
+  root?.classList.add('hidden');action?.run();
+  if(last){finishQuickTutorial();window.setTimeout(scheduleInstallGuide,500);return;}
+  _wqTutorialIndex++;window.setTimeout(renderQuickTutorial,500);
+}
+
 let _hourfolioInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();_hourfolioInstallPrompt=event;});
 function hourfolioIsInstalled(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;}
