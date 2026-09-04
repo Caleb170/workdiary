@@ -1674,7 +1674,7 @@ body {
     <div class="mobile-menu-list">
       <button onclick="closeMobileMenu();openSearchModal()"><span>⌕</span><strong>Search shifts</strong><i>›</i></button>
       <button onclick="toggleTheme();syncMobileMenuThemeLabel()"><span>◐</span><strong id="mobileThemeLabel">Change appearance</strong><i>›</i></button>
-      <button onclick="toggleTrustedDevice()"><span>⌁</span><strong id="mobileTrustedDeviceLabel">Remember this device</strong><i>›</i></button>
+      <button class="remember-device-row remember-on" onclick="toggleTrustedDevice()"><span>⌁</span><strong id="mobileTrustedDeviceLabel">Remembered <b>✓</b></strong><i class="remember-switch"><u></u></i></button>
       <button onclick="closeMobileMenu();setTimeout(()=>showInstallGuide(/android/i.test(navigator.userAgent)?'android':'iphone'),180)"><span>⇧</span><strong>Install Hourfolio</strong><i>›</i></button>
       <button onclick="closeMobileMenu();logout()"><span>⇄</span><strong>Switch profile</strong><i>›</i></button>
       <button class="mobile-menu-danger" onclick="closeMobileMenu();fullSignOut()"><span>↪</span><strong>Sign out</strong><i>›</i></button>
@@ -2009,7 +2009,7 @@ function totalEarningsForRange(fromISO, toISO){
   let salary = 0;
   for(const emp of STATE.employers){
     if(emp.payMode!=='salary' || !emp.salaryVersions?.length) continue;
-    if(emp.salaryFrequency==='monthly' || emp.salaryFrequency==='yearly'){ let cursor=fromISO.slice(0,7)+'-01'; while(isoCompare(cursor,toISO)<=0){ const [y,m]=cursor.split('-').map(Number); const payday=monthlyDom(y,m,emp.salaryPayDay||1); if(isoCompare(payday,fromISO)>=0&&isoCompare(payday,toISO)<=0){ const v=versionForDate(emp.salaryVersions,payday); salary+=(v?.amount||0)*(emp.salaryFrequency==='yearly'?1/12:1); } cursor=addDays(payday,1); } } else { const weekStarts=weeksWithShiftsForEmployer(emp.id,fromISO,toISO); for(const ws of weekStarts){ const v=versionForDate(emp.salaryVersions,ws); salary+=v?.amount||0; } }
+    if(emp.salaryFrequency==='monthly' || emp.salaryFrequency==='yearly'){ let cursor=fromISO.slice(0,7)+'-01'; while(isoCompare(cursor,toISO)<=0){ const [y,m]=cursor.split('-').map(Number); const payday=monthlyDom(y,m,emp.salaryPayDay||1); if(isoCompare(payday,fromISO)>=0&&isoCompare(payday,toISO)<=0){ const v=versionForDate(emp.salaryVersions,payday); salary+=(v?.amount||0)*(emp.salaryFrequency==='yearly'?1/12:1); } cursor=addDays(payday,1); } } else { const periods=new Map(); STATE.shifts.filter(s=>s.employerId===emp.id&&isoCompare(s.date,fromISO)>=0&&isoCompare(s.date,toISO)<=0).forEach(s=>{const p=salaryPeriodForDate(emp,s.date);periods.set(p.key,p);}); periods.forEach(p=>salary+=p.amount); }
   }
   return hourly+salary;
 }
@@ -2017,7 +2017,9 @@ function salaryCreditForWeek(employer, weekStart){
   if(employer.payMode!=='salary' || employer.salaryFrequency==='monthly' || employer.salaryFrequency==='yearly' || !employer.salaryVersions?.length) return 0;
   const hasShift = STATE.shifts.some(s=>s.employerId===employer.id && weekForDate(s.date).start===weekStart);
   if(!hasShift) return 0;
-  return versionForDate(employer.salaryVersions, weekStart)?.amount||0;
+  const period=salaryPeriodForDate(employer,weekStart);
+  if(employer.salaryFrequency==='fortnightly'&&period.start!==weekStart)return 0;
+  return period.amount;
 }
 
 /* =========================================================================
@@ -2072,7 +2074,9 @@ function payPeriodEarnings(emp, paydayISO){
   const {periodStart, periodEnd} = payPeriodBounds(emp, paydayISO);
   if(emp.payMode==='salary'){
     if(emp.salaryFrequency==='monthly' || emp.salaryFrequency==='yearly'){ const v=versionForDate(emp.salaryVersions,paydayISO); return (v?.amount||0)*(emp.salaryFrequency==='yearly'?1/12:1); }
-    return weeksWithShiftsForEmployer(emp.id, periodStart, periodEnd).reduce((sum,ws)=>sum+salaryCreditForWeek(emp,ws),0);
+    const periods=new Map();
+    STATE.shifts.filter(s=>s.employerId===emp.id&&isoCompare(s.date,periodStart)>=0&&isoCompare(s.date,periodEnd)<=0).forEach(s=>{const p=salaryPeriodForDate(emp,s.date);periods.set(p.key,p);});
+    return [...periods.values()].reduce((sum,p)=>sum+p.amount,0);
   }
   return STATE.shifts.filter(s=>s.employerId===emp.id && isoCompare(s.date,periodStart)>=0 && isoCompare(s.date,periodEnd)<=0)
     .reduce((sum,s)=>sum+(s.locked?.totalPay||0),0);
@@ -2109,10 +2113,36 @@ let _pinActivationMode = false;
 let _pinRecoveryMode = false;
 let _newSignupMode = false;
 const WQ_TRUSTED_DEVICE_KEY='wq_trusted_device_v1';
+const WQ_TRUSTED_DEVICE_PREF='wq_trusted_device_pref_v1';
 
 function getEmployer(id){ return STATE.employers.find(e=>e.id===id); }
 function shiftsOnDate(iso){ return STATE.shifts.filter(s=>s.date===iso).sort((a,b)=>a.start<b.start?-1:1); }
-function dayTotal(iso){ return shiftsOnDate(iso).reduce((sum,s)=>sum+(s.locked?.totalPay||0),0); }
+function salaryPeriodForDate(emp,iso){
+  const frequency=emp.salaryFrequency||'weekly';
+  if(frequency==='monthly'||frequency==='yearly'){
+    const [y,m]=iso.split('-').map(Number),start=isoFromParts(y,m,1),end=isoFromParts(y,m,new Date(Date.UTC(y,m,0)).getUTCDate());
+    return {key:`${emp.id}:${y}-${m}`,start,end,amount:(versionForDate(emp.salaryVersions||[],iso)?.amount||0)*(frequency==='yearly'?1/12:1)};
+  }
+  if(frequency==='fortnightly'){
+    const anchor=emp.payCycle?.anchorDate||weekForDate(iso).start;
+    const delta=Math.floor((dateFromISO(iso)-dateFromISO(anchor))/86400000),block=Math.floor(delta/14),start=addDays(anchor,block*14);
+    return {key:`${emp.id}:${start}`,start,end:addDays(start,13),amount:versionForDate(emp.salaryVersions||[],iso)?.amount||0};
+  }
+  const start=weekForDate(iso).start;
+  return {key:`${emp.id}:${start}`,start,end:addDays(start,6),amount:versionForDate(emp.salaryVersions||[],iso)?.amount||0};
+}
+function salaryDayAmount(emp,iso){
+  if(!emp||emp.payMode!=='salary')return 0;
+  const period=salaryPeriodForDate(emp,iso);
+  const workedDays=new Set(STATE.shifts.filter(s=>s.employerId===emp.id&&isoCompare(s.date,period.start)>=0&&isoCompare(s.date,period.end)<=0).map(s=>s.date));
+  return workedDays.has(iso)?period.amount/Math.max(1,workedDays.size):0;
+}
+function calendarDayTotal(iso,shifts=shiftsOnDate(iso)){
+  let total=shifts.reduce((sum,s)=>sum+(getEmployer(s.employerId)?.payMode==='salary'?0:Number(s.locked?.totalPay||0)),0);
+  new Set(shifts.map(s=>s.employerId).filter(id=>getEmployer(id)?.payMode==='salary')).forEach(id=>{total+=salaryDayAmount(getEmployer(id),iso);});
+  return total;
+}
+function dayTotal(iso){ return calendarDayTotal(iso); }
 
 /* =========================================================================
    AUTH
@@ -2155,13 +2185,9 @@ async function enterApp(){
   if(STATE.role==='admin'){
     try { startTickerWatcher(); } catch(err) { console.error('Ticker init failed:',err); }
   }
-  // Do not place a full-screen tutorial overlay over a freshly opened account.
-  // A new/empty account must remain immediately interactive; the tutorial can
-  // be launched later without blocking the app during startup.
-  const tutorialRoot=document.getElementById('wqTutorialRoot');
-  if(tutorialRoot){ tutorialRoot.classList.add('hidden'); tutorialRoot.innerHTML=''; }
-  localStorage.removeItem('wq_pending_quick_tutorial');
-  window.setTimeout(scheduleInstallGuide,900);
+  rememberCurrentDeviceIfEnabled();
+  if(localStorage.getItem('wq_pending_quick_tutorial')==='1')window.setTimeout(showQuickTutorial,700);
+  else window.setTimeout(scheduleInstallGuide,900);
 
   const generation=++_wqSyncGeneration;
   const syncTask=STATE.role==='admin'?loadAdminData(generation):loadViewerData(generation);
@@ -2219,18 +2245,24 @@ function trustedDeviceRecord(){
 function syncTrustedDeviceLabel(){
   const label=document.getElementById('mobileTrustedDeviceLabel');
   if(!label)return;
-  const record=trustedDeviceRecord();
-  label.textContent=record&&record.profileId===STATE.activeProfileId?'Forget this device':'Remember this device';
+  const enabled=localStorage.getItem(WQ_TRUSTED_DEVICE_PREF)!=='0';
+  label.innerHTML=enabled?'Remembered <b>✓</b>':'Not remembered <b>×</b>';
+  label.closest('button')?.classList.toggle('remember-on',enabled);
+}
+function rememberCurrentDeviceIfEnabled(){
+  if(localStorage.getItem(WQ_TRUSTED_DEVICE_PREF)==='0'||!STATE.activeProfileId||!STATE.role)return;
+  localStorage.setItem(WQ_TRUSTED_DEVICE_KEY,JSON.stringify({profileId:STATE.activeProfileId,role:STATE.role,displayName:STATE.activeProfileName||'My workspace',viewerToken:STATE.role==='viewer'?STATE.viewerToken:null,userId:STATE.authUid,email:STATE.email,expiresAt:Date.now()+30*24*60*60*1000}));
+  syncTrustedDeviceLabel();
 }
 function toggleTrustedDevice(){
-  const current=trustedDeviceRecord();
-  if(current&&current.profileId===STATE.activeProfileId){
+  const enabled=localStorage.getItem(WQ_TRUSTED_DEVICE_PREF)!=='0';
+  if(enabled){
+    localStorage.setItem(WQ_TRUSTED_DEVICE_PREF,'0');
     localStorage.removeItem(WQ_TRUSTED_DEVICE_KEY);
-    syncTrustedDeviceLabel();toast('Automatic sign-in removed from this device');return;
+    syncTrustedDeviceLabel();toast('This device will ask for your profile next time');return;
   }
   if(!STATE.activeProfileId||!STATE.role){toast('Open a profile before remembering this device');return;}
-  localStorage.setItem(WQ_TRUSTED_DEVICE_KEY,JSON.stringify({profileId:STATE.activeProfileId,role:STATE.role,displayName:STATE.activeProfileName||'My workspace',viewerToken:STATE.role==='viewer'?STATE.viewerToken:null,userId:STATE.authUid,email:STATE.email,expiresAt:Date.now()+30*24*60*60*1000}));
-  syncTrustedDeviceLabel();toast('This profile will open automatically on this device');
+  localStorage.setItem(WQ_TRUSTED_DEVICE_PREF,'1');rememberCurrentDeviceIfEnabled();toast('Remembered — this profile will open automatically');
 }
 async function tryTrustedDevice(session){
   const record=trustedDeviceRecord();
@@ -3001,8 +3033,10 @@ async function loadAdminData(generation=_wqSyncGeneration){
 }
 
 function normaliseShareMember(row){
-  return {id:row.id,ownerId:row.owner_id||null,memberUserId:row.member_user_id||null,name:row.display_name||row.name||'Shared calendar',email:row.invited_email||row.email||'',color:safeJobColor(row.colour||row.color,row.display_name||row.name),showDayAmount:!!(row.show_day_amount??row.requested_day??row.showDayAmount),showWeekAmount:!!(row.show_week_amount??row.requested_week??row.showWeekAmount),approvedDay:!!(row.member_approved_day??row.approved_day),approvedWeek:!!(row.member_approved_week??row.approved_week),paused:!!(row.paused!==undefined?row.paused:(row.owner_paused||row.member_paused)),token:row.invite_token||row.token||'',status:row.status||'invited'};
+  const ownerName=row.owner_name||row.owner_label||'Name 1',memberName=row.member_name||row.member_label||row.display_name||row.name||'Name 2';
+  return {id:row.id,ownerId:row.owner_id||null,memberUserId:row.member_user_id||null,ownerName,memberName,name:`${ownerName} / ${memberName}`,email:row.invited_email||row.email||'',ownerColor:safeJobColor(row.owner_colour||'#5267D9',ownerName),memberColor:safeJobColor(row.member_colour||row.colour||row.color,memberName),color:safeJobColor(row.member_colour||row.colour||row.color,memberName),showDayAmount:!!(row.show_day_amount??row.requested_day??row.showDayAmount),showWeekAmount:!!(row.show_week_amount??row.requested_week??row.showWeekAmount),approvedDay:!!(row.member_approved_day??row.approved_day),approvedWeek:!!(row.member_approved_week??row.approved_week),paused:!!(row.paused!==undefined?row.paused:(row.owner_paused||row.member_paused)),token:row.invite_token||row.token||'',status:row.status||'invited'};
 }
+function sharedConnectionCount(){return new Set([...sharingPeople(),...(STATE.incomingShares||[])].filter(x=>x.status!=='revoked').map(x=>x.id)).size;}
 async function loadSecureSharingAdmin(){
   const [membersResult,assignmentsResult,incomingResult,challengesResult]=await Promise.all([
     wqRequest(()=>sb.rpc('get_my_share_members'),'Shared people sync',10000),
@@ -3575,15 +3609,14 @@ document.addEventListener('click', (e)=>{
    ========================================================================= */
 let calCursor = getTodaySydney().slice(0,7); // 'YYYY-MM'
 function sharingPeople(){return Array.isArray(STATE.sharing?.people)?STATE.sharing.people:[];}
-function incomingCalendarForSelected(){
+function selectedShareConnection(){
   const selected=String(STATE.selectedCalendarPerson||'all');
   if(selected.startsWith('incoming:'))return (STATE.incomingShares||[]).find(x=>x.id===selected.slice(9))||null;
-  const outgoing=sharingPeople().find(x=>x.id===selected);
-  return outgoing?.memberUserId?(STATE.incomingShares||[]).find(x=>x.ownerId===outgoing.memberUserId)||null:null;
+  return sharingPeople().find(x=>x.id===selected)||null;
 }
 function calendarSplitForDate(iso){
   if(STATE.role!=='admin'||STATE.selectedCalendarPerson==='all')return null;
-  const other=incomingCalendarForSelected();
+  const other=selectedShareConnection();
   return {mine:shiftsOnDate(iso),theirs:other?(STATE.incomingCalendars[other.id]||[]).filter(s=>s.date===iso):[],other};
 }
 function shiftsForCalendarDate(iso){
@@ -3591,7 +3624,7 @@ function shiftsForCalendarDate(iso){
   const split=calendarSplitForDate(iso);
   return split?[...split.mine,...split.theirs]:shifts;
 }
-async function selectCalendarPerson(id){STATE.selectedCalendarPerson=id;const other=incomingCalendarForSelected();const memberId=String(id).startsWith('incoming:')?String(id).slice(9):other?.id;if(memberId&&!STATE.incomingCalendars[memberId]){try{const result=await wqRequest(()=>sb.rpc('get_shared_calendar',{p_member_id:memberId}),'Open shared calendar',12000);const payload=result.data||{};STATE.incomingCalendars[memberId]=(payload.shifts||[]).map(x=>({id:x.id,date:x.date,employerName:x.employer||'Shared shift',employerColor:safeJobColor(x.employer_color,x.employer),start:x.start_time,end:x.end_time,hours:Number(x.hours)||0,totalPay:x.total_pay==null?null:Number(x.total_pay),locked:{totalPay:x.total_pay==null?0:Number(x.total_pay)},sharedIncoming:true}));}catch(error){toast(error.message||'Could not open shared calendar');}}render();}
+async function selectCalendarPerson(id){STATE.selectedCalendarPerson=id;const other=selectedShareConnection(),memberId=other?.id;if(memberId&&!STATE.incomingCalendars[memberId]){try{const result=await wqRequest(()=>sb.rpc('get_shared_calendar',{p_member_id:memberId}),'Open shared calendar',12000);const payload=result.data||{};STATE.incomingCalendars[memberId]=(payload.shifts||[]).map(x=>({id:x.id,date:x.date,employerName:x.employer||'Shared shift',employerColor:safeJobColor(x.employer_color,x.employer),start:x.start_time,end:x.end_time,hours:Number(x.hours)||0,totalPay:x.total_pay==null?null:Number(x.total_pay),locked:{totalPay:x.total_pay==null?0:Number(x.total_pay)},sharedIncoming:true}));}catch(error){toast(error.message||'Could not open shared calendar');}}render();}
 function renderCalendarPeopleBar(){
   if(STATE.role!=='admin')return '';
   const people=sharingPeople(),incoming=STATE.incomingShares||[];
@@ -3599,7 +3632,7 @@ function renderCalendarPeopleBar(){
     <button class="person-chip ${STATE.selectedCalendarPerson==='all'?'active':''}" onclick="selectCalendarPerson('all')"><span class="person-avatar all">✦</span><strong>My calendar</strong></button>
     ${people.map(person=>`<button class="person-chip ${STATE.selectedCalendarPerson===person.id?'active':''}" onclick="selectCalendarPerson('${person.id}')"><span class="person-avatar" style="background:${safeJobColor(person.color,person.name)}">${escapeHtml((person.name||'?').charAt(0).toUpperCase())}</span><strong>${escapeHtml(person.name)}</strong></button>`).join('')}
     ${incoming.map(person=>`<button class="person-chip ${STATE.selectedCalendarPerson==='incoming:'+person.id?'active':''}" onclick="selectCalendarPerson('incoming:${person.id}')"><span class="person-avatar" style="background:${safeJobColor(person.color,person.name)}">↙</span><strong>${escapeHtml(person.name)}</strong></button>`).join('')}
-    ${people.length<4?`<button class="person-chip invite" onclick="openShareHub()"><span class="person-avatar add">＋</span><strong>Invite</strong></button>`:''}
+    ${sharedConnectionCount()<4?`<button class="person-chip invite" onclick="openShareHub()"><span class="person-avatar add">＋</span><strong>Invite</strong></button>`:''}
   </div><button class="share-hub-button" onclick="openShareHub()">Manage sharing</button></div>`;
 }
 function renderCalendar(){
@@ -3631,11 +3664,12 @@ function renderCalendar(){
     let inner = `<span class="d">${d}</span>`;
     const split=calendarSplitForDate(iso);
     if(split){
-      const mineColour='var(--accent)';
-      const theirColour=safeJobColor(split.other?.color,split.other?.name||'Shared person');
+      const incoming=String(STATE.selectedCalendarPerson).startsWith('incoming:');
+      const mineColour=incoming?(split.other?.memberColor||'#16A06D'):(split.other?.ownerColor||'#5267D9');
+      const theirColour=incoming?(split.other?.ownerColor||'#5267D9'):(split.other?.memberColor||'#16A06D');
       inner+=`<span class="shared-calendar-split" aria-label="${split.mine.length?'Your shift':'No shift for you'}; ${split.theirs.length?escapeHtml(split.other?.name||'the other person')+' shift':'no shift for the other person'}"><i class="shared-calendar-edge top ${split.mine.length?'':'empty'}" style="--person-colour:${mineColour}"></i><i class="shared-calendar-edge bottom ${split.theirs.length?'':'empty'}" style="--person-colour:${theirColour}"></i></span>`;
     } else if(holiday){ inner += `<span class="na">N/A</span>`; }
-    else if(STATE.role==='admin' && shifts.length){ inner += `<span class="amt">$${shifts.reduce((sum,s)=>sum+(s.locked?.totalPay||0),0).toFixed(0)}</span>`; }
+    else if(STATE.role==='admin' && shifts.length){ inner += `<span class="amt">$${calendarDayTotal(iso,shifts).toFixed(0)}</span>`; }
     else if(shifts.length&&STATE.activeSharePerson?.showDayAmount){inner+=`<span class="amt">$${shifts.reduce((sum,s)=>sum+Number(s.totalPay||0),0).toFixed(0)}</span>`;}
     else if(shifts.length){ inner += `<span class="sr-only">Shift recorded</span>`; }
     if(isPH && !holiday){ inner += `<span style="display:block;font-size:8.5px;font-weight:700;color:var(--accent);margin-top:2px;">PH</span>`; }
@@ -3663,7 +3697,7 @@ function openDayModal(iso){
   if(split){
     const myName=STATE.activeProfileName||'You';
     const theirName=split.other?.name||'Shared person';
-    const renderMine=s=>{const emp=getEmployer(s.employerId);return `<div class="shift-row shared-day-shift"><div class="shared-shift-line" style="background:${emp?.color||shiftJobColor(s)}"></div><div><div class="shift-emp">${emp?jobIconHtml(emp.icon):jobIconHtml('💼')} ${escapeHtml(emp?.name||s.employerName||'Shift')}</div><div class="shift-time">${s.start} → ${s.end} · ${Number(s.locked?.paidHours??s.hours??0).toFixed(2)} hrs</div></div><div class="shift-amt money">$${Number(s.locked?.totalPay??s.totalPay??0).toFixed(2)}</div></div>`;};
+    const renderMine=s=>{const emp=getEmployer(s.employerId),amount=emp?.payMode==='salary'?salaryDayAmount(emp,s.date):Number(s.locked?.totalPay??s.totalPay??0);return `<div class="shift-row shared-day-shift"><div class="shared-shift-line" style="background:${emp?.color||shiftJobColor(s)}"></div><div><div class="shift-emp">${emp?jobIconHtml(emp.icon):jobIconHtml('💼')} ${escapeHtml(emp?.name||s.employerName||'Shift')}</div><div class="shift-time">${s.start} → ${s.end} · ${Number(s.locked?.paidHours??s.hours??0).toFixed(2)} hrs</div></div><div class="shift-amt money">$${amount.toFixed(2)}</div></div>`;};
     const renderTheirs=s=>`<div class="shift-row shared-day-shift"><div class="shared-shift-line" style="background:${shiftJobColor(s)}"></div><div><div class="shift-emp">${escapeHtml(s.employerName||'Shared shift')}</div><div class="shift-time">${s.start} → ${s.end} · ${Number(s.hours||0).toFixed(2)} hrs</div></div>${s.totalPay==null?'':`<div class="shift-amt money">$${Number(s.totalPay).toFixed(2)}</div>`}</div>`;
     const section=(name,colour,items,renderer)=>`<section class="shared-day-person"><div class="shared-day-person-head"><i style="background:${colour}"></i><strong>${escapeHtml(name)} shifts</strong><span>${items.length}</span></div>${items.length?items.map(renderer).join(''):'<div class="shared-day-empty">No shift for this person</div>'}</section>`;
     openModal(`<button class="modal-close" onclick="closeModal()">×</button><div class="eyebrow">SHARED DAY</div><h3>${DOW_LONG[dowIndex(iso)]} ${formatAUShort(iso)}</h3><div class="shared-day-list">${section(myName,'var(--accent)',split.mine,renderMine)}${section(theirName,safeJobColor(split.other?.color,theirName),split.theirs,renderTheirs)}</div><div class="row" style="margin-top:14px;"><button class="btn btn-primary btn-block" onclick="closeModal();openAddShiftModal();selectMiniCalDate('sDate','${iso}');">+ Add my shift</button></div>`);
@@ -3673,7 +3707,9 @@ function openDayModal(iso){
   let body = shifts.length ? shifts.map(s=>{
     if(STATE.role==='admin'){
       const emp=getEmployer(s.employerId);
-      return `<div class="shift-row" style="border-left:3px solid ${emp?emp.color||'var(--accent)':'var(--accent)'};padding-left:8px;"><div><div class="shift-emp">${emp?jobIconHtml(emp.icon):jobIconHtml('💼')} ${escapeHtml(emp?emp.name:'?')}</div><div class="shift-time">${s.start} → ${s.end} · ${s.locked.paidHours.toFixed(2)} hrs</div>${sharingPeople().length?`<div class="shift-share-pills">${sharingPeople().map(person=>`<button class="mini-share ${(STATE.sharing.assignments?.[s.id]||[]).includes(person.id)?'on':''}" onclick="toggleShiftShare('${s.id}','${person.id}',this)">${escapeHtml(person.name)}</button>`).join('')}</div>`:''}</div><div class="shift-amt money">$${s.locked.totalPay.toFixed(2)}</div></div>`;
+      const connections=[...sharingPeople().filter(p=>p.status==='active'),...(STATE.incomingShares||[])];
+      const amount=emp?.payMode==='salary'?salaryDayAmount(emp,s.date):s.locked.totalPay;
+      return `<div class="shift-row" style="border-left:3px solid ${emp?emp.color||'var(--accent)':'var(--accent)'};padding-left:8px;"><div><div class="shift-emp">${emp?jobIconHtml(emp.icon):jobIconHtml('💼')} ${escapeHtml(emp?emp.name:'?')}</div><div class="shift-time">${s.start} → ${s.end} · ${s.locked.paidHours.toFixed(2)} hrs</div>${connections.length?`<div class="shift-share-pills">${connections.map(person=>`<button class="mini-share ${(STATE.sharing.assignments?.[s.id]||[]).includes(person.id)?'on':''}" onclick="toggleShiftShare('${s.id}','${person.id}',this)">${escapeHtml(person.name)}</button>`).join('')}</div>`:''}</div><div class="shift-amt money">$${amount.toFixed(2)}</div></div>`;
     }
     return `<div class="shift-row" style="border-left:3px solid ${shiftJobColor(s)};padding-left:8px;"><div><div class="shift-emp">${escapeHtml(s.employerName)}</div><div class="shift-time">${s.start} → ${s.end} · ${Number(s.hours).toFixed(2)} hrs</div></div></div>`;
   }).join('') : `<div class="day-empty">No shifts recorded</div>`;
@@ -4244,27 +4280,36 @@ function openShareHub(){
   const people=sharingPeople();
   openModal(`<button class="modal-close" onclick="closeModal()">×</button>
     <div class="eyebrow">SHARED CALENDARS</div><h3 style="margin-top:5px">Your crew</h3>
-    <p class="muted small">Invite up to four people, choose what each person can see, then tap their name on Calendar to manage their shifts.</p>
+    <p class="muted small">Each connection uses one of four slots for both people. Names and colours stay separate so every calendar is easy to read.</p>
     <div class="share-people-list">${people.map(person=>sharePersonCard(person)).join('')||'<div class="share-empty">No shared calendars yet.</div>'}</div>
-    ${people.length<4?`<div class="share-invite-form"><div class="field-row"><div class="field"><label>Name</label><input id="shareInviteName" maxlength="32" placeholder="e.g. Mia"></div><div class="field"><label>Email</label><input id="shareInviteEmail" type="email" placeholder="mia@example.com"></div></div><button class="btn btn-primary btn-block" onclick="addSharedPerson()">Invite person</button></div>`:'<div class="viewer-note">All four shared calendar slots are being used.</div>'}
+    ${sharedConnectionCount()<4?`<div class="share-invite-form"><div class="field-row"><div class="field"><label>Their name</label><input id="shareInviteName" maxlength="32" placeholder="e.g. Mia"></div><div class="field"><label>Email</label><input id="shareInviteEmail" type="email" placeholder="mia@example.com"></div></div><button class="btn btn-primary btn-block" onclick="addSharedPerson()">Invite person</button></div>`:'<div class="viewer-note">All four shared calendar slots are being used.</div>'}
   `);
 }
 function sharePersonCard(person){
   const consent=person.status==='active'?`<small>${person.showDayAmount?(person.approvedDay?'Daily totals approved':'Daily totals awaiting approval'):''}${person.showDayAmount&&person.showWeekAmount?' · ':''}${person.showWeekAmount?(person.approvedWeek?'Weekly totals approved':'Weekly totals awaiting approval'):''}</small>`:'<small>Waiting for invitation acceptance</small>';
-  return `<div class="share-person-card"><div class="share-person-top"><span class="person-avatar" style="background:${safeJobColor(person.color,person.name)}">${escapeHtml((person.name||'?').charAt(0).toUpperCase())}</span><div><strong>${escapeHtml(person.name)}</strong><small>${escapeHtml(person.email||'Invite not sent')}</small>${consent}</div><button class="share-remove" onclick="removeSharedPerson('${person.id}')">End</button></div>
+  return `<div class="share-person-card"><div class="share-person-top"><span class="person-avatar duo-avatar" style="--c1:${person.ownerColor};--c2:${person.memberColor}">${escapeHtml((person.ownerName||'1').charAt(0))}${escapeHtml((person.memberName||'2').charAt(0))}</span><div><strong>${escapeHtml(person.name)}</strong><small>${escapeHtml(person.email||'Invite not sent')}</small>${consent}</div><button class="share-remove" onclick="removeSharedPerson('${person.id}')">End</button></div>
     <div class="share-permissions"><label><input type="checkbox" ${person.showDayAmount?'checked':''} onchange="updateSharedPerson('${person.id}','showDayAmount',this.checked)"> Request daily $ totals</label><label><input type="checkbox" ${person.showWeekAmount?'checked':''} onchange="updateSharedPerson('${person.id}','showWeekAmount',this.checked)"> Request weekly $ totals</label></div>
-    <div class="share-person-actions"><button class="btn btn-sm" onclick="sendShareInvite('${person.id}')">${person.status==='active'?'Invite accepted':'Email invitation'}</button><button class="btn btn-sm" onclick="toggleSharePause('${person.id}',${!person.paused})">${person.paused?'Resume sharing':'Pause sharing'}</button><button class="btn btn-sm" onclick="openChallengeCreator('${person.id}')">Start competition</button></div></div>`;
+    <div class="share-person-actions"><button class="btn btn-sm" onclick="openEditShareIdentity('${person.id}','outgoing')">Edit</button><button class="btn btn-sm" onclick="sendShareInvite('${person.id}')">${person.status==='active'?'Invite accepted':'Email invitation'}</button><button class="btn btn-sm" onclick="toggleSharePause('${person.id}',${!person.paused})">${person.paused?'Resume sharing':'Pause sharing'}</button><button class="btn btn-sm" onclick="openChallengeCreator('${person.id}')">Start competition</button></div></div>`;
 }
 async function addSharedPerson(){
   const name=document.getElementById('shareInviteName')?.value.trim();
   const email=document.getElementById('shareInviteEmail')?.value.trim().toLowerCase();
   if(!name||!email||!email.includes('@')){toast('Enter a name and valid email');return;}
-  if(sharingPeople().length>=4){toast('You can share with up to four people');return;}
+  if(sharedConnectionCount()>=4){toast('All four shared calendar slots are in use');return;}
   if(sharingPeople().some(person=>person.email===email)){toast('That email already has a calendar');return;}
   const colours=['#5B6FE0','#A05ACC','#27899A','#E4572E'],colour=colours[sharingPeople().length%colours.length];
   try{const result=await wqRequest(()=>sb.rpc('create_share_invite',{p_email:email,p_display_name:name,p_colour:colour}),'Create invitation',12000);const person=normaliseShareMember(result.data||{});STATE.sharing.people.push(person);closeModal();render();openShareHub();await sendShareInvite(person.id);}catch(error){toast(error.message||'Could not create invitation');}
 }
 async function updateSharedPerson(id,key,value){const person=sharingPeople().find(item=>item.id===id);if(!person)return;const previous=person[key];person[key]=value;try{await wqRequest(()=>sb.rpc('update_share_member_options',{p_member_id:id,p_show_day:person.showDayAmount,p_show_week:person.showWeekAmount}),'Update sharing permissions',10000);toast('Sharing permissions updated');}catch(error){person[key]=previous;render();toast(error.message||'Could not update permissions');}}
+function openEditShareIdentity(id,direction){
+  const person=(direction==='incoming'?STATE.incomingShares:sharingPeople()).find(x=>x.id===id);if(!person)return;
+  const mine=direction==='incoming'?person.memberName:person.ownerName,colour=direction==='incoming'?person.memberColor:person.ownerColor;
+  openModal(`<button class="modal-close" onclick="closeModal()">×</button><div class="eyebrow">SHARED CALENDAR</div><h3>Edit how you appear</h3><p class="muted small">Both people see the pair as ${escapeHtml(person.name)}.</p><div class="field"><label>Your name</label><input id="shareIdentityName" maxlength="32" value="${escapeHtml(mine)}"></div><div class="field"><label>Your calendar colour</label><input id="shareIdentityColour" type="color" value="${colour}"></div><button class="btn btn-primary btn-block" onclick="saveShareIdentity('${id}','${direction}')">Save changes</button>`);
+}
+async function saveShareIdentity(id,direction){
+  const name=document.getElementById('shareIdentityName')?.value.trim(),colour=document.getElementById('shareIdentityColour')?.value;if(!name)return toast('Enter your name');
+  try{await wqRequest(()=>sb.rpc('update_share_identity',{p_member_id:id,p_name:name,p_colour:colour}),'Update shared calendar',10000);await loadSecureSharingAdmin();closeModal();render();toast('Shared calendar updated');}catch(error){toast(error.message||'Could not update shared calendar');}
+}
 async function removeSharedPerson(id){
   const person=sharingPeople().find(item=>item.id===id);if(!person||!confirm(`Remove ${person.name}'s shared calendar?`))return;
   try{await wqRequest(()=>sb.rpc('revoke_share_member',{p_member_id:id}),'Remove shared calendar',10000);STATE.sharing.people=sharingPeople().filter(item=>item.id!==id);Object.keys(STATE.sharing.assignments||{}).forEach(shiftId=>{STATE.sharing.assignments[shiftId]=(STATE.sharing.assignments[shiftId]||[]).filter(personId=>personId!==id);});STATE.sharing.challenges=(STATE.sharing.challenges||[]).filter(challenge=>challenge.personId!==id);if(STATE.selectedCalendarPerson===id)STATE.selectedCalendarPerson='all';closeModal();render();openShareHub();}catch(error){toast(error.message||'Could not remove shared calendar');}
@@ -4296,12 +4341,12 @@ function renderAchievements(){
 }
 function renderIncomingCompetitions(){const pending=(STATE.sharing?.challenges||[]).filter(c=>c.ownerId!==STATE.uid&&!c.accepted);if(!pending.length)return '';return `<div class="card card-pad" style="margin-bottom:16px"><div class="eyebrow">COMPETITION REQUESTS</div>${pending.map(c=>`<div class="rate-row"><span><strong>${c.type==='earnings'?'Cash climb':'Shift sprint'}</strong><br><small>Weekly target: ${c.type==='earnings'?'$':''}${c.target}</small></span><span><button class="btn btn-sm btn-primary" onclick="respondCompetition('${c.id}',true)">Accept</button> <button class="btn btn-sm" onclick="respondCompetition('${c.id}',false)">Decline</button></span></div>`).join('')}</div>`;}
 async function respondCompetition(id,accept){try{await wqRequest(()=>sb.rpc('respond_share_challenge',{p_challenge_id:id,p_accept:accept}),'Respond to competition',10000);const challenge=(STATE.sharing.challenges||[]).find(c=>c.id===id);if(challenge)challenge.accepted=accept;toast(accept?'Competition accepted':'Competition declined');render();}catch(error){toast(error.message||'Could not update competition');}}
-function renderIncomingShareSettings(){const incoming=STATE.incomingShares||[];if(!incoming.length)return '';return `<h2 style="margin-bottom:4px">Calendars shared with you</h2><p class="muted small">Money stays hidden until you approve a request. Either person can pause or end sharing.</p>${incoming.map(person=>`<div class="card card-pad" style="margin:10px 0 16px"><div class="share-person-top"><span class="person-avatar" style="background:${person.color}">↙</span><div><strong>${escapeHtml(person.name)}</strong><small>${person.paused?'Sharing paused':'Private shared calendar'}</small></div></div><div class="share-permissions"><label><input type="checkbox" id="incomingDay-${person.id}" ${person.approvedDay?'checked':''} ${person.showDayAmount?'':'disabled'}> Allow daily $ totals ${person.showDayAmount?'':'(not requested)'}</label><label><input type="checkbox" id="incomingWeek-${person.id}" ${person.approvedWeek?'checked':''} ${person.showWeekAmount?'':'disabled'}> Allow weekly $ totals ${person.showWeekAmount?'':'(not requested)'}</label></div><div class="share-person-actions"><button class="btn btn-sm btn-primary" onclick="approveIncomingAmounts('${person.id}')">Save privacy choices</button><button class="btn btn-sm" onclick="pauseIncomingShare('${person.id}',${!person.paused})">${person.paused?'Resume':'Pause'}</button><button class="btn btn-sm btn-danger" onclick="leaveIncomingShare('${person.id}')">End sharing</button></div></div>`).join('')}`;}
+function renderIncomingShareSettings(){const incoming=STATE.incomingShares||[];if(!incoming.length)return '';return `<h2 style="margin-bottom:4px">Calendars shared with you</h2><p class="muted small">Money stays hidden until you approve a request. Either person can edit their identity, pause, or end sharing.</p>${incoming.map(person=>`<div class="card card-pad" style="margin:10px 0 16px"><div class="share-person-top"><span class="person-avatar duo-avatar" style="--c1:${person.ownerColor};--c2:${person.memberColor}">${escapeHtml((person.ownerName||'1')[0])}${escapeHtml((person.memberName||'2')[0])}</span><div><strong>${escapeHtml(person.name)}</strong><small>${person.paused?'Sharing paused':'Private shared calendar'}</small></div><button class="btn btn-sm" onclick="openEditShareIdentity('${person.id}','incoming')">Edit</button></div><div class="share-permissions"><label><input type="checkbox" id="incomingDay-${person.id}" ${person.approvedDay?'checked':''} ${person.showDayAmount?'':'disabled'}> Allow daily $ totals ${person.showDayAmount?'':'(not requested)'}</label><label><input type="checkbox" id="incomingWeek-${person.id}" ${person.approvedWeek?'checked':''} ${person.showWeekAmount?'':'disabled'}> Allow weekly $ totals ${person.showWeekAmount?'':'(not requested)'}</label></div><div class="share-person-actions"><button class="btn btn-sm btn-primary" onclick="approveIncomingAmounts('${person.id}')">Save privacy choices</button><button class="btn btn-sm" onclick="pauseIncomingShare('${person.id}',${!person.paused})">${person.paused?'Resume':'Pause'}</button><button class="btn btn-sm btn-danger" onclick="leaveIncomingShare('${person.id}')">End sharing</button></div></div>`).join('')}`;}
 async function approveIncomingAmounts(id){const day=!!document.getElementById(`incomingDay-${id}`)?.checked,week=!!document.getElementById(`incomingWeek-${id}`)?.checked;try{await wqRequest(()=>sb.rpc('respond_share_amount_request',{p_member_id:id,p_allow_day:day,p_allow_week:week}),'Save privacy choices',10000);const person=(STATE.incomingShares||[]).find(x=>x.id===id);if(person){person.approvedDay=day;person.approvedWeek=week;}delete STATE.incomingCalendars[id];toast('Privacy choices saved');}catch(error){toast(error.message||'Could not save privacy choices');}}
 async function pauseIncomingShare(id,paused){try{await wqRequest(()=>sb.rpc('set_share_paused',{p_member_id:id,p_paused:paused}),'Update sharing pause',10000);const person=(STATE.incomingShares||[]).find(x=>x.id===id);if(person)person.paused=paused;delete STATE.incomingCalendars[id];toast(paused?'Sharing paused':'Sharing resumed');render();}catch(error){toast(error.message||'Could not update sharing');}}
 async function leaveIncomingShare(id){if(!confirm('End this shared calendar? Both people will lose access to the connection.'))return;try{await wqRequest(()=>sb.rpc('leave_shared_calendar',{p_member_id:id}),'End sharing',10000);STATE.incomingShares=(STATE.incomingShares||[]).filter(x=>x.id!==id);delete STATE.incomingCalendars[id];STATE.selectedCalendarPerson='all';toast('Sharing ended');render();}catch(error){toast(error.message||'Could not end sharing');}}
 function renderSettings(){
-  let html = `${renderIncomingShareSettings()}<h2 style="margin-bottom:4px;">Shared calendars</h2><p class="muted small" style="margin-bottom:10px;">Invite up to four people, request earnings visibility with their approval, and create weekly competitions.</p><div class="card card-pad share-settings-summary"><div class="share-avatar-stack">${sharingPeople().map(p=>`<span style="background:${safeJobColor(p.color,p.name)}">${escapeHtml((p.name||'?')[0].toUpperCase())}</span>`).join('')||'<span>＋</span>'}</div><div><strong>${sharingPeople().length} of 4 people</strong><small>${sharingPeople().length?'Separate calendars are ready':'Invite your first person'}</small></div><button class="btn btn-primary" onclick="openShareHub()">Manage</button></div><h2 style="margin:26px 0 4px;">Holidays</h2><p class="muted small" style="margin-bottom:10px;">Mark date ranges you're away. Those days show as N/A on the calendar and aren't counted as missed work.</p>`;
+  let html = `${renderIncomingShareSettings()}<h2 style="margin-bottom:4px;">Shared calendars</h2><p class="muted small" style="margin-bottom:10px;">Invite up to four people, request earnings visibility with their approval, and create weekly competitions.</p><div class="card card-pad share-settings-summary"><div class="share-avatar-stack">${[...sharingPeople(),...(STATE.incomingShares||[])].map(p=>`<span class="duo-avatar" style="--c1:${p.ownerColor};--c2:${p.memberColor}">${escapeHtml((p.ownerName||'1')[0])}${escapeHtml((p.memberName||'2')[0])}</span>`).join('')||'<span>＋</span>'}</div><div><strong>${sharedConnectionCount()} of 4 connections</strong><small>${sharedConnectionCount()?'Shared calendars are ready':'Invite your first person'}</small></div><button class="btn btn-primary" onclick="openShareHub()">Manage</button></div><h2 style="margin:26px 0 4px;">Holidays</h2><p class="muted small" style="margin-bottom:10px;">Mark date ranges you're away. Those days show as N/A on the calendar and aren't counted as missed work.</p>`;
   html += `<div class="card card-pad" style="margin-bottom:22px;">`;
   if(!STATE.holidays.length) html += `<p class="muted small">No holidays set.</p>`;
   STATE.holidays.forEach((h,i)=>{
@@ -6091,6 +6136,8 @@ button:disabled{opacity:.38!important;filter:saturate(.3);box-shadow:none!import
 <style id="workquest-sharing-achievements">
 .people-calendar-bar{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:10px;border:0;border-radius:20px;background:var(--card);box-shadow:var(--shadow-sm)}.people-calendar-scroll{display:flex;align-items:center;gap:7px;min-width:0;flex:1;overflow-x:auto;scrollbar-width:none}.people-calendar-scroll::-webkit-scrollbar{display:none}.person-chip{flex:0 0 auto;min-height:50px;padding:5px 10px 5px 6px;border:0;border-radius:15px;background:transparent;color:var(--text-dim);display:flex;align-items:center;gap:7px}.person-chip strong{font-size:10.5px;white-space:nowrap}.person-chip.active{background:var(--blue-dim);color:var(--text)}.person-avatar{width:36px;height:36px;flex:0 0 36px;border-radius:12px;display:grid;place-items:center;color:#fff;font-size:13px;font-weight:900;box-shadow:0 7px 16px rgba(0,0,0,.12)}.person-avatar.all{background:linear-gradient(145deg,var(--accent),#9868e9)}.person-avatar.add{background:var(--card-2);color:var(--accent);box-shadow:none}.share-hub-button{min-height:42px;padding:0 13px;border:0;border-radius:13px;background:linear-gradient(145deg,var(--accent),#8f67e5);color:#fff;font-size:10.5px;font-weight:800;white-space:nowrap}.shift-share-pills{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.mini-share{min-height:25px;padding:3px 8px;border:0;border-radius:8px;background:var(--card-2);color:var(--text-faint);font-size:9px;font-weight:800}.mini-share.on{background:var(--blue-dim);color:var(--accent)}
 .share-people-list{display:grid;gap:9px;margin:17px 0}.share-empty{padding:24px;border-radius:18px;background:var(--card);color:var(--text-faint);text-align:center;font-size:12px}.share-person-card{padding:14px;border:0;border-radius:18px;background:var(--card);box-shadow:var(--shadow-sm)}.share-person-top{display:grid;grid-template-columns:42px 1fr auto;align-items:center;gap:10px}.share-person-top>div{min-width:0}.share-person-top strong,.share-person-top small{display:block}.share-person-top small{margin-top:2px;color:var(--text-faint);font-size:10px;overflow:hidden;text-overflow:ellipsis}.share-remove{border:0;background:var(--rust-dim);color:var(--rust);border-radius:9px;padding:7px 9px;font-size:9px;font-weight:800}.share-permissions{display:flex;flex-wrap:wrap;gap:8px 14px;margin:13px 0}.share-permissions label{display:flex;align-items:center;gap:6px;font-size:10.5px;text-transform:none}.share-permissions input{width:16px;height:16px;min-height:16px}.share-person-actions{display:flex;gap:7px}.share-invite-form{padding:15px;border-radius:18px;background:var(--card-2)}.share-settings-summary{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;margin-bottom:20px}.share-settings-summary strong,.share-settings-summary small{display:block}.share-settings-summary small{margin-top:3px;color:var(--text-faint);font-size:10px}.share-avatar-stack{display:flex}.share-avatar-stack span{width:34px;height:34px;margin-left:-8px;border:3px solid var(--card);border-radius:12px;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:900}.share-avatar-stack span:first-child{margin-left:0}.challenge-choice{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:17px 0}.challenge-choice button{min-height:58px;border:0;border-radius:16px;background:var(--card);color:var(--text-dim);font-weight:800}.challenge-choice button.active{background:var(--blue-dim);color:var(--accent);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)}
+.duo-avatar{background:linear-gradient(135deg,var(--c1) 0 49%,#fff 49% 53%,var(--c2) 53% 100%)!important;letter-spacing:-2px;text-shadow:0 1px 4px rgba(0,0,0,.28)}
+.remember-device-row .remember-switch{width:38px;height:22px!important;border-radius:99px;background:var(--line);padding:3px;display:flex!important;align-items:center;transition:.2s}.remember-device-row .remember-switch u{width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.25);transition:.2s}.remember-device-row.remember-on .remember-switch{background:var(--green)}.remember-device-row.remember-on .remember-switch u{transform:translateX(16px)}.remember-device-row.remember-on strong b{color:var(--green)}
 .achievement-hero{display:flex;align-items:center;gap:16px;padding:22px;margin-bottom:16px;border:0;border-radius:24px;background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 18%,var(--card)),var(--card));box-shadow:var(--shadow-md)}.achievement-hero>span{width:64px;height:64px;display:grid;place-items:center;border-radius:21px;background:linear-gradient(145deg,#ffbf4b,#f58c48);font-size:29px;box-shadow:0 15px 35px rgba(245,140,72,.25)}.achievement-hero h2{margin:4px 0;font-size:24px}.achievement-hero p{margin:0;color:var(--text-dim);font-size:11px}.achievement-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.achievement-card{min-height:145px;padding:17px;border:0;border-radius:20px;background:var(--card);box-shadow:var(--shadow-sm);display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end}.achievement-card>span{font-size:31px;margin-bottom:auto}.achievement-card strong{font-size:13px}.achievement-card small{margin-top:4px;color:var(--text-dim);font-size:9.5px}.achievement-card.locked{filter:grayscale(1);opacity:.48}.achievement-card.unlocked{background:linear-gradient(155deg,color-mix(in srgb,var(--card) 84%,#ffc65b 16%),var(--card))}.achievement-section-title{margin:24px 0 10px}.challenge-list{display:grid;gap:9px}.challenge-card{display:grid;grid-template-columns:minmax(110px,1fr) minmax(120px,2fr) auto;align-items:center;gap:13px;padding:15px;border-radius:18px;background:var(--card);box-shadow:var(--shadow-sm)}.challenge-card strong,.challenge-card small{display:block}.challenge-card small{margin-top:3px;color:var(--text-faint);font-size:9.5px}.challenge-track{height:9px;border-radius:99px;background:var(--card-2);overflow:hidden}.challenge-track i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--accent),#a665e8)}.challenge-card b{font:800 11px 'IBM Plex Mono',monospace;color:var(--accent)}
 @media(max-width:600px){.people-calendar-bar{margin-inline:-2px;padding:7px;border-radius:16px}.share-hub-button{display:none}.person-chip{min-height:45px;padding-right:8px}.person-avatar{width:32px;height:32px;flex-basis:32px;border-radius:10px}.achievement-grid{grid-template-columns:repeat(2,1fr)}.achievement-card{min-height:132px}.achievement-hero{padding:18px}.challenge-card{grid-template-columns:1fr auto}.challenge-track{grid-column:1/-1;grid-row:2}.share-person-top{grid-template-columns:38px 1fr auto}}
 </style>
