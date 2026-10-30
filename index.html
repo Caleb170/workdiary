@@ -4967,10 +4967,8 @@ function openAddJobModal(){
     <div class="field"><label>Icon</label>${swatchPickerHtml('icon', ICON_CHOICES, '💼', 'icon')}</div>
     <div class="field"><label>Colour</label>${swatchPickerHtml('color', COLOR_CHOICES, '#7C9CFF', 'color')}</div>
     <div class="field"><label>Pay type</label>
-      <select id="jPayMode" onchange="document.getElementById('jHourlyFields').classList.toggle('hidden',this.value!=='hourly');document.getElementById('jSalaryFields').classList.toggle('hidden',this.value!=='salary');">
-        <option value="hourly">Hourly rate</option>
-        <option value="salary">Salary</option>
-      </select>
+      <input type="hidden" id="jPayMode" value="hourly">
+      <div class="job-pay-options" role="group" aria-label="Pay type"><button type="button" class="active" aria-pressed="true" onclick="selectJobPayMode('hourly',this)"><span>◷</span><strong>Hourly</strong><small>Paid by the hour</small></button><button type="button" aria-pressed="false" onclick="selectJobPayMode('salary',this)"><span>▤</span><strong>Salary</strong><small>Fixed regular pay</small></button></div>
     </div>
     <div id="jHourlyFields">
       <div class="field-row">
@@ -4986,6 +4984,13 @@ function openAddJobModal(){
     <div class="row wrap"><button class="btn btn-primary" id="saveNewJobBtn" onclick="saveNewJob()" disabled>Add job</button><button class="btn" onclick="closeModal()">Cancel</button></div>
   `);
   wireAddJobValidation();
+}
+function selectJobPayMode(mode,button){
+  document.getElementById('jPayMode').value=mode;
+  document.getElementById('jHourlyFields').classList.toggle('hidden',mode!=='hourly');
+  document.getElementById('jSalaryFields').classList.toggle('hidden',mode!=='salary');
+  document.querySelectorAll('.job-pay-options button').forEach(item=>{const active=item===button;item.classList.toggle('active',active);item.setAttribute('aria-pressed',String(active));});
+  updateAddJobButtonState();
 }
 function updateAddJobButtonState(){
   const btn=document.getElementById('saveNewJobBtn');
@@ -6571,5 +6576,26 @@ html[data-theme="light"] #landing-screen:not(.hidden),#landing-screen:not(.hidde
 @media(prefers-reduced-motion:reduce){.wq-tour-target,.wq-tour-tap i{animation:none}}
 </style>
 
+<style id="hourfolio-refined-mobile">
+/* A consistent, touch-first layer for the working app. */
+#app-screen{--wq-focus:#5267d9}
+#app-screen button:focus-visible,#modalRoot button:focus-visible,#mobileMenu button:focus-visible{outline:3px solid var(--wq-focus,#5267d9)!important;outline-offset:3px}
+#content .diary-mode-switch{padding:5px!important;border-radius:18px!important;gap:4px!important}
+#content .diary-mode-switch button{min-height:58px!important;border-radius:14px!important;transition:background .2s,box-shadow .2s}
+#content .diary-mode-switch button>span{display:grid;place-items:center;width:32px;height:32px;border-radius:11px;background:rgba(82,103,217,.1);color:#5267d9;font-size:18px}
+#content .diary-mode-switch button.personal>span{background:rgba(21,155,112,.1);color:#159b70}
+#content .diary-mode-switch button strong{font-size:12px!important}#content .diary-mode-switch button small{font-size:10px!important}
+#content .earnings-hero{padding:22px!important;border-radius:25px!important}#content .earnings-hero .hero-actions button{min-height:57px;border-radius:14px;font-size:11px}#content .earnings-week small{font-size:11px;line-height:1.5}
+#content .week-head{border-radius:20px!important;padding:13px!important}#content .week-nav-btn{min-width:44px;min-height:44px;border-radius:14px!important}#content .day-card{border-radius:19px!important}#content .day-top{gap:8px}#content .day-dow{font-size:14px!important}#content .day-empty{padding:11px 12px!important;border-radius:13px!important;font-size:12px!important}#content .shift-row{min-width:0;gap:10px!important}#content .shift-row>div:first-child{min-width:0}#content .shift-emp{overflow-wrap:anywhere}#content .shift-time{line-height:1.45}
+.job-pay-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.job-pay-options button{min-width:0;min-height:91px;padding:12px;text-align:left;border:1px solid var(--line)!important;border-radius:17px;background:var(--card)!important;color:var(--text)!important}.job-pay-options button.active{border-color:var(--accent)!important;background:color-mix(in srgb,var(--accent) 9%,var(--card))!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 15%,transparent)}.job-pay-options button span{display:grid;place-items:center;width:28px;height:28px;margin-bottom:8px;border-radius:9px;background:color-mix(in srgb,var(--accent) 14%,var(--card));color:var(--accent);font-size:17px}.job-pay-options strong,.job-pay-options small{display:block}.job-pay-options strong{font-size:13px}.job-pay-options small{margin-top:3px;color:var(--text-dim);font-size:11px}
+.mobile-menu-grid button,.mobile-menu-list button{transition:transform .15s ease,background .15s ease}.mobile-menu-grid button:active,.mobile-menu-list button:active{transform:scale(.97)}.mobile-menu-grid button strong{font-size:12px!important}.mobile-menu-list button{min-height:54px!important}.mobile-menu-sheet{overscroll-behavior:contain}.modal .field label{font-size:11px!important;letter-spacing:.06em}.modal input:not([type=checkbox]):not([type=hidden]),.modal select,.modal textarea{font-size:16px!important}.modal .btn{justify-content:center}.modal .btn:disabled{opacity:.5;cursor:not-allowed}
+.tax-command-grid small,.tax-action-grid small,.tax-ledger-row small,.tax-review p,.tax-discovery small,.deduction-finder-grid small{font-size:11px!important;white-space:normal!important;line-height:1.4}.tax-action-grid strong,.tax-ledger-row strong,.tax-review strong,.deduction-finder-grid strong{font-size:13px!important}.tax-command-grid b{font-size:13px!important;overflow-wrap:anywhere}
+@media(max-width:600px){
+ #content .cal-grid{gap:4px!important}#content .cal-cell{min-height:56px!important}#content .cal-cell button{min-height:54px!important}#content .cal-dow{font-size:10px!important}
+ .modal .field-row:has(.custom-time),.composer-time-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:9px!important}.composer-time-grid>span{display:none}.custom-time{width:100%;grid-template-columns:44px minmax(0,1fr) 58px 44px!important}.custom-time button{height:52px!important}.time-readout small{display:block!important;font-size:9px!important}
+ .tabs .tab{min-height:48px!important;font-size:10px!important}.mobile-menu-sheet{border-radius:26px 26px 0 0!important}.mobile-menu-grid button{min-height:88px!important}.modal{max-height:calc(100dvh - env(safe-area-inset-top) - 12px)!important}
+}
+@media(prefers-reduced-motion:reduce){#app-screen *,#modalRoot *,#mobileMenu *{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+</style>
 </body>
 </html>
