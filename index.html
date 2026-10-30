@@ -2246,7 +2246,26 @@ let STATE={
   weekStart: weekForDate(getTodaySydney()).start,
   activeTab:'diary',
 };
-let offlineQueue = JSON.parse(localStorage.getItem('wq_offline_queue')||'[]');
+function loadOfflineQueue(){
+  try{
+    const raw=localStorage.getItem('wq_offline_queue');
+    if(!raw)return [];
+    const queue=JSON.parse(raw);
+    if(!Array.isArray(queue))throw new Error('Invalid offline queue');
+    return queue.filter(op=>op&&typeof op==='object');
+  }catch(error){
+    // Preserve the original value for recovery; never discard unsynced changes.
+    console.error('Could not read offline queue; original data was preserved.',error);
+    try{
+      const raw=localStorage.getItem('wq_offline_queue');
+      if(raw!==null){localStorage.setItem('wq_offline_queue_recovery_'+Date.now(),raw);localStorage.removeItem('wq_offline_queue');}
+      window.sessionStorage.setItem('wq_queue_read_error','1');
+      return [];
+    }catch(_){}
+    return null;
+  }
+}
+let offlineQueue = loadOfflineQueue();
 let realtimeChannel = null;
 let _pinActivationMode = false;
 let _pinRecoveryMode = false;
@@ -2320,6 +2339,7 @@ async function enterApp(){
   // Render synchronously before touching the network. If a renderer has a
   // data-dependent problem, keep the shell usable and expose the error.
   try { render(); } catch(err) { console.error('Initial Admin render failed:',err); wqShowStartupError(err); }
+  try{if(sessionStorage.getItem('wq_queue_read_error')==='1')toast('Some offline changes need recovery. Contact support before relying on them.');}catch(_){}
   startSafeAuthRefresh();
   if(STATE.role==='admin'){
     try { startTickerWatcher(); } catch(err) { console.error('Ticker init failed:',err); }
@@ -3304,6 +3324,7 @@ window.addEventListener('offline', ()=> setSync('error','Offline'));
 window.addEventListener('online', ()=>{ setSync('saving','Syncing…'); flushOfflineQueue(); });
 
 async function flushOfflineQueue(){
+  if(!offlineQueue){setSync('error','Offline changes need attention');return;}
   if(!offlineQueue.length){ setSync('saved','Synced'); return; }
   const queue=[...offlineQueue]; offlineQueue=[]; persistQueue();
   for(const op of queue){
@@ -3317,7 +3338,7 @@ async function flushOfflineQueue(){
   persistQueue();
   setSync(offlineQueue.length?'error':'saved', offlineQueue.length?'⚠️ Unable to save':'Synced');
 }
-function persistQueue(){ localStorage.setItem('wq_offline_queue', JSON.stringify(offlineQueue)); }
+function persistQueue(){ if(!offlineQueue)throw new Error('Offline changes could not be read. They have been preserved; contact support before making offline changes.');localStorage.setItem('wq_offline_queue', JSON.stringify(offlineQueue)); }
 
 /* Queue-aware write: tries the network, falls back to offline queue */
 async function writeShift(row, isNew){
