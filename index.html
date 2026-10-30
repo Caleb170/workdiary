@@ -4430,29 +4430,24 @@ function renderAdminDiary(){
     return credit>0 ? `${e.icon||''} ${e.name} salary $${credit.toFixed(2)} included` : null;
   }).filter(Boolean).join(' · ');
   const todaysPaydays = upcomingPaydays().filter(p=>p.isToday);
+  const weekShifts=STATE.shifts.filter(s=>isoCompare(s.date,week.start)>=0&&isoCompare(s.date,week.end)<=0);
+  const weekHours=weekShifts.reduce((sum,s)=>sum+Number(s.locked?.paidHours||0),0);
+  const weekLabel=week.start===weekForDate(today).start?'THIS WEEK':'SELECTED WEEK';
   let html = `${diaryModeSwitch()}
     ${!STATE.employers.length?`<section class="first-job-card"><span class="first-job-orbit">✦</span><div class="eyebrow">YOUR WORKSPACE IS READY</div><h2>Start with your first job.</h2><p>Add the place you work and your rate once. Hourfolio handles the rest.</p><button class="btn btn-primary" onclick="openAddJobModal()">Add my first job <b>→</b></button><div class="first-job-steps"><span><i>1</i>Add job</span><span><i>2</i>Log shift</span><span><i>3</i>Watch pay</span></div></section>`:''}
-    <section class="earnings-hero">
-      <div class="earnings-hero-top"><div><div class="eyebrow">${fy.key} EARNED</div><strong>$${fyEarned.toFixed(2)}</strong></div><span class="hero-spark">↗</span></div>
-      <div class="earnings-week"><span>This week</span><b>$${total.toFixed(2)}</b><small>${STATE.shifts.filter(s=>isoCompare(s.date,week.start)>=0&&isoCompare(s.date,week.end)<=0).length} shift${STATE.shifts.filter(s=>isoCompare(s.date,week.start)>=0&&isoCompare(s.date,week.end)<=0).length===1?'':'s'} logged ${weekDelta===null?'· comparison starts after another week':`· <em class="${weekDelta>=0?'up':'down'}">${weekDelta>=0?'↑':'↓'} ${Math.abs(weekDelta).toFixed(0)}% vs last week</em>`}</small></div>
-      <div class="hero-actions"><button onclick="openAddShiftModal()"><span>＋</span>Add shift</button><button onclick="switchTab('calendar')"><span>▦</span>Calendar</button><button onclick="switchTab('settings')"><span>⚙</span>Pay setup</button></div>
+    <section class="home-summary">
+      <div class="home-summary-head"><span><i></i> ${weekLabel}</span><span>${formatWeekHeading(week.start,week.end)}</span></div>
+      <div class="home-amount"><span>Estimated gross pay</span><strong>$${total.toFixed(2)}</strong><small>${weekDelta===null?'Add shifts to see your weekly trends':`${weekDelta>=0?'↗':'↘'} ${Math.abs(weekDelta).toFixed(0)}% ${weekDelta>=0?'more':'less'} than the previous week`}</small></div>
+      <div class="home-summary-stats"><div><span>SHIFTS</span><b>${weekShifts.length}</b></div><div><span>PAID HOURS</span><b>${weekHours.toFixed(1)}<small> hrs</small></b></div><div><span>${fy.key} TO DATE</span><b>$${fyEarned.toFixed(0)}</b></div></div>
+      <div class="home-summary-foot">Includes scheduled shifts · before tax</div>
     </section>
+    <div class="home-shortcuts"><button onclick="openAddShiftModal()"><span>＋</span><strong>Add shift</strong><i>↗</i></button><button onclick="switchTab('calendar')"><span>▦</span><strong>Calendar</strong><i>↗</i></button><button onclick="switchTab('settings')"><span>⚙</span><strong>Pay setup</strong><i>↗</i></button></div>
     ${todaysPaydays.length ? `<div class="card card-pad" style="margin-bottom:16px;background:var(--green-dim);border-color:var(--green);">
       <div class="eyebrow" style="color:var(--green);">💰 Payday today</div>
       ${todaysPaydays.map(p=>`<div class="row" style="justify-content:space-between;margin-top:4px;"><span>${jobIconHtml(p.emp.icon)} ${escapeHtml(p.emp.name)}</span><span class="num" style="font-weight:700;color:var(--green);">$${p.amount.toFixed(2)}</span></div>`).join('')}
     </div>` : ''}
-    <div class="week-head">
-      <button class="week-nav-btn" onclick="navWeek(-1)">‹</button>
-      <div style="text-align:center;">
-        <div class="eyebrow">${formatWeekHeading(week.start,week.end)}</div>
-        <div class="week-total">$${total.toFixed(2)}</div>
-        ${salaryNote?`<div class="muted small" style="margin-top:2px;">${salaryNote}</div>`:''}
-      </div>
-      <button class="week-nav-btn" onclick="navWeek(1)">›</button>
-    </div>
-    <div class="row" style="justify-content:center;margin-bottom:14px;">
-      <button class="btn btn-sm" onclick="exportWeekIcs()">📅 Add this week to Calendar</button>
-    </div>`;
+    <div class="home-agenda-head"><div><span>YOUR DIARY</span><h2>The week ahead.</h2></div><div class="home-week-controls"><button onclick="navWeek(-1)" aria-label="Previous week">‹</button><button onclick="navWeek(1)" aria-label="Next week">›</button></div></div>
+    <div class="home-week-caption"><span>${formatWeekHeading(week.start,week.end)}</span><button onclick="exportWeekIcs()">Export week ↗</button></div>${salaryNote?`<p class="home-salary-note">${escapeHtml(salaryNote)}</p>`:''}`;
   for(const d of days){
     const shifts = shiftsOnDate(d);
     const isToday = d===today;
@@ -4480,7 +4475,7 @@ function renderAdminDiary(){
       continue;
     }
     if(!shifts.length){
-      html += `<div class="day-empty">No shifts recorded</div>`;
+      html += `<div class="day-empty">A clear day <span>— no shifts</span></div>`;
     } else {
       for(const s of shifts){
         const emp = getEmployer(s.employerId);
@@ -6596,6 +6591,10 @@ html[data-theme="light"] #landing-screen:not(.hidden),#landing-screen:not(.hidde
  .tabs .tab{min-height:48px!important;font-size:10px!important}.mobile-menu-sheet{border-radius:26px 26px 0 0!important}.mobile-menu-grid button{min-height:88px!important}.modal{max-height:calc(100dvh - env(safe-area-inset-top) - 12px)!important}
 }
 @media(prefers-reduced-motion:reduce){#app-screen *,#modalRoot *,#mobileMenu *{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+</style>
+<style id="hourfolio-home-redesign">
+.home-summary{position:relative;overflow:hidden;padding:22px;border-radius:25px;background:#132536;color:#fff;box-shadow:0 16px 36px rgba(18,33,49,.16)}.home-summary:before{content:"";position:absolute;right:-80px;top:-105px;width:260px;height:260px;border:1px solid rgba(165,227,213,.14);border-radius:50%;box-shadow:0 0 0 30px rgba(165,227,213,.035),0 0 0 60px rgba(165,227,213,.025);pointer-events:none}.home-summary-head{position:relative;display:flex;justify-content:space-between;gap:10px;color:#b3c3ce;font-size:10px;font-weight:800;letter-spacing:.1em}.home-summary-head span:last-child{letter-spacing:0;text-align:right;font-weight:600}.home-summary-head i{display:inline-block;width:7px;height:7px;margin-right:4px;border-radius:50%;background:#69e2b0}.home-amount{position:relative;margin:26px 0 24px}.home-amount>span,.home-amount>small{display:block;color:#b4c3cf;font-size:12px}.home-amount strong{display:block;margin:8px 0 8px;color:#fff;font:700 clamp(34px,9vw,46px)/1 'Fraunces',serif;letter-spacing:-.045em}.home-amount>small{color:#8ce2c1;font-weight:700}.home-summary-stats{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding-top:16px;border-top:1px solid rgba(255,255,255,.14)}.home-summary-stats>div+div{padding-left:12px;border-left:1px solid rgba(255,255,255,.1)}.home-summary-stats span,.home-summary-stats b{display:block}.home-summary-stats span{color:#a1b2bf;font-size:9px;font-weight:800;letter-spacing:.08em}.home-summary-stats b{margin-top:6px;color:#fff;font-size:17px}.home-summary-stats b small{font-size:10px;font-weight:500;color:#aabac6}.home-summary-foot{position:relative;margin-top:17px;color:#9cabb7;font-size:10px}.home-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:13px 0 28px}.home-shortcuts button{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:10px;min-height:85px;padding:12px;border:1px solid var(--line-soft);border-radius:17px;background:var(--card);color:var(--text);text-align:left;box-shadow:0 6px 20px rgba(25,39,54,.04)}.home-shortcuts button>span{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:color-mix(in srgb,var(--accent) 10%,var(--card));color:var(--accent);font-size:19px}.home-shortcuts button:first-child>span{background:#e2f5eb;color:#13825b}.home-shortcuts strong{font-size:11px}.home-shortcuts i{position:absolute;right:11px;top:10px;color:var(--text-dim);font-size:13px;font-style:normal}.home-agenda-head{display:flex;justify-content:space-between;align-items:end;gap:10px}.home-agenda-head span{color:var(--text-dim);font-size:10px;font-weight:800;letter-spacing:.13em}.home-agenda-head h2{margin:5px 0 0;font:700 26px/1.1 'Fraunces',serif;letter-spacing:-.035em}.home-week-controls{display:flex;gap:6px}.home-week-controls button{display:grid;place-items:center;width:42px;height:42px;border:1px solid var(--line);border-radius:13px;background:var(--card);color:var(--text);font-size:23px}.home-week-caption{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 14px;color:var(--text-dim);font-size:12px;font-weight:600}.home-week-caption button{padding:6px;border:0;background:transparent;color:var(--accent);font:inherit;font-size:11px;font-weight:800}.home-salary-note{margin:-3px 0 12px;color:var(--text-dim);font-size:11px;line-height:1.5}#content[data-view="diary"] .diary-card-grid{gap:8px!important}#content[data-view="diary"] .day-card{box-shadow:none!important}#content[data-view="diary"] .day-empty{background:transparent!important;padding:10px 0 0!important;color:var(--text-dim);font-size:12px!important}#content[data-view="diary"] .day-empty span{opacity:.75}#content[data-view="diary"] .day-card.today{box-shadow:0 6px 24px rgba(21,155,112,.08)!important}
+@media(max-width:380px){.home-summary{padding:19px}.home-summary-head{font-size:9px}.home-summary-stats span{font-size:8px}.home-summary-stats b{font-size:15px}.home-shortcuts button{padding:10px}.home-shortcuts strong{font-size:10px}.home-agenda-head h2{font-size:23px}}
 </style>
 </body>
 </html>
